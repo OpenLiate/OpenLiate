@@ -1,0 +1,44 @@
+{
+  "name": "@openliate/liate",
+  "version": "0.0.0",
+  "description": "Open Source Backend Layer for AI Agents",
+  "type": "module",
+  "main": "./src/liate.ts",
+  "types": "./src/engine/types.ts",
+  "bin": {
+    "liate": "./src/liate.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "build": "bun build ./src/liate.ts --compile --outfile dist/liate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "liate",
+    "agent",
+    "autonomous-agents",
+    "sovereign-ai",
+    "agent-platform",
+    "runtime",
+    "mcp",
+    "sarvamai"
+  ],
+  "author": "I Am Azent (@iamazent)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openliate/liate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/openliate/liate/issues"
+  },
+  "homepage": "https://liate.dev"
+}
