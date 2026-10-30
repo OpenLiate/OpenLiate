@@ -1,8 +1,7 @@
 import { z } from "zod";
-import type { AgentManifest, ModelConfig, IntegrationConfig, AgentConfig, ToolConfig, EnvironmentConfig } from "../engine/types";
+import type { AgentManifest } from "../engine/types";
 
 export const AUMSchema = z.object({
-  version: z.string().optional().default("1.0.0"),
   L: z.union([
     z.string().min(1, "Model definition cannot be empty"),
     z.object({
@@ -25,6 +24,7 @@ export const AUMSchema = z.object({
     intent: z.string().optional(),
     author: z.string().optional(),
     skills: z.union([z.string(), z.array(z.string())]).optional(),
+    maxSteps: z.number().optional().default(10),
     subagents: z.array(z.string()).optional()
   }),
   T: z.union([
@@ -76,4 +76,3 @@ export class AUM {
     };
   }
 }
-
