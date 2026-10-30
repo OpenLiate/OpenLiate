@@ -20,6 +20,15 @@ export class ReActLoop {
     const steps: AgentStep[] = [];
     const toolMap = new Map<string, AgentTool>(tools.map(t => [t.name, t]));
 
+    const formattedTools = tools.length > 0 ? tools.map(t => ({
+      type: "function",
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters || { type: "object", properties: {} }
+      }
+    })) : undefined;
+
     // 1. Append user input to session memory
     await memory.append({
       role: "user",
@@ -31,7 +40,7 @@ export class ReActLoop {
     let finalOutput = "";
     let finalThought: string | undefined = undefined;
     let finishReason: "stop" | "max_steps_reached" | "error" = "max_steps_reached";
-    let usedModel = "unknown";
+    let usedModel = options.model || "unknown";
 
     // Build system message incorporating Intent, Name, and Version
     const systemInstruction = options.systemPrompt ??
@@ -43,10 +52,25 @@ Follow the ReAct methodology: Reason about the user's request, select tools if n
       const stepStartTime = Date.now();
 
       // Retrieve full history from memory
-      const conversationHistory = memory.getMessages().map(m => ({
-        role: m.role as "system" | "user" | "assistant",
-        content: m.content
-      }));
+      const conversationHistory: SarvamMessage[] = memory.getMessages().map(m => {
+        const item: SarvamMessage = {
+          role: m.role as "system" | "user" | "assistant" | "tool",
+          content: m.content
+        };
+        if (m.name) item.name = m.name;
+        if (m.toolCallId) item.tool_call_id = m.toolCallId;
+        if (m.toolCalls && m.toolCalls.length > 0) {
+          item.tool_calls = m.toolCalls.map(tc => ({
+            id: tc.id,
+            type: "function",
+            function: {
+              name: tc.name,
+              arguments: JSON.stringify(tc.arguments)
+            }
+          }));
+        }
+        return item;
+      });
 
       const messages: SarvamMessage[] = [
         { role: "system", content: systemInstruction },
@@ -55,7 +79,10 @@ Follow the ReAct methodology: Reason about the user's request, select tools if n
 
       // Query LLM
       const response = await llm.chat(messages, {
-        temperature: options.temperature ?? 0.2
+        model: options.model,
+        maxTokens: options.maxTokens,
+        temperature: options.temperature ?? 0.2,
+        tools: formattedTools
       });
 
       usedModel = response.model || usedModel;
@@ -68,6 +95,15 @@ Follow the ReAct methodology: Reason about the user's request, select tools if n
       const requestedToolCalls: ToolCall[] = response.toolCalls || [];
 
       if (requestedToolCalls.length > 0) {
+        // Record assistant tool request in session history
+        await memory.append({
+          role: "assistant",
+          content: response.text || "",
+          reasoningContent: thought,
+          toolCalls: requestedToolCalls,
+          timestamp: stepStartTime
+        });
+
         const stepResults: ToolResult[] = [];
 
         for (const tc of requestedToolCalls) {

@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, existsSync } from "fs";
+import { resolve, join } from "path";
 
 export interface HubLLMDefinition {
   name: string;
@@ -18,15 +18,20 @@ export interface HubLLMDefinition {
 }
 
 export class HubResolver {
-  private static cache = new Map<string, HubLLMDefinition>();
+  private static cache: Map<string, HubLLMDefinition> = new Map();
 
-  public static loadLLM(providerName: string, baseDir: string = process.cwd()): HubLLMDefinition {
-    const cached = this.cache.get(providerName);
-    if (cached) return cached;
+  /**
+   * Resolves a provider definition dynamically from the hub/llm/ directory.
+   * Throws an error if the hub file does not exist, guaranteeing zero hardcoding.
+   */
+  public static loadLLM(providerName: string): HubLLMDefinition {
+    if (this.cache.has(providerName)) {
+      return this.cache.get(providerName)!;
+    }
 
     const possiblePaths = [
-      join(baseDir, "hub", "llm", `${providerName}.json`),
-      join(baseDir, "..", "hub", "llm", `${providerName}.json`),
+      resolve(process.cwd(), "hub", "llm", `${providerName}.json`),
+      resolve(process.cwd(), "..", "hub", "llm", `${providerName}.json`),
       join(__dirname, "..", "..", "hub", "llm", `${providerName}.json`)
     ];
 
@@ -43,31 +48,6 @@ export class HubResolver {
       }
     }
 
-    // Default fallback definition for Sarvam /v2 if hub file is not found
-    if (providerName.toLowerCase() === "sarvam") {
-      const defaultSarvam: HubLLMDefinition = {
-        name: "sarvam",
-        provider: "sarvam",
-        version: "v2",
-        base_url: "https://api.sarvam.ai/v2",
-        endpoint: "https://api.sarvam.ai/v2/chat/completions",
-        default_model: "glm5.3",
-        available_models: ["glm5.3", "glm5.3-flash", "sarvam-105b", "gemma4", "deepseekv4.1-flash-1017"],
-        headers: {
-          "api-subscription-key": "$SARVAM_API_KEY",
-          "Content-Type": "application/json"
-        },
-        features: {
-          tool_calling: true,
-          streaming: true,
-          reasoning: true
-        }
-      };
-      this.cache.set(providerName, defaultSarvam);
-      return defaultSarvam;
-    }
-
-    throw new Error(`Model provider definition for "${providerName}" not found in hub/llm/`);
+    throw new Error(`Model provider definition for "${providerName}" not found in hub/llm/${providerName}.json`);
   }
 }
-

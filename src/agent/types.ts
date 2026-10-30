@@ -44,6 +44,8 @@ export interface AgentRunResult {
 }
 
 export interface AgentExecutionOptions {
+  model?: string;
+  maxTokens?: number;
   maxSteps?: number;
   systemPrompt?: string;
   temperature?: number;

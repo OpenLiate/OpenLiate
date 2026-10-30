@@ -1,0 +1,9 @@
+{
+  "id": "fetch",
+  "name": "Fetch",
+  "description": "Web fetch and content extraction MCP server via uvx",
+  "transport": "stdio",
+  "command": "uvx",
+  "args": ["mcp-server-fetch"]
+}
+

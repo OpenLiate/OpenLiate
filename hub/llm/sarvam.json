@@ -4,12 +4,12 @@
   "version": "v2",
   "base_url": "https://api.sarvam.ai/v2",
   "endpoint": "https://api.sarvam.ai/v2/chat/completions",
-  "default_model": "glm5.3",
+  "default_model": "sarvam-105b",
   "available_models": [
-    "glm5.3",
-    "glm5.3-flash",
     "sarvam-105b",
     "sarvam-105b-conversations",
+    "glm5.3",
+    "glm5.3-flash",
     "gemma4",
     "deepseekv4.1-flash-1017",
     "kimi-k3"

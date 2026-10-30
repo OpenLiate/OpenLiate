@@ -5,6 +5,7 @@ export interface AgentMessage {
   content: string;
   name?: string;
   toolCallId?: string;
+  toolCalls?: Array<{ id: string; name: string; arguments: Record<string, any> }>;
   reasoningContent?: string;
   timestamp?: number;
 }

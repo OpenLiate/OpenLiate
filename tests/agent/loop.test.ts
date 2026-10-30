@@ -114,12 +114,14 @@ describe("Layer 3: [A] Agent Harness & ReAct Loop", () => {
 
     // Verify memory contains: user -> tool observation -> assistant final answer
     const history = memory.getMessages();
-    expect(history.length).toBe(3);
+    expect(history.length).toBe(4);
     expect(history[0].role).toBe("user");
-    expect(history[1].role).toBe("tool");
-    expect(history[1].content).toBe("100");
-    expect(history[2].role).toBe("assistant");
-    expect(history[2].content).toBe("The sum of 42 and 58 is 100.");
+    expect(history[1].role).toBe("assistant");
+    expect(history[1].toolCalls?.length).toBe(1);
+    expect(history[2].role).toBe("tool");
+    expect(history[2].content).toBe("100");
+    expect(history[3].role).toBe("assistant");
+    expect(history[3].content).toBe("The sum of 42 and 58 is 100.");
   });
 
   test("ReActLoop: enforces maxSteps guardrail against infinite loops", async () => {
