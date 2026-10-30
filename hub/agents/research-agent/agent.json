@@ -1,0 +1,18 @@
+{
+  "L": "sarvam/sarvam-105b",
+  "I": {
+    "memory": "sessions/research-agent"
+  },
+  "A": {
+    "name": "research_agent",
+    "version": "1.0.0",
+    "intent": "Autonomous Web Research and Knowledge Extraction Agent",
+    "maxSteps": 5
+  },
+  "T": [
+    "mcp:fetch"
+  ],
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}

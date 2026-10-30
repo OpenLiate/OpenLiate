@@ -1,0 +1,19 @@
+{
+  "L": "sarvam/sarvam-105b",
+  "I": {
+    "memory": "sessions/identity-agent"
+  },
+  "A": {
+    "name": "identity_agent",
+    "version": "1.0.0",
+    "intent": "Verify and validate Indian identity credentials including 12-digit Aadhaar (Verhoeff checksum) and 10-character PAN card format with taxpayer classification.",
+    "maxSteps": 5
+  },
+  "T": [
+    "verify_identity"
+  ],
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}
+

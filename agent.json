@@ -1,0 +1,18 @@
+{
+  "L": "sarvam/sarvam-105b",
+  "I": {
+    "memory": "sessions/liate-agent"
+  },
+  "A": {
+    "name": "liate_agent",
+    "version": "1.0.0",
+    "intent": "Explain Liate: The Open Source Backend Layer for AI Agents",
+    "maxSteps": 5
+  },
+  "T": [
+    "mcp:fetch"
+  ],
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}
