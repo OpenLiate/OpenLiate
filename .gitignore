@@ -14,15 +14,18 @@ node_modules/
 dist/
 build/
 out/
+*.exe
 *.tsbuildinfo
+
+# Runtime Agent Sessions & State
+sessions/
+.liate/
 
 # Python artifacts
 __pycache__/
 *.py[cod]
 *$py.class
 *.egg-info/
-dist/
-build/
 .pytest_cache/
 
 # Fern docs local cache
