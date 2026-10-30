@@ -1,0 +1,27 @@
+{
+  "name": "sarvam",
+  "provider": "sarvam",
+  "version": "v2",
+  "base_url": "https://api.sarvam.ai/v2",
+  "endpoint": "https://api.sarvam.ai/v2/chat/completions",
+  "default_model": "glm5.3",
+  "available_models": [
+    "glm5.3",
+    "glm5.3-flash",
+    "sarvam-105b",
+    "sarvam-105b-conversations",
+    "gemma4",
+    "deepseekv4.1-flash-1017",
+    "kimi-k3"
+  ],
+  "headers": {
+    "api-subscription-key": "$SARVAM_API_KEY",
+    "Authorization": "Bearer $SARVAM_API_KEY",
+    "Content-Type": "application/json"
+  },
+  "features": {
+    "tool_calling": true,
+    "streaming": true,
+    "reasoning": true
+  }
+}
