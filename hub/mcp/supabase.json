@@ -1,0 +1,12 @@
+{
+  "id": "supabase",
+  "name": "Supabase",
+  "description": "Supabase Edge Functions, pgvector database, and storage management via Supabase MCP",
+  "transport": "http",
+  "url": "https://mcp.supabase.com/mcp",
+  "headers": {
+    "Authorization": "Bearer $SUPABASE_MCP_TOKEN",
+    "Accept": "application/json, text/event-stream"
+  }
+}
+

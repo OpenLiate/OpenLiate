@@ -28,7 +28,7 @@ export const AUMSchema = z.object({
     subagents: z.array(z.string()).optional()
   }),
   T: z.union([
-    z.array(z.string()),
+    z.array(z.union([z.string(), z.record(z.any())])),
     z.record(z.any())
   ]).optional().default([]),
   E: z.record(z.string()).optional().default({})

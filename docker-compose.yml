@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  liate-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: liate-engine
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - SARVAM_API_KEY=${SARVAM_API_KEY}
+      - AGENTMAIL_API_KEY=${AGENTMAIL_API_KEY}
+    restart: unless-stopped
+

@@ -5,6 +5,11 @@ import type { McpServerConfig, ParsedToolSpec } from "./types";
 import { LiateMcp } from "./mcp";
 import { fetchTool } from "./builtin/fetch";
 import { identityVerifierTool } from "./builtin/identity";
+import agentmailDef from "../../hub/mcp/agentmail.json";
+import fetchDef from "../../hub/mcp/fetch.json";
+import neonDef from "../../hub/mcp/neon.json";
+import vercelDef from "../../hub/mcp/vercel.json";
+import supabaseDef from "../../hub/mcp/supabase.json";
 
 export class ToolRegistry {
   public static parseSpec(spec: string): ParsedToolSpec {
@@ -97,12 +102,23 @@ export class ToolRegistry {
       }
     }
 
-    if (!foundPath) {
+    let parsed: McpServerConfig;
+    if (foundPath) {
+      const raw = fs.readFileSync(foundPath, "utf-8");
+      parsed = JSON.parse(raw);
+    } else if (serverName === "agentmail") {
+      parsed = JSON.parse(JSON.stringify(agentmailDef)) as McpServerConfig;
+    } else if (serverName === "fetch") {
+      parsed = JSON.parse(JSON.stringify(fetchDef)) as McpServerConfig;
+    } else if (serverName === "neon") {
+      parsed = JSON.parse(JSON.stringify(neonDef)) as McpServerConfig;
+    } else if (serverName === "vercel") {
+      parsed = JSON.parse(JSON.stringify(vercelDef)) as McpServerConfig;
+    } else if (serverName === "supabase") {
+      parsed = JSON.parse(JSON.stringify(supabaseDef)) as McpServerConfig;
+    } else {
       throw new Error(`MCP definition file not found for '${serverName}' at hub/mcp/${serverName}.json`);
     }
-
-    const raw = fs.readFileSync(foundPath, "utf-8");
-    const parsed: McpServerConfig = JSON.parse(raw);
 
     // Resolve environment variables in headers and URL
     const resolvedHeaders: Record<string, string> = {};
@@ -130,12 +146,20 @@ export class ToolRegistry {
   }
 
   public static async resolveTools(
-    specs: Array<string | AgentTool | Record<string, any>>,
+    specs: Array<string | AgentTool | Record<string, any>> | Record<string, any>,
     customEnv: Record<string, string | undefined> = process.env
   ): Promise<AgentTool[]> {
     const resolved: AgentTool[] = [];
+    const rawList: Array<string | AgentTool | Record<string, any>> = Array.isArray(specs)
+      ? specs
+      : Object.entries(specs || {}).map(([key, val]) => {
+          if (typeof val === "object" && val !== null) {
+            return { id: key, name: key, ...val };
+          }
+          return key;
+        });
 
-    for (const item of specs) {
+    for (const item of rawList) {
       if (typeof item === "object" && item !== null) {
         // Direct AgentTool object (has name & execute function)
         if ("name" in item && "execute" in item && typeof (item as any).execute === "function") {

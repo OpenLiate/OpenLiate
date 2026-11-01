@@ -57,10 +57,18 @@ export class LiateMcp {
     const filterSet = toolFilter && toolFilter.length > 0 ? new Set(toolFilter.map(t => t.toLowerCase())) : null;
 
     try {
+      const containerSafeEnv: Record<string, string> = {
+        HOME: "/tmp",
+        npm_config_cache: "/tmp/.npm",
+        npm_config_update_notifier: "false",
+        ...process.env,
+        ...(config.env || {})
+      };
+
       const transport = new StdioClientTransport({
-        command: config.command || "bunx",
+        command: config.command || "npx",
         args: config.args || [],
-        env: { ...process.env, ...(config.env || {}) } as Record<string, string>
+        env: containerSafeEnv
       });
       this.activeTransports.push(transport);
 

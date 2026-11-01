@@ -3,22 +3,35 @@ import { FileSessionMemory, InMemorySession } from "./memory";
 
 export interface IntegrationConfig {
   memory?: string;
+  type?: string;
   [key: string]: any;
 }
 
 export class IntegrationResolver {
-  public static resolveMemory(config?: string | IntegrationConfig, metadata?: Record<string, any>): MemoryProvider {
+  public static resolveMemory(
+    config?: string | IntegrationConfig | MemoryProvider,
+    metadata?: Record<string, any>,
+    sessionId?: string
+  ): MemoryProvider {
     if (!config) {
-      return new InMemorySession("ephemeral", metadata);
+      return new InMemorySession(sessionId || "ephemeral", metadata);
     }
 
-    const memoryTarget = typeof config === "string" ? config : config.memory;
+    if (typeof config === "object" && "append" in config && "getMessages" in config) {
+      return config as MemoryProvider;
+    }
 
-    if (!memoryTarget || memoryTarget === ":memory:") {
-      return new InMemorySession("ephemeral", metadata);
+    const memoryTarget = typeof config === "string" ? config : (config.memory || config.type);
+
+    if (!memoryTarget || memoryTarget === ":memory:" || memoryTarget === "memory" || memoryTarget === "in-memory") {
+      return new InMemorySession(sessionId || "ephemeral", metadata);
     }
 
     // Local file path (e.g. "sessions/hello-agent" or "./data/session.json")
-    return new FileSessionMemory(memoryTarget, metadata);
+    try {
+      return new FileSessionMemory(memoryTarget, metadata);
+    } catch {
+      return new InMemorySession(sessionId || "ephemeral", metadata);
+    }
   }
 }

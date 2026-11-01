@@ -106,9 +106,13 @@ export class FileSessionMemory implements MemoryProvider {
 
   public async save(): Promise<void> {
     this.data.updatedAt = new Date().toISOString();
-    const dir = path.dirname(this.filePath);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(this.filePath, JSON.stringify(this.data, null, 2), "utf-8");
+    try {
+      const dir = path.dirname(this.filePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(this.filePath, JSON.stringify(this.data, null, 2), "utf-8");
+    } catch {
+      // In read-only cloud container environments (e.g. Neon Functions), gracefully persist in memory
+    }
   }
 
   public getMessages(): AgentMessage[] {

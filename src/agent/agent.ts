@@ -17,7 +17,8 @@ export interface AgentConfigOptions {
   version?: string;
   intent?: string;
   model?: string;
-  memory?: string;
+  memory?: string | MemoryProvider;
+  sessionId?: string;
   tools?: Array<string | AgentTool>;
   apiKey?: string;
 }
@@ -65,11 +66,16 @@ export class Agent {
     this.model = resolvedModel;
 
     // Resolve Memory Provider ([I] Layer)
-    const memoryConfig = options.memory || resolvedManifest?.I;
-    this.memory = IntegrationResolver.resolveMemory(memoryConfig, {
-      agentName: this.name,
-      agentVersion: this.version
-    });
+    if (options.memory && typeof options.memory === "object" && "append" in options.memory) {
+      this.memory = options.memory as MemoryProvider;
+    } else {
+      const memoryConfig = options.memory || resolvedManifest?.I;
+      const sId = options.sessionId || (typeof resolvedManifest?.I === "object" ? (resolvedManifest.I as any).sessionId || (resolvedManifest.I as any).session : undefined);
+      this.memory = IntegrationResolver.resolveMemory(memoryConfig, {
+        agentName: this.name,
+        agentVersion: this.version
+      }, sId);
+    }
 
     // Resolve LLM Provider ([L] Layer)
     const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY;
@@ -79,8 +85,18 @@ export class Agent {
     if (options.tools) {
       this.rawToolSpecs.push(...options.tools);
     }
-    if (resolvedManifest?.T && Array.isArray(resolvedManifest.T)) {
-      this.rawToolSpecs.push(...resolvedManifest.T);
+    if (resolvedManifest?.T) {
+      if (Array.isArray(resolvedManifest.T)) {
+        this.rawToolSpecs.push(...resolvedManifest.T);
+      } else if (typeof resolvedManifest.T === "object") {
+        for (const [key, val] of Object.entries(resolvedManifest.T)) {
+          if (typeof val === "object" && val !== null) {
+            this.rawToolSpecs.push({ id: key, name: key, ...val });
+          } else {
+            this.rawToolSpecs.push(key);
+          }
+        }
+      }
     }
   }
 
