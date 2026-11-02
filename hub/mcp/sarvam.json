@@ -1,0 +1,12 @@
+{
+  "id": "sarvam",
+  "name": "Sarvam AI",
+  "description": "Official Sarvam AI MCP server for speech, translation, Bulbul v4 TTS, and document intelligence",
+  "transport": "stdio",
+  "command": "uvx",
+  "args": ["sarvam-mcp"],
+  "env": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}
+
