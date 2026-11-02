@@ -22,7 +22,7 @@
   &nbsp;
   <a href="#instant-install"><img src="https://img.shields.io/badge/Instant_Install-Zero_Dependencies-white?labelColor=black&style=flat-square" alt="Instant Install"></a>
   &nbsp;
-  <a href="#run-cloud"><img src="https://img.shields.io/badge/18.5M_AI_Agent_Runs/mo-Regional_Core_·_Worldwide_Edge_·_Docker-white?labelColor=black&style=flat-square" alt="18.5M Free AI Agent Runs"></a>
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/2.5M_Live_Free_Runs/mo-(18.5M_Grid)-white?labelColor=black&style=flat-square" alt="2.5M Live Free AI Agent Runs"></a>
   &nbsp;
   <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-1.5M+_skills.sh_(Vercel_Labs)-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="1.5M+ Agent Skills (skills.sh)"></a>
   &nbsp;
@@ -185,7 +185,7 @@ liate link --azion
 
 ---
 
-### <a id="run-cloud"></a>Multi-Cloud Capacity Matrix (18.5M Free Runs/Month · Zero Vendor Lock-in)
+### <a id="run-cloud"></a>Multi-Cloud Capacity Matrix (2.5M Live Runs/mo · 18.5M Total Grid · Zero Vendor Lock-in)
 
 OpenLiate organizes multi-cloud agent execution across two clean physical topologies: **Regional Cloud** (co-located with your Postgres memory) and **Worldwide Edge Cloud** (sub-10ms global ingress):
 
@@ -198,7 +198,8 @@ OpenLiate organizes multi-cloud agent execution across two clean physical topolo
 | **#2 Edge** | **Worldwide Anycast Edge** | **Cloudflare Workers** *(Soon)* | **3,000,000** (3M) | Global V8 Isolates (300+ cities) | Remote MCP (HTTP/SSE) | Workers KV & D1 Database | **$0** |
 | **#2 Edge** | **Worldwide Anycast Edge** | **Azion Edge Functions** *(Soon)* | **3,000,000** (3M) | Distributed V8 Isolates (500+ PoPs) | Remote MCP (HTTP/SSE) | Edge Storage & KV Caching | **$0** |
 | **#2 Edge** | **Worldwide Anycast Edge** | **Fastly Compute (WASM)** *(Soon)* | **10,000,000** (10M) | WebAssembly (Wasmtime/Lucet) | Remote MCP (HTTP/SSE) | Fastly KV & Secret Store | **$0** |
-| **TOTAL** | **Multi-Cloud Sovereign Grid** | **All 6 Sovereign Clouds** | **18,500,000 / mo** | **Decentralized Multi-Cloud Mesh** | **Dual Stdio & Remote MCP** | **Sovereign Multi-Database** | **$0.00** |
+| **LIVE TOTAL** | **Regional Multi-Cloud Mesh** | **Neon + Vercel + Supabase** *(Live)* | **2,500,000 / mo** | **Live Serverless Mesh** | **Dual Stdio & Remote MCP** | **Postgres + pgvector** | **$0.00** |
+| **GRID TOTAL** | **Multi-Cloud Sovereign Grid** | **All 6 Sovereign Clouds** | **18,500,000 / mo** | **Decentralized Multi-Cloud Mesh** | **Dual Stdio & Remote MCP** | **Sovereign Multi-Database** | **$0.00** |
 
 ---
 
