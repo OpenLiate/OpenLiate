@@ -1,0 +1,75 @@
+---
+title: "Agent Unified Manifest (AUM)"
+description: "The complete Zod-validated schema specification for agent.json"
+icon: "file-code"
+---
+
+## Overview
+
+The **Agent Unified Manifest (AUM)** is OpenLiate's declarative specification for autonomous agents. Implemented in `src/core/aum.ts`, every manifest is validated against `AUMSchema` using [Zod](https://zod.dev).
+
+---
+
+## Full `agent.json` Schema
+
+```json agent.json
+{
+  "L": "sarvam/sarvam-105b",
+  "I": {
+    "memory": "sessions/identity-agent",
+    "system": "You are a sovereign identity verification agent."
+  },
+  "A": {
+    "name": "identity_agent",
+    "version": "1.0.0",
+    "intent": "Verify Indian identity credentials (Aadhaar & PAN)",
+    "maxSteps": 5
+  },
+  "T": [
+    "verify_identity",
+    "mcp:fetch"
+  ],
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}
+```
+
+---
+
+## TypeScript Definition (`AUMSchema`)
+
+```typescript
+export const AUMSchema = z.object({
+  L: z.union([
+    z.string().min(1),
+    z.object({
+      provider: z.string(),
+      model: z.string(),
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      endpoint: z.string().optional()
+    })
+  ]),
+  I: z.object({
+    memory: z.string().optional(),
+    system: z.string().optional(),
+    skills: z.union([z.string(), z.array(z.string())]).optional(),
+    database: z.string().optional()
+  }).optional().default({}),
+  A: z.object({
+    name: z.string().min(1),
+    version: z.string().optional().default("1.0.0"),
+    intent: z.string().optional(),
+    author: z.string().optional(),
+    skills: z.union([z.string(), z.array(z.string())]).optional(),
+    maxSteps: z.number().optional().default(10),
+    subagents: z.array(z.string()).optional()
+  }),
+  T: z.union([
+    z.array(z.union([z.string(), z.record(z.any())])),
+    z.record(z.any())
+  ]).optional().default([]),
+  E: z.record(z.string()).optional().default({})
+});
+```

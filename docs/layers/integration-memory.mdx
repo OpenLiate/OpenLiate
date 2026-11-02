@@ -1,0 +1,42 @@
+---
+title: "[I] Integration & Memory Layer"
+description: "Multi-turn session persistence, monotonic UUIDv7 keys, and vector retention"
+icon: "database"
+---
+
+## Overview
+
+Layer **`[I]`** manages conversation history and agent memory across runs. 
+
+It is implemented in `src/integration/memory.ts` and resolved dynamically by `IntegrationResolver`.
+
+---
+
+## Memory Providers
+
+### 1. In-Memory (`InMemorySession`)
+Stores messages in RAM. Ideal for ephemeral tasks, microservices, and unit tests:
+
+```json
+{
+  "I": {
+    "memory": "memory"
+  }
+}
+```
+
+### 2. File-Based Persistence (`FileSessionMemory`)
+Persists conversations to a local JSON file under `sessions/` across server restarts:
+
+```json
+{
+  "I": {
+    "memory": "sessions/my-agent"
+  }
+}
+```
+
+Each session is identified by an RFC 9562 time-ordered **UUIDv7** string, ensuring strictly monotonic ordering.
+
+### 3. Cloud Vector Memory (Neon / Supabase)
+Integrated seamlessly with `openliate link` to store vector embeddings in serverless Postgres.

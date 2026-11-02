@@ -1,0 +1,53 @@
+---
+title: "Invoke Agent"
+api: "POST /run"
+description: "Execute an agent on the fly with custom prompt, session ID, and dynamic keys"
+---
+
+### Request Headers
+
+* `Content-Type: application/json`
+* `x-sarvam-api-key: <string>` *(optional on-the-fly key)*
+
+---
+
+### Request Body
+
+```json
+{
+  "agent": "identity-agent",
+  "prompt": "Verify PAN number ABCDE1234F and check if format is valid",
+  "sessionId": "0192e3a1-7b82-7f91-8abc-123456789abc",
+  "keys": {
+    "SARVAM_API_KEY": "sk_live_..."
+  }
+}
+```
+
+---
+
+### Response
+
+```json 200 OK
+{
+  "output": "PAN ABCDE1234F is valid. Entity classification: Company.",
+  "sessionId": "0192e3a1-7b82-7f91-8abc-123456789abc",
+  "steps": [
+    {
+      "step": 1,
+      "thought": "The user wants to verify PAN ABCDE1234F. I will call verify_identity.",
+      "action": "verify_identity",
+      "toolInput": {
+        "type": "pan",
+        "value": "ABCDE1234F"
+      },
+      "observation": {
+        "valid": true,
+        "masked": "XXXXX1234X",
+        "entityType": "Company"
+      }
+    }
+  ],
+  "toolsUsed": ["verify_identity"]
+}
+```

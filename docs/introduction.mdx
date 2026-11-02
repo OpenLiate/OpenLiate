@@ -1,0 +1,94 @@
+---
+title: "Introduction"
+description: "India's Sovereign AI Agent Runtime Engine"
+icon: "sparkles"
+---
+
+## Welcome to OpenLiate
+
+<Note>
+**#1 Milestone:** **Liate** is officially selected for **India's Sarvam AI Startup Program 2026** 🇮🇳 — Engineering the open-source backend layer for sovereign AI agents.
+</Note>
+
+**OpenLiate** is India's headless, open-source sovereign AI agent runtime engine built for Object-Oriented Programming (OOP) architectures. It executes autonomous agents from local developer silicon to private sovereign cloud clusters with zero vendor lock-in.
+
+```
+Class is an Agent.
+Agent is a Function.
+Function is an API.
+LAPI is Your Backend.
+```
+
+---
+
+## The Mathematical Inspiration: The LIATE Rule
+
+In calculus, the **LIATE Rule** is the universal mnemonic used to break down complex mathematical integration by parts:
+
+> *"Don't build AI agents. Integrate by parts."*
+
+Just as the LIATE rule breaks down complex equations into solvable components, OpenLiate decomposes autonomous agent engineering into 5 orthogonal, manageable layers:
+
+| Calculus LIATE Rule (Problem Decomposition) | OpenLiate LIATE Architecture (Agent Decomposition) |
+| :--- | :--- |
+| **`L`** — **Logarithmic** | **`[L]`** — **Large Models Layer** (Sarvam AI 105B/2B, Ollama, Cloud LLMs) |
+| **`I`** — **Inverse Trigonometric** | **`[I]`** — **Integration & Memory Layer** (Knowledge, Sessions, State, Postgres) |
+| **`A`** — **Algebraic** | **`[A]`** — **Agent Harness Layer** (ReAct Reasoning Loop, maxSteps guardrails) |
+| **`T`** — **Trigonometric** | **`[T]`** — **Tools & MCP Layer** (Aadhaar & PAN verification, Stdio/HTTP MCP) |
+| **`E`** — **Exponential** | **`[E]`** — **Environment & Sandbox Layer** (Secrets, Safe `$VAR`, Guardrails) |
+
+---
+
+## NVIDIA 5-Element Alignment
+
+On stage, **NVIDIA CEO Jensen Huang** demonstrated that an AI Agent is fundamentally comprised of 5 foundational elements: **Model, Knowledge, Harness, Tools, and Sandbox**. 
+
+OpenLiate provides a direct, 1-to-1 implementation of this architecture in **5 lines of declarative JSON**:
+
+```json agent.json
+{
+  "L": "sarvam/sarvam-105b",                     // [L] Model: Sovereign LLMs & local silicon
+  "I": { "memory": "sessions/my-agent" },        // [I] Knowledge: Session history & database state
+  "A": { "name": "analyst", "maxSteps": 10 },    // [A] Harness: ReAct autonomous loop & intent
+  "T": [ "verify_identity", "mcp:fetch" ],       // [T] Tools: Model Context Protocol & identity APIs
+  "E": { "SARVAM_API_KEY": "$SARVAM_API_KEY" }   // [E] Sandbox: Secret isolation & guardrails
+}
+```
+
+---
+
+## Core Pillars
+
+<CardGroup cols={2}>
+  <Card title="Sovereign AI Runtime" icon="shield-check">
+    Self-host millions of autonomous AI agents on edge silicon or private sovereign clouds with zero vendor lock-in.
+  </Card>
+  <Card title="Object-Oriented Architecture" icon="box">
+    Define agents as standard classes with isolated state, memory, tools, and execution loops.
+  </Card>
+  <Card title="LAPI HTTP Protocol" icon="server">
+    Instantly serve any agent class as a high-performance HTTP endpoint with monotonic UUIDv7 session tracking.
+  </Card>
+  <Card title="Multi-Cloud Mesh" icon="cloud">
+    Zero-config OAuth 2.1 linking to Neon Postgres, Supabase, and Vercel with 2.5 million free monthly runs.
+  </Card>
+</CardGroup>
+
+---
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="bolt" href="/quickstart">
+    Run your first agent in under 10 seconds with Bun and the CLI.
+  </Card>
+  <Card title="The Doctrine" icon="book-open" href="/doctrine">
+    Learn the object-oriented design patterns powering OpenLiate.
+  </Card>
+  <Card title="Agent Unified Manifest" icon="file-code" href="/runtime/manifest">
+    Explore the `agent.json` declarative specification.
+  </Card>
+  <Card title="LAPI HTTP Server" icon="server" href="/runtime/lapi">
+    Serve agents as high-performance HTTP microservices.
+  </Card>
+</CardGroup>

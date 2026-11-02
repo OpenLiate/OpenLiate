@@ -1,0 +1,116 @@
+---
+title: "Quickstart"
+description: "Run autonomous agents locally and launch the LAPI server in under 10 seconds"
+icon: "bolt"
+---
+
+## Prerequisites
+
+OpenLiate is powered by [Bun](https://bun.sh) for ultra-fast startup and native TypeScript execution.
+
+```bash
+# Verify Bun is installed
+bun --version
+```
+
+---
+
+## 1. Installation
+
+<CodeGroup>
+```bash Bun (Global)
+bun add -g openliate
+```
+
+```bash npm (Global)
+npm install -g openliate
+```
+
+```bash Local Clone
+git clone https://github.com/openliate/openliate.git
+cd openliate
+bun install
+```
+</CodeGroup>
+
+---
+
+## 2. Setting Up Your Environment
+
+Create a `.env` file or export your Sarvam AI key:
+
+```bash
+export SARVAM_API_KEY="your-sarvam-api-key"
+```
+
+Or configure it persistently using the CLI:
+
+```bash
+liate env set SARVAM_API_KEY="your-sarvam-api-key"
+```
+
+---
+
+## 3. The `agent.json` Manifest
+
+OpenLiate defines agents in a minimal `agent.json` manifest following the **L · I · A · T · E** layers:
+
+```json agent.json
+{
+  "L": "sarvam/sarvam-105b",
+  "I": {
+    "memory": "sessions/my-agent"
+  },
+  "A": {
+    "name": "my_agent",
+    "version": "1.0.0",
+    "intent": "Autonomous assistant for research and identity verification",
+    "maxSteps": 5
+  },
+  "T": [
+    "mcp:fetch",
+    "verify_identity"
+  ],
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}
+```
+
+---
+
+## 4. Run the Agent Locally
+
+Execute your agent directly using the CLI:
+
+```bash
+liate run agent.json "Verify PAN ABCDE1234F and check if format is valid"
+```
+
+You can also run pre-packaged agents directly from the **Liate Hub** by name:
+
+```bash
+liate run identity-agent "Validate Aadhaar 367598345210"
+liate run research-agent "Fetch https://openliate.tech and summarize"
+```
+
+---
+
+## 5. Launch the LAPI HTTP Server
+
+Start the headless **Liate Agent Protocol Interface (LAPI)** server:
+
+```bash
+liate serve --port 8080
+```
+
+Now invoke your agent from any application via HTTP:
+
+```bash
+curl -X POST http://localhost:8080/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent": "identity-agent",
+    "prompt": "Verify PAN card ABCDE1234F"
+  }'
+```

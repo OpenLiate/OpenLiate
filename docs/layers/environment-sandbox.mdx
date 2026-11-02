@@ -1,0 +1,33 @@
+---
+title: "[E] Environment & Sandbox Layer"
+description: "Safe environment variable resolution, secret masking, and execution sandboxing"
+icon: "lock"
+---
+
+## Overview
+
+Layer **`[E]`** manages secret injection, credential resolution, and runtime sandboxing. Implemented in `src/environment/environment.ts` as `EnvironmentResolver`.
+
+---
+
+## Capabilities
+
+### 1. Safe `$VAR` Resolution
+Variables prefixed with `$` are dynamically resolved from `process.env` or `.env` files without crashing if missing:
+
+```json agent.json
+{
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY",
+    "CUSTOM_TOKEN": "$MY_SECRET"
+  }
+}
+```
+
+### 2. Secret Masking
+When logging or returning traces, OpenLiate automatically masks sensitive credentials:
+* Formats like `sk-...`, `Bearer ...`, or keys matching `SARVAM_API_KEY` are redacted into `sk-***`.
+
+### 3. Sandboxing & Guardrails
+* **Domain Whitelisting:** Outbound tool requests can be restricted to authorized domains.
+* **Execution Timeouts:** Long-running tool operations are aborted cleanly if they exceed execution timeouts.

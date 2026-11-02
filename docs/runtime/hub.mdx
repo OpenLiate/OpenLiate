@@ -1,0 +1,45 @@
+---
+title: "The Liate Hub"
+description: "Pre-configured agents, LLM definitions, and MCP servers in the local registry"
+icon: "shapes"
+---
+
+## Overview
+
+The **Liate Hub** (`hub/`) acts as OpenLiate's local package registry. It allows you to run pre-configured agents, load model definitions, and configure MCP servers by name without specifying manual file paths.
+
+---
+
+## Directory Structure
+
+```
+hub/
+├── agents/
+│   ├── identity-agent/agent.json   # Aadhaar & PAN card verification
+│   ├── research-agent/agent.json   # Web research & summarization
+│   ├── email-agent/agent.json      # AgentMail communication
+│   └── general-agent/agent.json    # General conversational agent
+├── llm/
+│   └── sarvam.json                 # Sarvam API provider definitions
+└── mcp/
+    ├── agentmail.json              # Transactional agent email MCP
+    ├── fetch.json                  # Native stdio fetch MCP
+    ├── neon.json                   # Serverless Postgres MCP
+    ├── supabase.json               # Supabase Edge Functions MCP
+    └── vercel.json                 # Vercel Serverless MCP
+```
+
+---
+
+## Running Hub Agents by Name
+
+The CLI automatically searches `hub/agents/<name>/agent.json`:
+
+```bash
+# Execute the Identity Verifier
+liate run identity-agent "Validate PAN card ABCDE1234F"
+
+# Execute the Research Agent
+liate run research-agent "Fetch https://openliate.tech and summarize"
+```
+

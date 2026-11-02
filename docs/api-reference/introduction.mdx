@@ -1,0 +1,31 @@
+---
+title: "API Overview"
+description: "Liate Agent Protocol Interface (LAPI) Specification"
+icon: "terminal"
+---
+
+## Base URLs
+
+* **Local Development:** `http://localhost:8080`
+* **Production Cluster:** `https://openliate.tech/api/v1`
+
+---
+
+## Authentication
+
+Authentication can be passed via standard Bearer headers or on-the-fly request keys:
+
+```http
+Authorization: Bearer <your-key>
+x-sarvam-api-key: <your-sarvam-api-key>
+```
+
+---
+
+## Available Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Check engine health, protocol version, and doctrine |
+| `GET` | `/agents` | List all available agents in the Liate Hub |
+| `POST` | `/run` | Execute an autonomous agent with prompt and session ID |

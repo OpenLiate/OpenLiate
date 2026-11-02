@@ -1,0 +1,51 @@
+---
+title: "[A] Agent Harness & Loop Layer"
+description: "The autonomous ReAct loop, step dispatching, and loop limits"
+icon: "repeat"
+---
+
+## Overview
+
+Layer **`[A]`** defines the agent's identity, role, and autonomous reasoning loop. It is implemented in `src/agent/loop.ts` as `ReActLoop`.
+
+---
+
+## The ReAct Execution Cycle
+
+When an agent runs, it steps through an autonomous cycle:
+
+```
+User Prompt
+    │
+    ▼
+[ Thought ] ──► Model analyzes context and plans next action
+    │
+    ▼
+[ Action ] ──► Runtime dispatches tool call with parameters
+    │
+    ▼
+[ Observation ] ──► Tool output captured and fed back to context
+    │
+    ▼
+[ Final Answer ] ──► Structured conclusion returned to caller
+```
+
+---
+
+## Configuration in `agent.json`
+
+```json
+{
+  "A": {
+    "name": "identity_agent",
+    "version": "1.0.0",
+    "intent": "Verify and validate Indian identity credentials including Aadhaar and PAN.",
+    "maxSteps": 5
+  }
+}
+```
+
+* **`name`** *(required)*: Unique identifier for the agent class.
+* **`version`**: Semantic version string (defaults to `1.0.0`).
+* **`intent`**: System directive and behavioral purpose.
+* **`maxSteps`**: Maximum number of tool iterations before returning (default: `10`), preventing infinite loop runaway.

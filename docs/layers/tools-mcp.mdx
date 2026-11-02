@@ -1,0 +1,45 @@
+---
+title: "[T] Tools & MCP v2 Layer"
+description: "Sovereign identity verification (Aadhaar/PAN) and Model Context Protocol (MCP)"
+icon: "wrench"
+---
+
+## Overview
+
+Layer **`[T]`** manages tools, external APIs, and MCP servers. Implemented in `src/tools/`, it registers both native TypeScript functions and dynamic MCP clients.
+
+---
+
+## 1. Native Identity Verifier (`verify_identity`)
+
+OpenLiate includes built-in sovereign Indian identity verification (`src/tools/builtin/identity.ts`):
+
+### Aadhaar Validation
+* **Rule:** Must be exactly 12 numeric digits (cannot start with 0 or 1).
+* **Checksum:** Mathematical validation using the **Verhoeff algorithm** (dihedral group $D_5$ permutation and multiplication tables).
+* **Privacy:** Automatically masked as `XXXX-XXXX-1234`.
+
+### PAN Card Validation
+* **Rule:** 10-character alphanumeric regex: `^[A-Z]{5}[0-9]{4}[A-Z]{1}$`.
+* **Taxpayer Classification:** The 4th character determines entity classification (`P` = Individual, `C` = Company, `F` = Firm, `H` = HUF, `T` = Trust, `G` = Government).
+* **Privacy:** Automatically masked as `XXXXX1234X`.
+
+---
+
+## 2. Model Context Protocol (MCP)
+
+OpenLiate natively consumes MCP configs declared under `hub/mcp/`:
+
+* **`mcp:fetch`** — Safe HTTP fetcher tool (`hub/mcp/fetch.json`).
+* **`mcp:agentmail`** — Transactional agent email delivery (`hub/mcp/agentmail.json`).
+* **`mcp:neon`** — Postgres database operations (`hub/mcp/neon.json`).
+* **`mcp:supabase`** — Supabase client operations (`hub/mcp/supabase.json`).
+
+```json agent.json
+{
+  "T": [
+    "verify_identity",
+    "mcp:fetch"
+  ]
+}
+```

@@ -1,0 +1,77 @@
+---
+title: "The Doctrine"
+description: "Object-Oriented Programming and systems philosophy of OpenLiate"
+icon: "book-open"
+---
+
+## The Four Truths
+
+OpenLiate is structured around four fundamental architectural principles:
+
+```
+1. Class is an Agent.
+2. Agent is a Function.
+3. Function is an API.
+4. LAPI is Your Backend.
+```
+
+---
+
+## 1. Class is an Agent
+
+In classical OOP, a class encapsulates state, properties, and methods. In OpenLiate, an **Agent** is an instantiated class where:
+
+* **Properties:** Configuration defined by the **L · I · A · T · E** layers in `agent.json`.
+* **State:** Session history, scratchpad notes, observation memory, and step counters.
+* **Methods:** Execution loops (`run`), tool dispatchers (`executeTool`), and memory persistence.
+
+```typescript
+// 1 Class = 5 Properties (L · I · A · T · E) = Same as agent.json
+class HelloAgent {
+  L; // Model
+  I; // Knowledge & Memory
+  A; // Harness & ReAct Loop
+  T; // Tools & MCP
+  E; // Environment & Sandbox
+}
+```
+
+---
+
+## 2. Agent is a Function
+
+When invoked, the entire agent class collapses into a single, callable, pure function. It accepts an input prompt and optional session ID, executes the autonomous loop, and returns a structured output:
+
+```typescript
+import { Agent } from "openliate";
+
+const agent = new Agent({
+  manifest: "agent.json"
+});
+
+const result = await agent.run({
+  prompt: "Verify taxpayer PAN AABCC1234D",
+  sessionId: "0192e3a1-7b82-7f91-8abc-123456789abc"
+});
+
+console.log(result.output);
+```
+
+---
+
+## 3. Function is an API
+
+Every agent function can be seamlessly exported as a network service without writing boilerplate router code. 
+
+By passing the agent to the LAPI server, the function is automatically mounted as an HTTP microservice with built-in CORS, error handling, and parameter validation.
+
+---
+
+## 4. LAPI is Your Backend
+
+The **Liate Agent Protocol Interface (LAPI)** acts as the headless backend for modern AI applications. 
+
+Frontends (Next.js, React, mobile apps, or voice clients) interact directly with LAPI endpoints:
+* **`GET /health`** — Verify engine readiness and active doctrine.
+* **`GET /agents`** — Query the agent registry in the local Hub.
+* **`POST /run`** — Execute any agent dynamically with UUIDv7 monotonic session tracking.

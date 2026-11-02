@@ -1,0 +1,27 @@
+---
+title: "Release History"
+description: "Changelog and version milestones for OpenLiate"
+icon: "history"
+---
+
+## v0.0.8 (Nov 2, 2026)
+
+* **Multi-Cloud Link Mesh:** Implemented `liate link`, `relink`, and `unlink` with automated OAuth 2.1 PKCE for Neon, Supabase, and Vercel (2.5M Free Runs).
+* **RFC 9562 UUIDv7 Standard:** Implemented time-ordered monotonic identifiers across all LAPI sessions and execution traces.
+* **Local Docker Stack:** Added multi-stage Alpine Docker runtime and `docker-compose.yml`.
+* **46 Passing Tests:** Complete unit test verification across all 5 architectural layers (196 assertions).
+
+---
+
+## v0.0.7 (Oct 31, 2026)
+
+* **Sovereign Identity Verification:** Added `verify_identity` tool with 12-digit Aadhaar Verhoeff checksum algorithm and 10-character PAN card format validation.
+* **Environment Resolvers:** Added safe `$VAR` expansion and automatic secret masking in Layer 5 (`[E]`).
+
+---
+
+## v0.0.1 - v0.0.6 (Oct 2026)
+
+* **Core L · I · A · T · E Stack:** Implemented initial AUM parser and dynamic layer resolution.
+* **Sarvam AI Sovereign Inference:** Integrated India's frontier models (`sarvam/sarvam-105b` and `sarvam/sarvam-2b`).
+* **LAPI Hono Server:** Built high-performance HTTP execution engine with CORS and session persistence.

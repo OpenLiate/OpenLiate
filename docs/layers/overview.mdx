@@ -1,0 +1,39 @@
+---
+title: "The 5 Layers Overview"
+description: "The L · I · A · T · E Sovereign Architecture"
+icon: "layers"
+---
+
+## The LIATE Specification
+
+OpenLiate decomposes agent design into five isolated, modular layers. In `agent.json`, each layer corresponds to a top-level key:
+
+```json agent.json
+{
+  "L": "sarvam/sarvam-105b",
+  "I": { "memory": "sessions/agent-data" },
+  "A": { "name": "analyst", "maxSteps": 10 },
+  "T": [ "mcp:fetch", "verify_identity" ],
+  "E": { "SARVAM_API_KEY": "$SARVAM_API_KEY" }
+}
+```
+
+---
+
+<CardGroup cols={1}>
+  <Card title="[L] Large Models Layer" icon="brain" href="/layers/large-models">
+    Provider abstraction supporting Indian sovereign models (Sarvam AI), Ollama, Anthropic, and OpenAI.
+  </Card>
+  <Card title="[I] Integration & Memory Layer" icon="database" href="/layers/integration-memory">
+    Multi-tier session persistence: In-Memory, File-backed JSON, and Vector DB integration.
+  </Card>
+  <Card title="[A] Agent Harness & Loop Layer" icon="repeat" href="/layers/agent-loop">
+    Autonomous ReAct execution loop (Thought $\rightarrow$ Action $\rightarrow$ Observation $\rightarrow$ Answer) with loop guardrails.
+  </Card>
+  <Card title="[T] Tools & MCP v2 Layer" icon="wrench" href="/layers/tools-mcp">
+    Built-in identity tools (Aadhaar & PAN) and Model Context Protocol (MCP) tool server dispatching.
+  </Card>
+  <Card title="[E] Environment & Sandbox Layer" icon="lock" href="/layers/environment-sandbox">
+    Secret masking (`sk-...`), safe `$VAR` expansion, domain whitelisting, and execution guardrails.
+  </Card>
+</CardGroup>

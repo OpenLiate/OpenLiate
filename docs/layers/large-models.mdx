@@ -1,0 +1,52 @@
+---
+title: "[L] Large Models Layer"
+description: "Model abstraction, Sarvam AI sovereign inference, and dynamic LLM routing"
+icon: "brain"
+---
+
+## Overview
+
+Layer **`[L]`** abstracts foundational models behind a standardized client interface (`SarvamClient` in `src/llm/`). 
+
+It dynamically normalizes model identifiers and handles token limits, temperature, and multi-turn message formatting.
+
+---
+
+## Supported Providers
+
+### 1. Sarvam AI (Sovereign Primary)
+OpenLiate natively defaults to **Sarvam AI**, India's frontier sovereign AI models:
+* `sarvam/sarvam-105b` — High-capacity multi-step reasoning.
+* `sarvam/sarvam-2b` — Ultra-lightweight edge execution.
+* Direct integration via `hub/llm/sarvam.json`.
+
+### 2. Ollama & Local Silicon
+Run completely offline on local Apple Silicon or NVIDIA edge devices.
+
+### 3. Cloud Frontier Models
+Anthropic (Claude 3.5 Sonnet) and OpenAI (GPT-4o).
+
+---
+
+## Configuration in `agent.json`
+
+Layer `[L]` can be declared as a clean string or a detailed object:
+
+<CodeGroup>
+```json Shorthand String
+{
+  "L": "sarvam/sarvam-105b"
+}
+```
+
+```json Structured Object
+{
+  "L": {
+    "provider": "sarvam",
+    "model": "sarvam-2b",
+    "temperature": 0.2,
+    "maxTokens": 4096
+  }
+}
+```
+</CodeGroup>

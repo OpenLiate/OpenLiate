@@ -1,0 +1,46 @@
+---
+title: "List Hub Agents"
+api: "GET /agents"
+description: "Retrieve all pre-configured agents discovered in the Liate Hub"
+---
+
+### cURL
+
+```bash
+curl -X GET http://localhost:8080/agents
+```
+
+---
+
+### Response
+
+```json 200 OK
+{
+  "agents": [
+    {
+      "id": "identity-agent",
+      "name": "identity_agent",
+      "intent": "Verify and validate Indian identity credentials including 12-digit Aadhaar (Verhoeff checksum) and 10-character PAN card format with taxpayer classification.",
+      "model": "sarvam/sarvam-105b"
+    },
+    {
+      "id": "research-agent",
+      "name": "research_agent",
+      "intent": "Autonomous web research and content synthesis",
+      "model": "sarvam/sarvam-105b"
+    },
+    {
+      "id": "email-agent",
+      "name": "email_agent",
+      "intent": "Automate transactional and conversational email delivery",
+      "model": "sarvam/sarvam-105b"
+    },
+    {
+      "id": "general-agent",
+      "name": "general_agent",
+      "intent": "General purpose conversational assistant",
+      "model": "sarvam/sarvam-105b"
+    }
+  ]
+}
+```

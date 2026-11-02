@@ -1,0 +1,58 @@
+---
+title: "Docker Multi-Runtime Stack"
+description: "Deploying OpenLiate via Docker and containerized clusters"
+icon: "container"
+---
+
+## Overview
+
+OpenLiate provides a production-ready, minimal Alpine Docker image powered by the official Oven Bun runtime.
+
+---
+
+## Running with Docker
+
+```bash
+docker run -d \
+  -p 8080:8080 \
+  -e SARVAM_API_KEY="your-sarvam-key" \
+  ghcr.io/openliate/openliate:latest
+```
+
+---
+
+## Production `Dockerfile`
+
+```dockerfile
+FROM oven/bun:1.2-alpine AS runtime
+WORKDIR /app
+
+# Copy dependency manifests
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
+
+# Copy source and hub configurations
+COPY . .
+
+EXPOSE 8080
+CMD ["bun", "run", "src/liate.ts", "serve", "--port", "8080"]
+```
+
+---
+
+## `docker-compose.yml`
+
+```yaml
+version: "3.8"
+
+services:
+  openliate:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SARVAM_API_KEY=${SARVAM_API_KEY}
+    volumes:
+      - ./sessions:/app/sessions
+    restart: always
+```

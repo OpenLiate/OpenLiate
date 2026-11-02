@@ -1,0 +1,87 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "OpenLiate",
+  "theme": "mint",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#55D799",
+    "dark": "#0D9373"
+  },
+  "appearance": {
+    "default": "dark"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "styling": {
+    "latex": true,
+    "codeblocks": "dark"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "doctrine"
+            ]
+          },
+          {
+            "group": "The 5 Layers (LIATE)",
+            "pages": [
+              "layers/overview",
+              "layers/large-models",
+              "layers/integration-memory",
+              "layers/agent-loop",
+              "layers/tools-mcp",
+              "layers/environment-sandbox"
+            ]
+          },
+          {
+            "group": "Runtime & Execution",
+            "pages": [
+              "runtime/manifest",
+              "runtime/hub",
+              "runtime/lapi",
+              "runtime/link",
+              "runtime/docker"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "LAPI HTTP Server",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/health",
+              "api-reference/agents",
+              "api-reference/run"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Releases",
+            "pages": [
+              "changelog/release-history"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
