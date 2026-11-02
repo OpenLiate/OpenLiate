@@ -90,8 +90,10 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   console.log(`Project:    ${deployment.projectName} (${deployment.projectId})`);
   console.log(`Branch:     ${deployment.branchName} (${deployment.branchId})`);
   console.log(`Endpoint:   ${baseUrl}`);
-  console.log(`Runtime:    Linux Node.js (2 vCPU, 8 GB RAM)`);
+  console.log(`Compute:    Neon Functions (Scale-to-Zero Node.js)`);
   console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
+  console.log("Memory [I]: Serverless Postgres + pgvector");
+  console.log("Triggers:   Neon Function Triggers (Scale-to-Zero Scheduled Cron)");
   console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
   console.log("===========================================================\n");
   console.log("How to run an agent:\n");
