@@ -96,11 +96,17 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   console.log("===========================================================\n");
   console.log("How to run an agent:\n");
   console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
+  console.log(`     # Sarvam Sovereign Indic AI Agent:`);
   console.log(`     curl -X POST ${runEndpoint} \\`);
   console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
+  console.log(`       -d '{"agent": "sarvam-agent", "prompt": "Namaste, summarize our metrics"}'\n`);
+  console.log(`     # Email Agent (AgentMail MCP):`);
+  console.log(`     curl -X POST ${runEndpoint} \\`);
+  console.log(`       -H "Content-Type: application/json" \\`);
+  console.log(`       -d '{"agent": "email-agent", "prompt": "Check incoming inboxes"}'\n`);
   console.log("  2. Via OpenLiate CLI (Local):");
-  console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
+  console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
+  console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
   console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
@@ -195,12 +201,17 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     console.log("===========================================================\n");
     console.log("How to run an agent:\n");
     console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
+    console.log(`     # Sarvam Sovereign Indic AI Agent:`);
     console.log(`     curl -X POST ${runEndpoint} \\`);
     console.log(`       -H "Content-Type: application/json" \\`);
-    console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
-    console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
+    console.log(`       -d '{"agent": "sarvam-agent", "prompt": "Namaste, summarize our metrics"}'\n`);
+    console.log(`     # Email Agent (AgentMail MCP):`);
+    console.log(`     curl -X POST ${runEndpoint} \\`);
+    console.log(`       -H "Content-Type: application/json" \\`);
+    console.log(`       -d '{"agent": "email-agent", "prompt": "Check incoming inboxes"}'\n`);
     console.log("  2. Via OpenLiate CLI (Local):");
-    console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
+    console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
+    console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
   }
   console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
@@ -269,11 +280,17 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   console.log("===========================================================\n");
   console.log("How to run an agent:\n");
   console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
+  console.log(`     # Sarvam Sovereign Indic AI Agent:`);
   console.log(`     curl -X POST ${runEndpoint} \\`);
   console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
+  console.log(`       -d '{"agent": "sarvam-agent", "prompt": "Namaste, summarize our metrics"}'\n`);
+  console.log(`     # Email Agent (AgentMail MCP):`);
+  console.log(`     curl -X POST ${runEndpoint} \\`);
+  console.log(`       -H "Content-Type: application/json" \\`);
+  console.log(`       -d '{"agent": "email-agent", "prompt": "Check incoming inboxes"}'\n`);
   console.log("  2. Via OpenLiate CLI (Local):");
-  console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
+  console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
+  console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
   console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
