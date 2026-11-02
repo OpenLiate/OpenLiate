@@ -275,7 +275,7 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   console.log(`Project:    ${deployment.projectRef}`);
   console.log(`Endpoint:   ${baseUrl}`);
   console.log(`Capacity:   500,000 Free AI Agent Runs / Month`);
-  console.log("Tooling:    Remote MCP (HTTP/SSE) + Edge Functions Enabled");
+  console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
   console.log("Memory [I]: pgvector Embeddings & Realtime Postgres");
   console.log("===========================================================\n");
   console.log("How to run an agent:\n");
