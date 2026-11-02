@@ -15,14 +15,14 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   console.log(`===========================================================`);
 
   if (relink) {
-    console.log("[Liate] Relink requested. Clearing saved Neon tokens from disk...");
+    console.log("[OpenLiate] Relink requested. Clearing saved Neon tokens from disk...");
     NeonMcpOAuth.clearSavedToken();
   }
 
   let token = relink ? undefined : (NeonMcpOAuth.loadSavedToken()?.access_token || key || process.env.NEON_API_KEY || process.env.NEON_MCP_TOKEN);
 
   async function performNeonOAuth(): Promise<string> {
-    console.log("[Liate] Registering Dynamic Client with Neon MCP Server (RFC 7591)...");
+    console.log("[OpenLiate] Registering Dynamic Client with Neon MCP Server (RFC 7591)...");
     const reg = await NeonMcpOAuth.registerClient();
     const { codeVerifier, codeChallenge } = generatePKCE();
     const state = crypto.randomUUID();
@@ -55,7 +55,7 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
 
   console.log("✔ Linked to Neon Cloud via MCP OAuth!");
   console.log("✔ 1,000,000 Free AI Agent Runs Unlocked (2 vCPU, 8GB RAM + pgvector).");
-  console.log("\n[Liate] Auto-provisioning project 'liate' and deploying runtime engine...");
+  console.log("\n[OpenLiate] Deploying OpenLiate to Neon...");
 
   let deployment;
   try {
@@ -74,7 +74,7 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
       NeonMcpOAuth.clearSavedToken();
       token = await performNeonOAuth();
       console.log("✔ Relinked to Neon Cloud via MCP OAuth!");
-      console.log("\n[Liate] Auto-provisioning project 'liate' and deploying runtime engine...");
+      console.log("\n[OpenLiate] Deploying OpenLiate to Neon...");
       const client = new NeonMcpClient(token);
       deployment = await client.deployEngine();
     } else {
@@ -86,7 +86,7 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   const runEndpoint = `${baseUrl}/run`;
 
   console.log("\n===========================================================");
-  console.log("✔ PURE LIATE RUNTIME ENGINE DEPLOYED LIVE TO NEON!");
+  console.log("✔ OPENLIATE DEPLOYED LIVE TO NEON!");
   console.log(`Project:    ${deployment.projectName} (${deployment.projectId})`);
   console.log(`Branch:     ${deployment.branchName} (${deployment.branchId})`);
   console.log(`Endpoint:   ${baseUrl}`);
@@ -100,9 +100,9 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   console.log(`       -H "Content-Type: application/json" \\`);
   console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
   console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
-  console.log("  2. Via Liate CLI (Local):");
+  console.log("  2. Via OpenLiate CLI (Local):");
   console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
-  console.log("Refer to https://liate.dev for documentation, agents, and guides.\n");
+  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
 export async function linkVercel(key?: string, isDaemon: boolean = false, relink: boolean = false): Promise<void> {
@@ -115,14 +115,14 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
   console.log(`===========================================================`);
 
   if (relink) {
-    console.log("[Liate] Relink requested. Clearing saved Vercel tokens from disk...");
+    console.log("[OpenLiate] Relink requested. Clearing saved Vercel tokens from disk...");
     VercelMcpOAuth.clearToken();
   }
 
   let token = relink ? undefined : (VercelMcpOAuth.loadToken()?.access_token || key || process.env.VERCEL_TOKEN || process.env.VERCEL_MCP_TOKEN);
 
   async function performVercelOAuth(): Promise<string> {
-    console.log("[Liate] Starting Vercel MCP OAuth 2.0 Authorization (via https://mcp.vercel.com)...");
+    console.log("[OpenLiate] Starting Vercel MCP OAuth 2.0 Authorization (via https://mcp.vercel.com)...");
     const tokenData = await runVercelLinkFlow({ port: 54322 });
     return tokenData.access_token;
   }
@@ -134,10 +134,10 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
   console.log("✔ Linked to Vercel Cloud via MCP OAuth!");
   if (isDaemon) {
     console.log("✔ Vercel Fluid Daemon Worker Unlocked (24/7 Container Execution).");
-    console.log("\n[Liate] Auto-deploying containerized background daemon to Vercel...");
+    console.log("\n[OpenLiate] Deploying OpenLiate to Vercel...");
   } else {
     console.log("✔ 1,000,000 Free AI Agent Runs + Fluid Compute Functions Unlocked.");
-    console.log("\n[Liate] Auto-deploying serverless runtime engine to Vercel...");
+    console.log("\n[OpenLiate] Deploying OpenLiate to Vercel...");
   }
 
   let deployment;
@@ -170,7 +170,7 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
 
   console.log("\n===========================================================");
   if (isDaemon) {
-    console.log("✔ PURE LIATE DAEMON WORKER DEPLOYED LIVE TO VERCEL!");
+    console.log("✔ OPENLIATE DAEMON WORKER DEPLOYED LIVE TO VERCEL!");
     console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
     console.log(`Deployment: ${deployment.url}`);
     console.log(`Mode:       Background Daemon Worker (Pull-based / Queue / Long-running)`);
@@ -187,7 +187,7 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     const baseUrl = (deployment.url || deployment.engineUrl).replace(/\/+$/, "").replace(/\/run$/, "");
     const runEndpoint = `${baseUrl}/run`;
 
-    console.log("✔ PURE LIATE RUNTIME ENGINE DEPLOYED LIVE TO VERCEL!");
+    console.log("✔ OPENLIATE DEPLOYED LIVE TO VERCEL!");
     console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
     console.log(`Endpoint:   ${baseUrl}`);
     console.log(`Mode:       Serverless Fluid Compute Function (Auto-scales to 0)`);
@@ -200,10 +200,10 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     console.log(`       -H "Content-Type: application/json" \\`);
     console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
     console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
-    console.log("  2. Via Liate CLI (Local):");
+    console.log("  2. Via OpenLiate CLI (Local):");
     console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
   }
-  console.log("Refer to https://liate.dev for documentation, agents, and guides.\n");
+  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
 export async function linkSupabase(key?: string, relink: boolean = false): Promise<void> {
@@ -212,14 +212,14 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   console.log(`===========================================================`);
 
   if (relink) {
-    console.log("[Liate] Relink requested. Clearing saved Supabase tokens from disk...");
+    console.log("[OpenLiate] Relink requested. Clearing saved Supabase tokens from disk...");
     SupabaseMcpOAuth.clearToken();
   }
 
   let token = relink ? undefined : (SupabaseMcpOAuth.loadToken()?.access_token || key || process.env.SUPABASE_MCP_TOKEN || process.env.SUPABASE_ACCESS_TOKEN);
 
   async function performSupabaseOAuth(): Promise<string> {
-    console.log("[Liate] Starting Supabase MCP OAuth 2.0 Authorization (via https://mcp.supabase.com)...");
+    console.log("[OpenLiate] Starting Supabase MCP OAuth 2.0 Authorization (via https://mcp.supabase.com)...");
     const tokenData = await runSupabaseLinkFlow({ port: 54323 });
     return tokenData.access_token;
   }
@@ -230,7 +230,7 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
 
   console.log("✔ Linked to Supabase Cloud via MCP OAuth!");
   console.log("✔ 500,000 Free AI Agent Runs + Edge Functions & pgvector Unlocked.");
-  console.log("\n[Liate] Auto-deploying Edge Function runtime engine to Supabase...");
+  console.log("\n[OpenLiate] Deploying OpenLiate to Supabase...");
 
   let deployment;
   try {
@@ -260,7 +260,7 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   const runEndpoint = `${baseUrl}/run`;
 
   console.log("\n===========================================================");
-  console.log("✔ PURE LIATE RUNTIME ENGINE DEPLOYED LIVE TO SUPABASE!");
+  console.log("✔ OPENLIATE DEPLOYED LIVE TO SUPABASE!");
   console.log(`Function:   ${deployment.name}`);
   console.log(`Project:    ${deployment.projectRef}`);
   console.log(`Endpoint:   ${baseUrl}`);
@@ -274,9 +274,9 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   console.log(`       -H "Content-Type: application/json" \\`);
   console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
   console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
-  console.log("  2. Via Liate CLI (Local):");
+  console.log("  2. Via OpenLiate CLI (Local):");
   console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
-  console.log("Refer to https://liate.dev for documentation, agents, and guides.\n");
+  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
 export async function unlink(provider: "neon" | "vercel" | "supabase" | "all" = "all"): Promise<void> {

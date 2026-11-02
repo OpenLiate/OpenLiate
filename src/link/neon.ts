@@ -488,19 +488,19 @@ export class NeonMcpClient {
     fs.writeFileSync(path.join(engineDistDir, "engine.zip"), zipBuffer);
     const zipBase64 = zipBuffer.toString("base64");
 
-    // 3. Resolve or Automatically Create Project "liate"
+    // 3. Resolve or Automatically Create Project "openliate"
     let projects = await this.listProjects();
-    let project = projects.find((p: any) => p.name === "liate");
+    let project = projects.find((p: any) => p.name === "openliate" || p.name === "liate");
 
     if (!project) {
       try {
         const createProjRes = await this.callTool("create_project", {
-          name: "liate",
+          name: "openliate",
           branch: { name: "main" }
         });
         project = createProjRes?.project || createProjRes;
       } catch {
-        project = projects.find((p: any) => p.name === "liate-engine") || projects[0];
+        project = projects.find((p: any) => p.name === "openliate" || p.name === "liate") || projects[0];
       }
     }
 

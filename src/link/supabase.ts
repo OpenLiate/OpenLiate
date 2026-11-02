@@ -168,8 +168,8 @@ export class SupabaseMcpOAuth {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          client_name: "OpenLiate CLI Supabase MCP",
-          client_uri: "https://liate.dev",
+          client_name: "OpenLiate CLI",
+          client_uri: "https://openliate.tech",
           redirect_uris: [callbackUrl],
           grant_types: ["authorization_code", "refresh_token"],
           response_types: ["code"],
@@ -352,8 +352,7 @@ export class SupabaseMcpClient {
     mcpUrl: string;
   }> {
     const uuid7 = generateUUIDv7();
-    const cleanId = uuid7.replace(/-/g, "").slice(0, 8);
-    const fnSlug = options.slug || `liate-edge-${cleanId}`;
+    const fnSlug = options.slug || "openliate";
 
     let projectRef = options.projectRef || process.env.SUPABASE_PROJECT_REF;
     if (!projectRef) {

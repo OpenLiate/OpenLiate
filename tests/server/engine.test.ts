@@ -10,10 +10,10 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
 
     const body = await res.json() as any;
     expect(body.status).toBe("ok");
-    expect(body.engine).toBe("liate-om");
+    expect(body.engine).toBe("openliate");
     expect(body.protocol).toBe("LAPI/v1");
     expect(body.doctrine).toContain("Class is an Agent");
-    expect(body.doctrine).toContain("LAPI");
+    expect(body.doctrine).toContain("OpenLiate");
   });
 
   it("GET /agents lists pre-configured agents from Liate Hub", async () => {

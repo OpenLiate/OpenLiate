@@ -25,9 +25,9 @@ export function createEngineApp() {
   app.get("/health", (c) => {
     return c.json({
       status: "ok",
-      engine: "liate-om",
+      engine: "openliate",
       protocol: "LAPI/v1",
-      doctrine: "Class is an Agent. Agent is a Function. Function is an API. Liate Agent Protocol Interface (LAPI) is Your Backend.",
+      doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
       uptime: process.uptime(),
       timestamp: new Date().toISOString()
     });
@@ -35,7 +35,7 @@ export function createEngineApp() {
 
   app.get("/", (c) => {
     return c.json({
-      name: "Liate Autonomous Engine Core",
+      name: "OpenLiate",
       status: "running",
       endpoints: {
         health: "GET /health",
