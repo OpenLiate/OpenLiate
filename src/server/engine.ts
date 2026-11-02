@@ -94,26 +94,28 @@ export function createEngineApp() {
       return c.json({ error: "Missing required field 'prompt' (string)" }, 400);
     }
 
-    // 1. Resolve on-the-fly API keys from headers or body
-    const onTheFlySarvamKey =
-      c.req.header("x-sarvam-api-key") ||
-      body.keys?.SARVAM_API_KEY ||
-      body.keys?.sarvamApiKey;
+    // 1. Resolve on-the-fly API keys and environment variables generically
+    const onTheFlyKeys: Record<string, string> = {
+      ...(body.keys || {}),
+      ...(body.env || {}),
+      ...(body.agent?.E || {})
+    };
 
-    const onTheFlyAgentmailKey =
-      c.req.header("x-agentmail-api-key") ||
-      body.keys?.AGENTMAIL_API_KEY ||
-      body.keys?.agentmailApiKey ||
-      body.agent?.E?.AGENTMAIL_API_KEY;
-
-    const previousSarvamKey = process.env.SARVAM_API_KEY;
-    if (onTheFlySarvamKey) {
-      process.env.SARVAM_API_KEY = onTheFlySarvamKey;
+    // Forward any custom request headers generically (e.g., x-api-key, x-sarvam-api-key, etc.)
+    const reqHeaders = c.req.header();
+    for (const [headerName, headerVal] of Object.entries(reqHeaders)) {
+      if (headerName.startsWith("x-") && headerVal && typeof headerVal === "string") {
+        const envKey = headerName.slice(2).replace(/-/g, "_").toUpperCase();
+        onTheFlyKeys[envKey] = headerVal;
+      }
     }
 
-    const previousAgentmailKey = process.env.AGENTMAIL_API_KEY;
-    if (onTheFlyAgentmailKey) {
-      process.env.AGENTMAIL_API_KEY = onTheFlyAgentmailKey;
+    const previousEnv: Record<string, string | undefined> = {};
+    for (const [k, v] of Object.entries(onTheFlyKeys)) {
+      if (typeof v === "string" && v) {
+        previousEnv[k] = process.env[k];
+        process.env[k] = v;
+      }
     }
 
     // 2. Resolve Agent Manifest (On-The-Fly Object or Path)
@@ -230,18 +232,11 @@ export function createEngineApp() {
       );
     } finally {
       // Restore environment state to avoid bleeding ephemeral keys
-      if (onTheFlySarvamKey) {
-        if (previousSarvamKey !== undefined) {
-          process.env.SARVAM_API_KEY = previousSarvamKey;
+      for (const [k, prevVal] of Object.entries(previousEnv)) {
+        if (prevVal !== undefined) {
+          process.env[k] = prevVal;
         } else {
-          delete process.env.SARVAM_API_KEY;
-        }
-      }
-      if (onTheFlyAgentmailKey) {
-        if (previousAgentmailKey !== undefined) {
-          process.env.AGENTMAIL_API_KEY = previousAgentmailKey;
-        } else {
-          delete process.env.AGENTMAIL_API_KEY;
+          delete process.env[k];
         }
       }
       await LiateMcp.closeAll();

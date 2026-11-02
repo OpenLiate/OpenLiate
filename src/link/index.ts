@@ -98,7 +98,6 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
   console.log(`     curl -X POST ${runEndpoint} \\`);
   console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
   console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
   console.log("  2. Via OpenLiate CLI (Local):");
   console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
@@ -272,7 +271,6 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
   console.log(`     curl -X POST ${runEndpoint} \\`);
   console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
   console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
   console.log("  2. Via OpenLiate CLI (Local):");
   console.log(`     liate run <agent.json|agent-name> "<prompt>"\n`);
