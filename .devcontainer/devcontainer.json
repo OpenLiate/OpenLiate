@@ -7,7 +7,7 @@
       "username": "node"
     }
   },
-  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash && export PATH=\"$HOME/.bun/bin:$PATH\" && bun install",
+  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash && curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH\"' >> ~/.zshrc && echo 'export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH\"' >> ~/.bashrc && export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH\" && bun install",
   "customizations": {
     "vscode": {
       "extensions": [
