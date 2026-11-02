@@ -1,24 +1,30 @@
 {
   "name": "@openliate/liate",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
   "main": "./src/liate.ts",
   "types": "./src/engine/types.ts",
   "bin": {
+    "openliate": "./src/liate.ts",
     "liate": "./src/liate.ts"
   },
   "scripts": {
     "test": "bun test",
-    "build": "bun build ./src/liate.ts --compile --outfile dist/liate",
+    "build": "bun run build:cli && bun run build:engine",
+    "build:cli": "bun build ./src/liate.ts --compile --outfile dist/cli/liate",
+    "build:engine": "bun build ./src/server/index.ts --target node --format esm --outfile dist/engine/index.js",
+    "serve": "bun run dist/engine/index.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clack/prompts": "1.8.1",
+    "@hono/node-server": "2.1.5",
     "@modelcontextprotocol/client": "2.4.0",
     "@modelcontextprotocol/core": "2.4.0",
     "@modelcontextprotocol/server": "2.4.0",
     "hono": "^4.7.0",
+    "jszip": "3.10.2",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -39,10 +45,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openliate/liate.git"
+    "url": "git+https://github.com/openliate/openliate.git"
   },
   "bugs": {
-    "url": "https://github.com/openliate/liate/issues"
+    "url": "https://github.com/openliate/openliate/issues"
   },
-  "homepage": "https://liate.dev"
+  "homepage": "https://openliate.tech"
 }

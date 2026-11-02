@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0] - 2026-11-01 — Liate v0.1.0: Multi-Cloud Link, LAPI Server, and Docker Stack
+
+Major milestone release establishing the sovereign, zero-dependency autonomous AI agent runtime.
+
+### Multi-Cloud Link & Deployment (`liate link`)
+- **1-Click Multi-Cloud Mesh (`liate link`):** Link Neon, Vercel, and Supabase accounts in a single command, unlocking **2,500,000 Free AI Agent Runs / Month** ($0.00/mo).
+- **Neon Cloud (`liate link --neon`):** Provisions regional serverless Postgres with co-located Linux compute (2 vCPU, 8 GB RAM) for 1,000,000 Free Runs/mo. Automated RFC 7591 dynamic client registration and RFC 7636 PKCE OAuth 2.1 loopback flow (`http://127.0.0.1:54321/callback`).
+- **Vercel Cloud (`liate link --vercel` / `liate link --vercel-daemons`):** Deploys serverless HTTP engine (1M runs, auto-scaling to zero) and 24/7 background worker daemons via containerized Docker environment. Automated OAuth PKCE flow on loopback port `54322`.
+- **Supabase Cloud (`liate link --supabase`):** Deploys pure Deno V8 Edge Functions co-located with `pgvector` store and realtime database webhooks for 500,000 Free Runs/mo. Automated PKCE flow on loopback port `54323`.
+- **Credential Lifecycle (`liate relink` & `liate unlink`):**
+  - `liate relink [--neon|--vercel|--supabase|--all]`: Clears expired tokens and re-executes clean OAuth authentication.
+  - `liate unlink [--neon|--vercel|--supabase|--all]`: Purges all cached tokens from disk (`.liate/`) and local environment files (`.env.local`).
+- **Eliminated Legacy Aliases:** Transitioned strictly to pure developer verbs (`link`, `relink`, `unlink`), permanently removing legacy `connect`, `reconnect`, `disconnect`, and `deploy` commands.
+
+### LAPI Pure Engine Server (`liate serve`)
+- **Liate Agent Protocol Interface (LAPI):** High-performance HTTP server (`src/server/engine.ts`) built on Hono.
+- **Endpoints:**
+  - `GET /health`: Engine status, version, LAPI protocol specifications, and core doctrine.
+  - `GET /agents`: Auto-discovers and lists pre-configured agents from Liate Hub.
+  - `POST /run`: Executes agents on the fly from raw prompts or declarative manifests with session-based memory retention.
+
+### Universal Docker Multi-Runtime Stack
+- **Production Containerization (`Dockerfile` & `docker-compose.yml`):** Multi-runtime environment bundling Node 24, Python 3.14, Astral `uv` / `uvx`, and `npx`.
+- **Full Dual-MCP Support:** Out-of-the-box execution for both local stdio tools (`uvx`, `npx`) and remote HTTP/SSE Model Context Protocol servers.
+
+### Core Architecture & Standards
+- **RFC 9562 Monotonic UUIDv7 (`src/core/uuid.ts`):** High-throughput, time-ordered distributed UUID generation with zero external dependencies.
+- **Pure Self-Contained Builds:** Standalone compiled CLI binary (`dist/cli/liate.exe`) and tree-shaken ESM engine bundle (`dist/engine/index.js`).
+
+---
+
 ## [0.0.6] - 2026-10-31 — Liate CLI and Liate Hub
 
 Autonomous execution CLI runner and OpenLiate Hub pre-built reference agents.
@@ -95,4 +126,4 @@ Open Source Backend Layer for AI Agents.
 - **Mathematical Inspiration:** Just like the LIATE rule in calculus breaks down complex problems by parts, LIATE makes building agents simple.
 - **NVIDIA Alignment:** 1-to-1 match with Jensen Huang's 5 agent elements: *Model (`L`), Knowledge (`I`), Harness (`A`), Tools (`T`), Sandbox (`E`)*.
 - **Milestone:** Selected for the **Sarvam AI Startup Program 2026** (India).
-- **Open Source Foundation:** Initialized repository under MIT License at `openliate/liate`.
+- **Open Source Foundation:** Initialized repository under MIT License.
