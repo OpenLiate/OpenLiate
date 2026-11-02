@@ -82,20 +82,21 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
     }
   }
 
-  const endpoint = `${deployment.invocationUrl}run`;
+  const baseUrl = deployment.invocationUrl.replace(/\/+$/, "").replace(/\/run$/, "");
+  const runEndpoint = `${baseUrl}/run`;
 
   console.log("\n===========================================================");
   console.log("✔ PURE LIATE RUNTIME ENGINE DEPLOYED LIVE TO NEON!");
   console.log(`Project:    ${deployment.projectName} (${deployment.projectId})`);
   console.log(`Branch:     ${deployment.branchName} (${deployment.branchId})`);
-  console.log(`Endpoint:   ${endpoint}`);
+  console.log(`Endpoint:   ${baseUrl}`);
   console.log(`Runtime:    Linux Node.js (2 vCPU, 8 GB RAM)`);
   console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
   console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
   console.log("===========================================================\n");
   console.log("How to run an agent:\n");
   console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
-  console.log(`     curl -X POST ${endpoint} \\`);
+  console.log(`     curl -X POST ${runEndpoint} \\`);
   console.log(`       -H "Content-Type: application/json" \\`);
   console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
   console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
@@ -183,16 +184,19 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     console.log(`  2. Daemons run continuously without inbound HTTP traffic, pulling`);
     console.log(`     and executing long-running agent tasks autonomously.\n`);
   } else {
+    const baseUrl = (deployment.url || deployment.engineUrl).replace(/\/+$/, "").replace(/\/run$/, "");
+    const runEndpoint = `${baseUrl}/run`;
+
     console.log("✔ PURE LIATE RUNTIME ENGINE DEPLOYED LIVE TO VERCEL!");
     console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
-    console.log(`Endpoint:   ${deployment.engineUrl}`);
+    console.log(`Endpoint:   ${baseUrl}`);
     console.log(`Mode:       Serverless Fluid Compute Function (Auto-scales to 0)`);
     console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
     console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
     console.log("===========================================================\n");
     console.log("How to run an agent:\n");
     console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
-    console.log(`     curl -X POST ${deployment.engineUrl} \\`);
+    console.log(`     curl -X POST ${runEndpoint} \\`);
     console.log(`       -H "Content-Type: application/json" \\`);
     console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
     console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);
@@ -252,18 +256,21 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
     }
   }
 
+  const baseUrl = (deployment.functionUrl || deployment.engineUrl).replace(/\/+$/, "").replace(/\/run$/, "");
+  const runEndpoint = `${baseUrl}/run`;
+
   console.log("\n===========================================================");
   console.log("✔ PURE LIATE RUNTIME ENGINE DEPLOYED LIVE TO SUPABASE!");
   console.log(`Function:   ${deployment.name}`);
   console.log(`Project:    ${deployment.projectRef}`);
-  console.log(`Endpoint:   ${deployment.engineUrl}`);
+  console.log(`Endpoint:   ${baseUrl}`);
   console.log(`Capacity:   500,000 Free AI Agent Runs / Month`);
   console.log("Tooling:    Remote MCP (HTTP/SSE) + Edge Functions Enabled");
   console.log("Memory [I]: pgvector Embeddings & Realtime Postgres");
   console.log("===========================================================\n");
   console.log("How to run an agent:\n");
   console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
-  console.log(`     curl -X POST ${deployment.engineUrl} \\`);
+  console.log(`     curl -X POST ${runEndpoint} \\`);
   console.log(`       -H "Content-Type: application/json" \\`);
   console.log(`       -H "x-sarvam-api-key: $SARVAM_API_KEY" \\`);
   console.log(`       -d '{"prompt": "Hello Agent World!", "agent": "research-agent"}'\n`);

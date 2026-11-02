@@ -6,8 +6,10 @@ const app = createEngineApp();
 const port = parseInt(process.env.PORT || "3000", 10);
 const host = process.env.HOST || "0.0.0.0";
 
-// When run directly in Docker, local Node.js, or local Bun
-if (typeof process !== "undefined" && process.env.NODE_ENV !== "test") {
+// When run in Deno (Supabase Edge Functions)
+if (typeof (globalThis as any).Deno !== "undefined" && typeof (globalThis as any).Deno.serve === "function") {
+  (globalThis as any).Deno.serve((req: Request) => app.fetch(req));
+} else if (typeof process !== "undefined" && process.env.NODE_ENV !== "test") {
   if ((globalThis as any).Bun?.serve) {
     (globalThis as any).Bun.serve({
       fetch: app.fetch,

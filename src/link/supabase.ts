@@ -388,6 +388,12 @@ export class SupabaseMcpClient {
       throw new Error("Could not locate dist/engine/index.js. Please run 'bun run build:engine' first.");
     }
 
+    // Ensure Node builtins use node: prefix for Deno runtime compatibility in Supabase Edge Functions
+    bundleCode = bundleCode
+      .replace(/from\s+["'](os|fs|path|http|https|crypto|stream|events|util|buffer|url|net|tls|zlib)["']/g, 'from "node:$1"')
+      .replace(/import\s+["'](os|fs|path|http|https|crypto|stream|events|util|buffer|url|net|tls|zlib)["']/g, 'import "node:$1"')
+      .replace(/require\(["'](os|fs|path|http|https|crypto|stream|events|util|buffer|url|net|tls|zlib)["']\)/g, 'require("node:$1")');
+
     const deployRes = await fetch(`${SUPABASE_API_ENDPOINT}/projects/${projectRef}/functions`, {
       method: "POST",
       headers: {
