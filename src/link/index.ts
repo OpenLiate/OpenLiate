@@ -181,7 +181,7 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     console.log(`Mode:       Background Daemon Worker (Pull-based / Queue / Long-running)`);
     console.log(`Runtime:    Docker Container (Node 24 + Python + uvx)`);
     console.log(`Instances:  1 Dedicated Worker Instance (iad1)`);
-    console.log("Tooling:    Dual-MCP (Stdio uvx/npx + Remote HTTP/SSE) Enabled");
+    console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
     console.log("===========================================================\n");
     console.log("Daemon Operation & Monitoring:\n");
     console.log(`  1. View live streaming daemon logs in Vercel Dashboard:`);
