@@ -179,7 +179,7 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
     console.log(`Deployment: ${deployment.url}`);
     console.log(`Mode:       Background Daemon Worker (Pull-based / Queue / Long-running)`);
-    console.log(`Runtime:    Docker Container (Node 24 + Python + uvx)`);
+    console.log(`Runtime:    Linux Node.js (Dedicated Worker)`);
     console.log(`Instances:  1 Dedicated Worker Instance (iad1)`);
     console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
     console.log("===========================================================\n");
