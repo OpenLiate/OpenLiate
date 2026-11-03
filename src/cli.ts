@@ -5,12 +5,13 @@ import { Agent } from "./agent/agent";
 import { EnvironmentResolver } from "./environment/environment";
 import { LiateMcp } from "./tools/mcp";
 import { link, relink, unlink, linkNeon, linkVercel, linkSupabase } from "./link/index";
+import { runJoinFlow } from "./link/join";
 import { NeonMcpOAuth, NeonMcpClient } from "./link/neon";
 import { VercelMcpOAuth, VercelMcpClient } from "./link/vercel";
 import { startEngineServer } from "./server/engine";
 import { ConfigManager } from "./core/config";
 
-const VERSION = "0.0.11";
+const VERSION = "0.0.12";
 const BANNER = `
 ===========================================================
   OPENLIATE — Open Source Backend Layer for AI Agents
@@ -47,6 +48,7 @@ async function main() {
   if (!command || command === "--help" || command === "-h" || command === "help") {
     console.log(BANNER);
     console.log(`Usage:
+  openliate join                                       Join Mission AgentYaan, claim @handle & BYOAI setup
   openliate run <agent.json|agent-name> "<prompt>"    Execute an agent locally
   openliate serve [--port <port>]                      Start the pure OpenLiate engine HTTP server
   openliate link                                       Link Vercel, Neon & Supabase in 1 click (2.5M Free Runs)
@@ -63,6 +65,7 @@ async function main() {
 Note: Both 'openliate' and 'liate' can be used interchangeably.
 
 Examples:
+  openliate join
   openliate run agent.json "Hello Agent World!"
   openliate run research-agent "Fetch https://skills.sh and summarize"
   openliate serve --port 3000
@@ -80,6 +83,17 @@ Examples:
   if (command === "version" || command === "--version" || command === "-v") {
     console.log(`OpenLiate v${VERSION}`);
     process.exit(0);
+  }
+
+  // 0. Join Command (Mission: AgentYaan & Starter Tokens)
+  if (command === "join" || command === "init" || command === "setup") {
+    try {
+      await runJoinFlow();
+    } catch (err: any) {
+      console.error(`\n[Join Error]: ${err.message}`);
+      process.exit(1);
+    }
+    return;
   }
 
   // 1. Run Command

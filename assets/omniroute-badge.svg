@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="244" height="20" role="img" aria-label="OmniRoute: 1.62B+ Free Tokens/mo">
-  <title>OmniRoute: 1.62B+ Free Tokens/mo</title>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="145" height="20" role="img" aria-label="OmniRoute: Soon">
+  <title>OmniRoute: Soon</title>
   <g shape-rendering="crispEdges">
     <rect width="93" height="20" fill="#000000"/>
-    <rect x="93" width="151" height="20" fill="#FFFFFF"/>
+    <rect x="93" width="52" height="20" fill="#FFFFFF"/>
   </g>
   <!-- Vector OmniRoute Logo -->
   <g transform="translate(6, 3)">
@@ -13,6 +13,6 @@
   </g>
   <g font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110">
     <text x="555" y="140" textLength="630" fill="#FFFFFF" text-anchor="middle" transform="scale(.1)">OmniRoute</text>
-    <text x="1685" y="140" textLength="1390" fill="#000000" text-anchor="middle" transform="scale(.1)">1.62B+ Free Tokens/mo</text>
+    <text x="1190" y="140" textLength="340" fill="#000000" text-anchor="middle" transform="scale(.1)">Soon</text>
   </g>
 </svg>

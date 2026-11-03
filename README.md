@@ -12,7 +12,10 @@
   <a href="https://github.com/openliate/openliate/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square" alt="License: MIT"></a>
   <a href="https://sarvam.ai"><img src="./assets/sarvam-badge.svg" alt="Startup Program: Sarvam AI"></a>
   <a href="https://codespaces.new/openliate/openliate"><img src="https://img.shields.io/badge/Codespaces-1--Click_Run-white?logo=github&logoColor=white&labelColor=black&style=flat-square" alt="Open in GitHub Codespaces"></a>
-  <img src="https://img.shields.io/badge/version-0.1.0-white?labelColor=black&style=flat-square" alt="v0.1.0">
+  <img src="https://img.shields.io/badge/version-beta-white?labelColor=black&style=flat-square" alt="beta">
+  <img src="https://img.shields.io/badge/Bun-Supported-white?logo=bun&logoColor=white&labelColor=black&style=flat-square" alt="Bun">
+  <img src="https://img.shields.io/badge/Node.js-Supported-white?logo=node.js&logoColor=5FA04E&labelColor=black&style=flat-square" alt="Node.js">
+  <img src="https://img.shields.io/badge/Deno-Soon-white?logo=deno&logoColor=white&labelColor=black&style=flat-square" alt="Deno (Soon)">
 </p>
 
 <p align="center">
@@ -26,7 +29,7 @@
 </p>
 
 <p align="center">
-  <a href="#run-cloud"><img src="https://img.shields.io/badge/Worldwide_Edge-16M_Grid-white?labelColor=black&style=flat-square" alt="Worldwide Edge"></a>
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Worldwide_Edge-16M_Soon-white?labelColor=black&style=flat-square" alt="Worldwide Edge"></a>
   &nbsp;
   <a href="#run-cloud"><img src="https://img.shields.io/badge/Fastly-10M_Runs-white?logo=fastly&logoColor=FF282D&labelColor=black&style=flat-square" alt="Fastly"></a>
   &nbsp;
@@ -42,9 +45,9 @@
   &nbsp;
   <a href="#instant-install"><img src="https://img.shields.io/badge/Instant_Install-Zero_Dependencies-white?labelColor=black&style=flat-square" alt="Instant Install"></a>
   &nbsp;
-  <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-1.5M+_skills.sh_(Vercel_Labs)-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="1.5M+ Agent Skills (skills.sh)"></a>
+  <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-skills.sh_(Vercel_Labs)_Soon-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="skills.sh (Vercel Labs) - Soon"></a>
   &nbsp;
-  <a href="https://www.omniroute.online/"><img src="./assets/omniroute-badge.svg" alt="1.62B+ Free AI Tokens Per Month (OmniRoute)"></a>
+  <a href="https://www.omniroute.online/"><img src="./assets/omniroute-badge.svg" alt="OmniRoute (Soon)"></a>
 </p>
 
 <br>
