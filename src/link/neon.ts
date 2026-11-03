@@ -310,7 +310,7 @@ export class NeonMcpOAuth {
           res.end(`<!DOCTYPE html>
 <html>
   <head>
-    <title>Liate — Authentication Successful</title>
+    <title>OpenLiate — Authentication Successful</title>
   </head>
   <body style="font-family: -apple-system, system-ui, sans-serif; padding: 40px; text-align: center; color: #111;">
     <h2>Authentication successful</h2>
@@ -363,7 +363,7 @@ export class NeonMcpClient {
     const saved = NeonMcpOAuth.loadSavedToken();
     this.token = token || saved?.access_token || process.env.NEON_MCP_TOKEN || "";
     if (!this.token) {
-      throw new Error("No Neon MCP token found. Run 'liate link --neon' first.");
+      throw new Error("No Neon MCP token found. Run 'openliate link --neon' first.");
     }
   }
 
@@ -390,7 +390,7 @@ export class NeonMcpClient {
 
     if (res.status === 401) {
       NeonMcpOAuth.clearSavedToken();
-      throw new Error("Neon MCP Token has expired or is invalid. Please run 'liate relink --neon' to re-authenticate.");
+      throw new Error("Neon MCP Token has expired or is invalid. Please run 'openliate relink --neon' to re-authenticate.");
     }
 
     const text = await res.text();
@@ -421,7 +421,7 @@ export class NeonMcpClient {
 
     if (data && typeof data === "object" && data.error) {
       if (data.error === "invalid_token" || data.error_description?.includes("expired")) {
-        throw new Error("Neon MCP Token has expired. Please run 'liate relink --neon' to re-authenticate.");
+        throw new Error("Neon MCP Token has expired. Please run 'openliate relink --neon' to re-authenticate.");
       }
       throw new Error(`Neon MCP Error (${data.error}): ${data.error_description || JSON.stringify(data)}`);
     }
@@ -478,7 +478,7 @@ export class NeonMcpClient {
       outdir: engineDistDir
     });
     if (!buildResult.success || buildResult.outputs.length === 0) {
-      throw new Error("Failed to bundle Liate Engine for Neon deployment.");
+      throw new Error("Failed to bundle OpenLiate Engine for Neon deployment.");
     }
     const bundleText = await buildResult.outputs[0].text();
 
@@ -491,28 +491,28 @@ export class NeonMcpClient {
 
     // 3. Resolve or Automatically Create Project "openliate"
     let projects = await this.listProjects();
-    let project = projects.find((p: any) => p.name === "openliate" || p.name === "liate");
+    let project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "liate");
 
     if (!project) {
       try {
         const createProjRes = await this.callTool("create_project", {
-          name: "openliate",
+          name: "OpenLiate",
           branch: { name: "main" }
         });
         project = createProjRes?.project || createProjRes;
       } catch {
-        project = projects.find((p: any) => p.name === "openliate" || p.name === "liate") || projects[0];
+        project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "liate") || projects[0];
       }
     }
 
     if (!project) {
-      throw new Error("Unable to resolve or create a Neon project for Liate.");
+      throw new Error("Unable to resolve or create a Neon project for OpenLiate.");
     }
 
     // 4. Generate RFC 9562 UUIDv7 for deployment traceability
     const uuid7 = generateUUIDv7();
     const cleanId = uuid7.replace(/-/g, "").slice(0, 8);
-    const targetBranchName = options?.branchName || `liate-branch-${cleanId}`;
+    const targetBranchName = options?.branchName || `openliate-branch-${cleanId}`;
 
     // 5. Resolve Branch (Dedicated isolated branch or Project's primary branch)
     let branch: any;
@@ -621,15 +621,15 @@ export class NeonMcpClient {
       throw new Error("No Neon projects found in your account.");
     }
 
-    const project = projects.find((p: any) => p.name === "liate-engine") || projects[0];
+    const project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "liate-engine") || projects[0];
     const branches = await this.listBranches(project.id);
     const branch = branches.find((b: any) => b.primary || b.default) || branches[0];
 
     const functions = await this.listFunctions(project.id, branch.id);
-    let fn = functions.find((f: any) => f.slug?.startsWith("liate") || f.id?.startsWith("liate")) || functions[0];
+    let fn = functions.find((f: any) => f.slug?.startsWith("engine") || f.slug?.startsWith("openliate") || f.slug?.startsWith("liate") || f.id?.startsWith("openliate")) || functions[0];
 
     if (!fn || !fn.invocation_url) {
-      throw new Error(`No deployed Liate engine function found on branch ${branch.name}.`);
+      throw new Error(`No deployed OpenLiate engine function found on branch ${branch.name}.`);
     }
 
     return {

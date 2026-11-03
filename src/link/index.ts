@@ -19,14 +19,14 @@ export function printHowToRunAgent(runEndpoint: string, provider: "neon" | "verc
   console.log("  2. Via PowerShell (Windows Invoke-RestMethod):");
   console.log(`     Invoke-RestMethod -Uri "${runEndpoint}" -Method Post -ContentType "application/json" -Body '{"prompt":"Namaste, who are you and what tools do you have?","sessionId":"${provider}-session-1","L":{"provider":"sarvam","model":"sarvam-105b"},"I":{"session":"${provider}-session-1"},"A":{"name":"sovereign_agent","intent":"Autonomous Sovereign Indic AI Agent"},"T":["mcp:sarvam"],"E":{},"keys":{"SARVAM_API_KEY":"${sarvamKey}"}}'\n`);
   console.log("  3. Via OpenLiate CLI (Local):");
-  console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
-  console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
+  console.log(`     openliate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
+  console.log(`     openliate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
   console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
 export async function linkNeon(key?: string, relink: boolean = false): Promise<void> {
   console.log(`\n===========================================================`);
-  console.log(`LIATE LINK — NEON CLOUD (REGIONAL POSTGRES MEMORY)`);
+  console.log(`OPENLIATE LINK — NEON CLOUD (REGIONAL POSTGRES MEMORY)`);
   console.log(`===========================================================`);
 
   if (relink) {
@@ -117,9 +117,9 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
 export async function linkVercel(key?: string, isDaemon: boolean = false, relink: boolean = false): Promise<void> {
   console.log(`\n===========================================================`);
   if (isDaemon) {
-    console.log(`LIATE LINK — VERCEL CLOUD (CONTAINERIZED DAEMON WORKER)`);
+    console.log(`OPENLIATE LINK — VERCEL CLOUD (CONTAINERIZED DAEMON WORKER)`);
   } else {
-    console.log(`LIATE LINK — VERCEL CLOUD (FLUID COMPUTE FUNCTIONS)`);
+    console.log(`OPENLIATE LINK — VERCEL CLOUD (FLUID COMPUTE FUNCTIONS)`);
   }
   console.log(`===========================================================`);
 
@@ -209,7 +209,7 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
 
 export async function linkSupabase(key?: string, relink: boolean = false): Promise<void> {
   console.log(`\n===========================================================`);
-  console.log(`LIATE LINK — SUPABASE CLOUD (EDGE FUNCTIONS & PGVECTOR)`);
+  console.log(`OPENLIATE LINK — SUPABASE CLOUD (EDGE FUNCTIONS & PGVECTOR)`);
   console.log(`===========================================================`);
 
   if (relink) {
