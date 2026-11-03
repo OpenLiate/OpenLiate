@@ -2,6 +2,12 @@
   "$schema": "https://mintlify.com/docs.json",
   "name": "OpenLiate",
   "theme": "mint",
+  "favicon": "/favicon.png",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg",
+    "href": "https://openliate.tech"
+  },
   "colors": {
     "primary": "#0D9373",
     "light": "#55D799",

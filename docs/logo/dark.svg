@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 26" width="168" height="26">
+  <!-- OpenLiate Mark (White for Dark Mode) -->
+  <g transform="translate(0, 2)">
+    <path fill="#FFFFFF" d="M0.00,7.72L0.45,10.40L1.75,12.57L9.81,20.58L11.56,21.63L13.20,21.96L15.62,21.37L20.17,17.26L22.82,16.33L24.20,16.52L25.69,17.26L29.16,20.62L30.69,21.63L32.66,21.96L34.31,21.55L35.91,20.55L44.34,12.19L45.42,10.33L45.83,8.58L45.38,5.33L43.81,2.80L40.79,0.63L37.96,0.00L35.39,0.26L32.52,1.64L22.93,10.89L13.76,1.83L12.04,0.75L9.77,0.07L6.49,0.26L3.28,1.79L0.86,4.62Z" />
+  </g>
+  <!-- Brand Name -->
+  <text x="56" y="19" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="700" letter-spacing="-0.02em">OpenLiate</text>
+</svg>
