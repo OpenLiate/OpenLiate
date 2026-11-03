@@ -45,11 +45,11 @@ export function createEngineApp() {
     });
   });
 
-  // List available agents in Liate Hub
+  // List available agents in OpenLiate Hub
   app.get("/agents", (c) => {
     const candidateHubDirs = [
       path.resolve(process.cwd(), "hub", "agents"),
-      path.resolve(process.cwd(), "liate", "hub", "agents"),
+      path.resolve(process.cwd(), "OpenLiate", "hub", "agents"),
       path.resolve(__dirname, "../../hub/agents")
     ];
     const hubDir = candidateHubDirs.find((d) => fs.existsSync(d)) || candidateHubDirs[0];
@@ -133,8 +133,8 @@ export function createEngineApp() {
         path.resolve(process.cwd(), body.agent),
         path.resolve(process.cwd(), "hub", "agents", body.agent, "agent.json"),
         path.resolve(process.cwd(), "hub", "agents", body.agent),
-        path.resolve(process.cwd(), "liate", "hub", "agents", body.agent, "agent.json"),
-        path.resolve(process.cwd(), "liate", "hub", "agents", body.agent),
+        path.resolve(process.cwd(), "OpenLiate", "hub", "agents", body.agent, "agent.json"),
+        path.resolve(process.cwd(), "OpenLiate", "hub", "agents", body.agent),
         path.resolve(__dirname, "..", "..", "hub", "agents", body.agent, "agent.json"),
         path.resolve(process.cwd(), "agent.json")
       ];
@@ -251,8 +251,8 @@ export function startEngineServer(options?: EngineServerOptions) {
   const host = options?.host || "0.0.0.0";
   const app = createEngineApp();
 
-  console.log(`[Liate] Starting Pure Engine Server on port ${port}...`);
-  console.log(`[Liate] Doctrine: "Class is an Agent. Agent is a Function. Function is an API."`);
+  console.log(`[OpenLiate] Starting Pure Engine Server on port ${port}...`);
+  console.log(`[OpenLiate] Doctrine: "Class is an Agent. Agent is a Function. Function is an API."`);
 
   // Native Bun / Node server
   const server = (globalThis as any).Bun?.serve

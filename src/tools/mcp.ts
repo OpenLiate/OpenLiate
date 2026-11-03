@@ -3,7 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { AgentTool } from "../agent/types";
 import type { McpServerConfig } from "./types";
 
-export class LiateMcp {
+export class OpenLiateMcp {
   private static activeClients: Client[] = [];
   private static activeTransports: any[] = [];
 
@@ -121,7 +121,7 @@ export class LiateMcp {
 
       return registeredTools;
     } catch (err: any) {
-      console.warn(`[LiateMcp] Stdio discovery failed for ${config.name}: ${err.message}`);
+      console.warn(`[OpenLiateMcp] Stdio discovery failed for ${config.name}: ${err.message}`);
       return [];
     }
   }
@@ -215,8 +215,10 @@ export class LiateMcp {
 
       return registeredTools;
     } catch (err: any) {
-      console.warn(`[LiateMcp] HTTP discovery failed for ${config.name}: ${err.message}`);
+      console.warn(`[OpenLiateMcp] HTTP discovery failed for ${config.name}: ${err.message}`);
       return [];
     }
   }
 }
+
+export const LiateMcp = OpenLiateMcp;

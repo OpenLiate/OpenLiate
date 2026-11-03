@@ -1,9 +1,9 @@
 {
   "name": "openliate",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
-  "main": "./src/liate.ts",
+  "main": "./src/index.ts",
   "types": "./src/engine/types.ts",
   "bin": {
     "openliate": "dist/bin.js",
@@ -19,7 +19,7 @@
     "test": "bun test",
     "build": "bun run build:bin && bun run build:cli && bun run build:engine",
     "build:bin": "bun build ./src/cli.ts --target node --format esm --outfile dist/bin.js",
-    "build:cli": "bun build ./src/liate.ts --compile --outfile dist/cli/liate",
+    "build:cli": "bun build ./src/cli.ts --compile --outfile dist/cli/openliate",
     "build:engine": "bun build ./src/server/index.ts --target node --format esm --outfile dist/engine/index.js",
     "serve": "bun run dist/engine/index.js",
     "typecheck": "tsc --noEmit"

@@ -16,7 +16,7 @@ if (typeof (globalThis as any).Deno !== "undefined" && typeof (globalThis as any
       port,
       hostname: host
     });
-    console.log(`[Liate] Engine running on Bun (http://${host}:${port})`);
+    console.log(`[OpenLiate] Engine running on Bun (http://${host}:${port})`);
   } else {
     try {
       serve({
@@ -24,7 +24,7 @@ if (typeof (globalThis as any).Deno !== "undefined" && typeof (globalThis as any
         port,
         hostname: host
       });
-      console.log(`[Liate] Engine running on Node.js (http://${host}:${port})`);
+      console.log(`[OpenLiate] Engine running on Node.js (http://${host}:${port})`);
     } catch {}
   }
 }

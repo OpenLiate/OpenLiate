@@ -9,13 +9,13 @@ export interface McpAgentLike {
 
 /**
  * OpenLiate MCP Server Exposer [Layer T]
- * Exposes a Liate Agent as a standard Model Context Protocol (MCP) server
+ * Exposes an OpenLiate Agent as a standard Model Context Protocol (MCP) server
  * so external IDEs (Claude Desktop, Cursor, Antigravity) can call it directly.
  */
 export function createAgentMcpServer(agent: McpAgentLike): McpServer {
-  const agentName = agent.name || "LiateAgent";
+  const agentName = agent.name || "OpenLiateAgent";
   const server = new McpServer({
-    name: `liate-${agentName.toLowerCase()}`,
+    name: `openliate-${agentName.toLowerCase()}`,
     version: "1.0.0"
   });
 

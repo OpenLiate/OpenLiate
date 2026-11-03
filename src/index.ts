@@ -17,9 +17,9 @@ export * from "./tools/builtin/fetch";
 export * from "./tools/builtin/identity";
 export * from "./environment/environment";
 export * from "./environment/types";
+export * from "./config/index";
 export * from "./link/neon";
+export * from "./link/vercel";
+export * from "./link/supabase";
 export * from "./link/index";
 export * from "./server/engine";
-
-// CLI entry point
-import "./cli";

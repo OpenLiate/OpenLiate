@@ -346,7 +346,7 @@ export class VercelMcpClient {
     if (!bundleCode) {
       const candidatePaths = [
         path.resolve(process.cwd(), "dist", "engine", "index.js"),
-        path.resolve(process.cwd(), "liate", "dist", "engine", "index.js"),
+        path.resolve(process.cwd(), "OpenLiate", "dist", "engine", "index.js"),
         path.resolve(__dirname, "..", "..", "dist", "engine", "index.js")
       ];
       for (const p of candidatePaths) {
@@ -369,7 +369,7 @@ export class VercelMcpClient {
       let dockerfileContent = "";
       const dockerfileCandidates = [
         path.resolve(process.cwd(), "Dockerfile"),
-        path.resolve(process.cwd(), "liate", "Dockerfile"),
+        path.resolve(process.cwd(), "OpenLiate", "Dockerfile"),
         path.resolve(__dirname, "..", "..", "Dockerfile")
       ];
       for (const df of dockerfileCandidates) {
@@ -418,7 +418,7 @@ CMD ["node", "dist/engine/index.js"]`;
             {
               version: 2,
               daemons: {
-                "liate-daemon": {
+                "openliate-daemon": {
                   entrypoint: "Dockerfile",
                   command: ["node", "dist/engine/index.js"],
                   instances: {
@@ -584,7 +584,7 @@ export async function runVercelLinkFlow(options: {
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Liate — Authentication Successful</title>
+    <title>OpenLiate — Authentication Successful</title>
   </head>
   <body style="font-family: -apple-system, system-ui, sans-serif; padding: 40px; text-align: center; color: #111;">
     <h2>Authentication successful</h2>
