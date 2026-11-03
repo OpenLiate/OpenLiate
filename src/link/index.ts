@@ -9,6 +9,21 @@ export interface LinkOptions {
   relink?: boolean;
 }
 
+export function printHowToRunAgent(runEndpoint: string, provider: "neon" | "vercel" | "supabase"): void {
+  const sarvamKey = process.env.SARVAM_API_KEY || "<YOUR_SARVAM_API_KEY>";
+  console.log("How to run an agent (5-Pillar L·I·A·T·E Architecture):\n");
+  console.log("  1. Via cURL (Direct HTTP API with on-the-fly BYOAI key):");
+  console.log(`     curl -X POST ${runEndpoint} \\`);
+  console.log(`       -H "Content-Type: application/json" \\`);
+  console.log(`       -d '{"prompt": "Namaste, who are you and what tools do you have?", "sessionId": "${provider}-session-1", "L": {"provider": "sarvam", "model": "sarvam-105b"}, "I": {"session": "${provider}-session-1"}, "A": {"name": "sovereign_agent", "intent": "Autonomous Sovereign Indic AI Agent"}, "T": ["mcp:sarvam"], "E": {}, "keys": {"SARVAM_API_KEY": "${sarvamKey}"}}'\n`);
+  console.log("  2. Via PowerShell (Windows Invoke-RestMethod):");
+  console.log(`     Invoke-RestMethod -Uri "${runEndpoint}" -Method Post -ContentType "application/json" -Body '{"prompt":"Namaste, who are you and what tools do you have?","sessionId":"${provider}-session-1","L":{"provider":"sarvam","model":"sarvam-105b"},"I":{"session":"${provider}-session-1"},"A":{"name":"sovereign_agent","intent":"Autonomous Sovereign Indic AI Agent"},"T":["mcp:sarvam"],"E":{},"keys":{"SARVAM_API_KEY":"${sarvamKey}"}}'\n`);
+  console.log("  3. Via OpenLiate CLI (Local):");
+  console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
+  console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
+  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
+}
+
 export async function linkNeon(key?: string, relink: boolean = false): Promise<void> {
   console.log(`\n===========================================================`);
   console.log(`LIATE LINK — NEON CLOUD (REGIONAL POSTGRES MEMORY)`);
@@ -96,20 +111,7 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
   console.log("Triggers:   Neon Function Triggers (Scale-to-Zero Scheduled Cron)");
   console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
   console.log("===========================================================\n");
-  console.log("How to run an agent:\n");
-  console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
-  console.log(`     # Sarvam Sovereign Indic AI Agent:`);
-  console.log(`     curl -X POST ${runEndpoint} \\`);
-  console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"agent": "sarvam-agent", "prompt": "Namaste, summarize our metrics"}'\n`);
-  console.log(`     # Email Agent (AgentMail MCP):`);
-  console.log(`     curl -X POST ${runEndpoint} \\`);
-  console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"agent": "email-agent", "prompt": "Check incoming inboxes"}'\n`);
-  console.log("  2. Via OpenLiate CLI (Local):");
-  console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
-  console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
-  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
+  printHowToRunAgent(runEndpoint, "neon");
 }
 
 export async function linkVercel(key?: string, isDaemon: boolean = false, relink: boolean = false): Promise<void> {
@@ -201,21 +203,8 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
     console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
     console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
     console.log("===========================================================\n");
-    console.log("How to run an agent:\n");
-    console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
-    console.log(`     # Sarvam Sovereign Indic AI Agent:`);
-    console.log(`     curl -X POST ${runEndpoint} \\`);
-    console.log(`       -H "Content-Type: application/json" \\`);
-    console.log(`       -d '{"agent": "sarvam-agent", "prompt": "Namaste, summarize our metrics"}'\n`);
-    console.log(`     # Email Agent (AgentMail MCP):`);
-    console.log(`     curl -X POST ${runEndpoint} \\`);
-    console.log(`       -H "Content-Type: application/json" \\`);
-    console.log(`       -d '{"agent": "email-agent", "prompt": "Check incoming inboxes"}'\n`);
-    console.log("  2. Via OpenLiate CLI (Local):");
-    console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
-    console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
+    printHowToRunAgent(runEndpoint, "vercel");
   }
-  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
 export async function linkSupabase(key?: string, relink: boolean = false): Promise<void> {
@@ -280,20 +269,7 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
   console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
   console.log("Memory [I]: pgvector Embeddings & Realtime Postgres");
   console.log("===========================================================\n");
-  console.log("How to run an agent:\n");
-  console.log("  1. Via cURL (Direct HTTP API to your cloud engine):");
-  console.log(`     # Sarvam Sovereign Indic AI Agent:`);
-  console.log(`     curl -X POST ${runEndpoint} \\`);
-  console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"agent": "sarvam-agent", "prompt": "Namaste, summarize our metrics"}'\n`);
-  console.log(`     # Email Agent (AgentMail MCP):`);
-  console.log(`     curl -X POST ${runEndpoint} \\`);
-  console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"agent": "email-agent", "prompt": "Check incoming inboxes"}'\n`);
-  console.log("  2. Via OpenLiate CLI (Local):");
-  console.log(`     liate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"`);
-  console.log(`     liate run hub/agents/email-agent/agent.json "Check new inboxes"\n`);
-  console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
+  printHowToRunAgent(runEndpoint, "supabase");
 }
 
 export async function unlink(provider: "neon" | "vercel" | "supabase" | "all" = "all"): Promise<void> {
