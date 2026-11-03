@@ -1,40 +1,72 @@
 # Changelog
 
-All notable changes to the **Liate** platform will be documented in this file.
+All notable changes to the **OpenLiate** platform will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.1.0] - 2026-11-01 — Liate v0.1.0: Multi-Cloud Link, LAPI Server, and Docker Stack
+## [0.1.0] - 2026-11-03 — OpenLiate v0.1.0: Sarvam AI Sovereign Agent, Neon Cron Triggers, and Public Launch
 
-Major milestone release establishing the sovereign, zero-dependency autonomous AI agent runtime.
+Major public milestone establishing the open-source backend layer for sovereign AI agents.
 
-### Multi-Cloud Link & Deployment (`liate link`)
+### Sovereign Indic AI & Sarvam Integration
+- **Sarvam AI Sovereign Agent (`hub/agents/sarvam-agent`):** Pre-configured sovereign Indic AI agent powered by `sarvam/sarvam-105b` and `sarvam/sarvam-2b`.
+- **Native Sarvam MCP Protocol (`mcp:sarvam`):** Built-in Model Context Protocol client for Sarvam AI tools and token factory infrastructure.
+- **Provider-Agnostic BYOAI Key Injection:** Generic on-the-fly execution supporting arbitrary inference providers (`SARVAM_API_KEY`, etc.) with zero vendor markup.
+
+### Cloud Automation & Scaling
+- **Neon Function Triggers:** Native integration with Neon Postgres for scale-to-zero scheduled background cron triggers.
+- **OpenLiate Brand Standardization:** Unified brand identity across all cloud endpoints, CLI binaries, OAuth 2.1 metadata, and health checks (`@openliate/liate`).
+- **Open Source Sponsorship:** Added `.github/FUNDING.yml` for community GitHub Sponsors.
+
+---
+
+## [0.0.9] - 2026-11-02 — Developer Documentation Suite & Architecture Specification
+
+Complete developer documentation and architecture specification suite.
+
+### Comprehensive Mintlify Documentation (`docs.openliate.tech`)
+- **Full Architecture Suite:** 20 in-depth MDX documentation pages covering:
+  - **Doctrine & Manifesto:** *"Class is an Agent. Agent is a Function. Function is an API."*
+  - **The 5 Architectural Layers:** Large Models (`[L]`), Integration Memory (`[I]`), Agent ReAct Loop (`[A]`), Tools & MCP (`[T]`), and Environment Sandbox (`[E]`).
+  - **Runtime & Execution Guides:** Quickstart, Agent Unified Manifest (AUM) specification, CLI reference, and Docker deployment.
+  - **LAPI REST API Reference:** Full OpenAPI-style endpoint documentation for `/health`, `/agents`, and `/run`.
+
+---
+
+## [0.0.8] - 2026-11-02 — Multi-Cloud Link Mesh, Docker Stack, and RFC 9562 UUIDv7
+
+Multi-cloud deployment grid and time-ordered distributed identifiers.
+
+### Multi-Cloud Link Mesh (`liate link`)
 - **1-Click Multi-Cloud Mesh (`liate link`):** Link Neon, Vercel, and Supabase accounts in a single command, unlocking **2,500,000 Free AI Agent Runs / Month** ($0.00/mo).
-- **Neon Cloud (`liate link --neon`):** Provisions regional serverless Postgres with co-located Linux compute (2 vCPU, 8 GB RAM) for 1,000,000 Free Runs/mo. Automated RFC 7591 dynamic client registration and RFC 7636 PKCE OAuth 2.1 loopback flow (`http://127.0.0.1:54321/callback`).
-- **Vercel Cloud (`liate link --vercel` / `liate link --vercel-daemons`):** Deploys serverless HTTP engine (1M runs, auto-scaling to zero) and 24/7 background worker daemons via containerized Docker environment. Automated OAuth PKCE flow on loopback port `54322`.
-- **Supabase Cloud (`liate link --supabase`):** Deploys pure Deno V8 Edge Functions co-located with `pgvector` store and realtime database webhooks for 500,000 Free Runs/mo. Automated PKCE flow on loopback port `54323`.
-- **Credential Lifecycle (`liate relink` & `liate unlink`):**
-  - `liate relink [--neon|--vercel|--supabase|--all]`: Clears expired tokens and re-executes clean OAuth authentication.
-  - `liate unlink [--neon|--vercel|--supabase|--all]`: Purges all cached tokens from disk (`.liate/`) and local environment files (`.env.local`).
-- **Eliminated Legacy Aliases:** Transitioned strictly to pure developer verbs (`link`, `relink`, `unlink`), permanently removing legacy `connect`, `reconnect`, `disconnect`, and `deploy` commands.
+- **Neon Cloud (`liate link --neon`):** Provisions regional serverless Postgres with co-located Linux compute (2 vCPU, 8 GB RAM) for 1,000,000 Free Runs/mo via automated RFC 7591 dynamic client registration and RFC 7636 PKCE loopback flow (`http://127.0.0.1:54321/callback`).
+- **Vercel Cloud (`liate link --vercel` / `liate link --vercel-daemons`):** Deploys serverless HTTP engine (1M runs) and 24/7 background worker daemons via loopback port `54322`.
+- **Supabase Cloud (`liate link --supabase`):** Deploys pure Deno V8 Edge Functions co-located with `pgvector` store for 500,000 Free Runs/mo on loopback port `54323`.
+- **Credential Lifecycle:** Added `liate relink` and `liate unlink` to safely refresh or purge cached tokens.
 
-### LAPI Pure Engine Server (`liate serve`)
+### Standards & Containers
+- **RFC 9562 Monotonic UUIDv7 (`src/core/uuid.ts`):** High-throughput, time-ordered distributed UUID generation with zero external dependencies.
+- **Universal Multi-Runtime Docker Stack:** Containerized environment bundling Node 24, Python 3.14, Astral `uv` / `uvx`, and `npx`.
+- **Automated Verification:** 46 unit test suites with 196 passing assertions.
+
+---
+
+## [0.0.7] - 2026-10-31 — LAPI Pure Engine Server and Sovereign Identity
+
+High-performance HTTP server interface and Indian sovereign compliance verification.
+
+### LAPI Engine Server (`liate serve`)
 - **Liate Agent Protocol Interface (LAPI):** High-performance HTTP server (`src/server/engine.ts`) built on Hono.
 - **Endpoints:**
   - `GET /health`: Engine status, version, LAPI protocol specifications, and core doctrine.
   - `GET /agents`: Auto-discovers and lists pre-configured agents from Liate Hub.
   - `POST /run`: Executes agents on the fly from raw prompts or declarative manifests with session-based memory retention.
 
-### Universal Docker Multi-Runtime Stack
-- **Production Containerization (`Dockerfile` & `docker-compose.yml`):** Multi-runtime environment bundling Node 24, Python 3.14, Astral `uv` / `uvx`, and `npx`.
-- **Full Dual-MCP Support:** Out-of-the-box execution for both local stdio tools (`uvx`, `npx`) and remote HTTP/SSE Model Context Protocol servers.
-
-### Core Architecture & Standards
-- **RFC 9562 Monotonic UUIDv7 (`src/core/uuid.ts`):** High-throughput, time-ordered distributed UUID generation with zero external dependencies.
-- **Pure Self-Contained Builds:** Standalone compiled CLI binary (`dist/cli/liate.exe`) and tree-shaken ESM engine bundle (`dist/engine/index.js`).
+### Sovereign Identity Verification
+- **Aadhaar & PAN Verification Tool (`src/tools/builtin/identity.ts`):** Indian Sovereign Aadhaar 12-digit Verhoeff checksum algorithm and Income Tax Department PAN format classifier with automatic credential masking.
 
 ---
 
@@ -98,32 +130,13 @@ Pluggable memory providers and session persistence for sovereign AI agents.
   - `InMemorySession`: Ephemeral, ultra-fast memory provider for stateless execution.
   - `FileSessionMemory`: Persistent JSON session storage on disk with atomic serialization.
 - **Dynamic Resolver (`IntegrationResolver`):** Parses Layer `[I]` configs (`:memory:` vs file path).
-- **Session State Management:** Key-value state tracking alongside conversation message history.
 
 ---
 
-## [0.0.1] - 2026-10-30 — [L] Large Models Layer
+## [0.0.1] - 2026-10-29 — [L] Large Models & Core LIATE Architecture
 
-First-class support for sovereign Indian foundation models and universal LLM providers.
+Initial architectural foundation defining the sovereign agent manifest and LLM inference abstraction.
 
-- **Sarvam AI /v2 Client:** Native REST client for Sarvam AI `/v2` endpoint using Web Standard `fetch`.
-- **Sarvam 105B Support:** Integrated Sarvam's flagship `sarvam-105b` foundation model with native reasoning and tool calling.
-- **Dynamic Model Hub (`hub/llm/`):** Declarative JSON model specifications (`sarvam.json`) with zero hardcoded model configurations.
-- **Token Factory & Model Normalization:** Dynamic provider and model parser (`normalizeModelConfig`).
-
----
-
-## [0.0.0] - 2026-10-29 — [0] Liate Begin
-
-Open Source Backend Layer for AI Agents.  
-*"If Stripe did payments in 7 lines of code, why not AI Agents in 5 lines of code?"*  
-*"Don't build AI agents. Integrate by parts." — L[LM] · I[ntegration] · A[gent] · T[ools] · E[nvironment]*  
-**Slogan:** *"Let's Try Liate."*
-
-- **5 Lines of Code (`agent.json`):** Define an agent, run it, scale it — build any AI agent in just 5 lines.
-- **AUM (Agent Unified Manifest):** Declarative 5-pillar specification contract for AI agents.
-- **OM (Orchestration Module):** Autonomous core engine executing the 5 orthogonal layers (`L · I · A · T · E`).
-- **Mathematical Inspiration:** Just like the LIATE rule in calculus breaks down complex problems by parts, LIATE makes building agents simple.
-- **NVIDIA Alignment:** 1-to-1 match with Jensen Huang's 5 agent elements: *Model (`L`), Knowledge (`I`), Harness (`A`), Tools (`T`), Sandbox (`E`)*.
-- **Milestone:** Selected for the **Sarvam AI Startup Program 2026** (India).
-- **Open Source Foundation:** Initialized repository under MIT License.
+- **Agent Unified Manifest (AUM):** Formally defined the 5-element schema: `L · I · A · T · E`.
+- **Sarvam AI & OpenAI Compatible Provider:** Pluggable LLM interface supporting local and cloud inference with system prompt injection and streaming capabilities.
+- **Monorepo Structure:** Zero-dependency standalone TypeScript design compiling to standalone binaries via Bun.

@@ -16,17 +16,35 @@
 </p>
 
 <p align="center">
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Regional_Cloud-2.5M_Live-white?labelColor=black&style=flat-square" alt="Regional Cloud"></a>
+  &nbsp;
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Neon-1M_Runs-white?logo=neon&logoColor=00E59B&labelColor=black&style=flat-square" alt="Neon"></a>
+  &nbsp;
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Vercel-1M_Runs-white?logo=vercel&logoColor=white&labelColor=black&style=flat-square" alt="Vercel"></a>
+  &nbsp;
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Supabase-5_Lakhs-white?logo=supabase&logoColor=3ECF8E&labelColor=black&style=flat-square" alt="Supabase"></a>
+</p>
+
+<p align="center">
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Worldwide_Edge-16M_Grid-white?labelColor=black&style=flat-square" alt="Worldwide Edge"></a>
+  &nbsp;
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Fastly-10M_Runs-white?logo=fastly&logoColor=FF282D&labelColor=black&style=flat-square" alt="Fastly"></a>
+  &nbsp;
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Cloudflare-3M_Runs-white?logo=cloudflare&logoColor=F38020&labelColor=black&style=flat-square" alt="Cloudflare"></a>
+  &nbsp;
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/Azion-3M_Runs-white?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0Y0NjUyQiIgZD0iTSAyIDE5LjMgTCAxOS44IDIgTCAyMiAyIEwgMTguOCAyMiBMIDE1LjUgMjIgTCAxNy42IDguNyBMIDQuMiAyMiBMIDIuOCAyMiBMIDIgMjEuMSBaIi8+PC9zdmc+&labelColor=black&style=flat-square" alt="Azion"></a>
+</p>
+
+<p align="center">
   <a href="#aum-architecture"><img src="https://img.shields.io/badge/Agent_Architecture-AUM_(Agent_Unified_Manifest)-white?labelColor=black&style=flat-square" alt="Agent Unified Manifest (AUM)"></a>
   &nbsp;
   <a href="#runtime-engine"><img src="https://img.shields.io/badge/Core_Engine-OM_(Orchestration_Module)-white?labelColor=black&style=flat-square" alt="Core Engine: OM (Orchestration Module)"></a>
   &nbsp;
   <a href="#instant-install"><img src="https://img.shields.io/badge/Instant_Install-Zero_Dependencies-white?labelColor=black&style=flat-square" alt="Instant Install"></a>
   &nbsp;
-  <a href="#run-cloud"><img src="https://img.shields.io/badge/2.5M_Live_Free_Runs/mo-(18.5M_Grid)-white?labelColor=black&style=flat-square" alt="2.5M Live Free AI Agent Runs"></a>
-  &nbsp;
   <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-1.5M+_skills.sh_(Vercel_Labs)-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="1.5M+ Agent Skills (skills.sh)"></a>
   &nbsp;
-  <a href="#free-tokens"><img src="https://img.shields.io/badge/Free_AI_Tokens-1.62B+_AI_Tokens/mo_(OmniRoute)-white?labelColor=black&style=flat-square" alt="1.62B+ Free AI Tokens Per Month"></a>
+  <a href="https://www.omniroute.online/"><img src="./assets/omniroute-badge.svg" alt="1.62B+ Free AI Tokens Per Month (OmniRoute)"></a>
 </p>
 
 <br>
@@ -89,13 +107,14 @@ liate run agent.json "Hello Agent World!"
 
 <br>
 
-## **Class is an Agent. Agent is a Function. Function is an API.**
+## **Class is an Agent. Agent is a Function. Function is an API.** *(Soon)*
 
 #### *Liate Agent Protocol Interface (LAPI) is Your Backend.*
 
 </div>
 
 ```typescript
+// Coming Soon: Class is an Agent (TypeScript & Python OOP SDK)
 class HelloAgent {
   L; I; A; T; E; // 1 Class = 5 Properties (L·I·A·T·E) = Same as agent.json
 }
