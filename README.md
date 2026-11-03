@@ -61,11 +61,11 @@ curl -fsSL https://openliate.tech/install.sh | sh
 
 ```jsonc
 {
-  "L": "sarvam/sarvam-105b",                                                          // [L] Model: Text, Image Gen (Nano Banana), Video (SeaDance), Decisions (OpenJev)
-  "I": { "memory": "sessions/hello-agent" },                                          // [I] Knowledge: Libraries (Zod), Memory, State, Neon Postgres, Frameworks, Repos
-  "A": { "name": "hello_agent", "intent": "Autonomous Agent", "skills": ["vercel/nextjs"] }, // [A] Harness: Name, Intent, Vercel skills.sh (1.5M+ skills), ReAct Loop
+  "L": "sarvam/sarvam-105b",                                                          // [L] LLM / Model: Text, Reasoning (Sarvam 105B), Decisions, Multimodal
+  "I": { "memory": "sessions/hello-agent" },                                          // [I] Integration / Knowledge: Session Memory, State, Neon Postgres, Frameworks
+  "A": { "name": "hello_agent", "intent": "Autonomous Agent", "skills": ["vercel/nextjs"] }, // [A] Agent / Harness: Name, Intent, Vercel skills.sh (1.5M+ skills), ReAct Loop
   "T": ["fetch"],                                                                     // [T] Tools: MCP v2 (Local Stdio & Remote SSE), Custom APIs
-  "E": { "SARVAM_API_KEY": "$SARVAM_API_KEY" }                                        // [E] Sandbox: Secrets, Neon Sandbox, Guardrails
+  "E": { "SARVAM_API_KEY": "$SARVAM_API_KEY" }                                        // [E] Environment / Sandbox: Secrets, Cloud Execution, Guardrails
 }
 ```
 
