@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { AUM } from "../core/aum";
-import type { AgentManifest } from "../engine/types";
+import type { AgentManifest } from "../core/types";
 import { SarvamClient } from "../llm/sarvam";
 import { normalizeModelConfig } from "../llm/config";
 import { IntegrationResolver } from "../integration/integration";

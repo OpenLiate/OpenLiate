@@ -1,6 +1,6 @@
 import { normalizeModelConfig } from "./config";
 import { SarvamClient, type SarvamMessage, type SarvamChatResponse } from "./sarvam";
-import type { ModelConfig } from "../engine/types";
+import type { ModelConfig } from "../core/types";
 
 export interface LLMMessage {
   role: "system" | "user" | "assistant";

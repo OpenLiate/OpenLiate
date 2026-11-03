@@ -1,4 +1,4 @@
-import type { ModelConfig } from "../engine/types";
+import type { ModelConfig } from "../core/types";
 
 export interface NormalizedModel {
   provider: "sarvam" | "openai" | "anthropic" | "google" | "ollama" | "custom";

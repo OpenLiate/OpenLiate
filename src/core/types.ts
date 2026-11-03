@@ -1,17 +1,15 @@
 /**
- * LIATE — Open Source Backend Layer for AI Agents
+ * OPENLIATE — Open Source Backend Layer for AI Agents
  * 
  * "If Stripe did payments in 7 lines of code, why not AI Agents in 5 lines of code?"
  * "Don't build AI agents. Integrate by parts."
  * 
- * The 5 Orthogonal Layers (NVIDIA Keynote Alignment):
+ * The 5 Orthogonal Layers:
  * L[LM]         — Model
  * I[ntegration] — Knowledge & State
  * A[gent]       — Harness & Reasoning Loop
  * T[ools]       — Tools & MCP
  * E[nvironment] — Sandbox & Security
- * 
- * Slogan: "Let's Try Liate."
  */
 
 /**
@@ -29,6 +27,8 @@ export type LayerL =
       temperature?: number;
       maxTokens?: number;
     };
+
+export type ModelConfig = LayerL;
 
 /**
  * [I] Integration Layer

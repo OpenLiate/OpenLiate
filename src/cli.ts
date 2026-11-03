@@ -8,7 +8,7 @@ import { link, relink, unlink, linkNeon, linkVercel, linkSupabase } from "./link
 import { NeonMcpOAuth, NeonMcpClient } from "./link/neon";
 import { VercelMcpOAuth, VercelMcpClient } from "./link/vercel";
 import { startEngineServer } from "./server/engine";
-import { ConfigManager } from "./config/index";
+import { ConfigManager } from "./core/config";
 
 const VERSION = "0.0.11";
 const BANNER = `

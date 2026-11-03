@@ -5,7 +5,7 @@ import path from "path";
 import os from "os";
 import JSZip from "jszip";
 import { generateUUIDv7 } from "../core/uuid";
-import { ConfigManager } from "../config/index";
+import { ConfigManager } from "../core/config";
 
 export const NEON_MCP_ENDPOINT = "https://mcp.neon.tech/mcp";
 export const NEON_REGISTER_ENDPOINT = "https://mcp.neon.tech/api/register";

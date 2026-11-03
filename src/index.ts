@@ -1,8 +1,7 @@
 export * from "./agent/agent";
 export * from "./agent/types";
 export * from "./agent/loop";
-export * from "./core/aum";
-export * from "./engine/types";
+export * from "./core/index";
 export * from "./integration/memory";
 export * from "./integration/types";
 export * from "./integration/integration";
@@ -17,7 +16,6 @@ export * from "./tools/builtin/fetch";
 export * from "./tools/builtin/identity";
 export * from "./environment/environment";
 export * from "./environment/types";
-export * from "./config/index";
 export * from "./link/neon";
 export * from "./link/vercel";
 export * from "./link/supabase";

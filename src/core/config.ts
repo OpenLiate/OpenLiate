@@ -63,7 +63,7 @@ export class ConfigManager {
   }
 
   /**
-   * Read system ~/.openliate/config.json (or fallback to local .openliate/config.json)
+   * Read system ~/.openliate/config.json (or local .openliate/config.json)
    */
   public static readSystemConfig(): OpenLiateGlobalConfig {
     const candidates = [
@@ -82,7 +82,7 @@ export class ConfigManager {
   }
 
   /**
-   * Write to system ~/.openliate/config.json (or fallback to local .openliate/config.json if home is restricted)
+   * Write to system ~/.openliate/config.json (or local .openliate/config.json)
    */
   public static writeSystemConfig(config: OpenLiateGlobalConfig): void {
     let dir = this.getSystemConfigDir();
@@ -95,7 +95,7 @@ export class ConfigManager {
       return;
     } catch {}
 
-    // Fallback to local workspace .openliate if home dir is not writable
+    // Workspace .openliate directory
     try {
       dir = this.getLocalConfigDir();
       if (!fs.existsSync(dir)) {
@@ -205,7 +205,7 @@ export class ConfigManager {
       return keyVal;
     }
 
-    // Non-interactive fallback
+    // Non-interactive error banner
     const errBanner = `
 ===========================================================
   [OpenLiate] Missing API Key: ${keyName}
@@ -229,4 +229,3 @@ export class ConfigManager {
     throw new Error(errBanner);
   }
 }
-
