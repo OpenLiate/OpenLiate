@@ -1,6 +1,6 @@
 <div align="center">
 
-# LIATE — Open Source Backend Layer for AI Agents
+# OpenLiate — Open Source Backend Layer for AI Agents
 ### Don't build AI agents. Integrate by parts.
 
 `L[LM] · I[ntegration] · A[gent] · T[ools] · E[nvironment]`
