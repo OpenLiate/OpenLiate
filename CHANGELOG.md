@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0] - 2026-11-03 — OpenLiate v0.1.0: Sarvam AI Sovereign Agent, Neon Cron Triggers, and Public Launch
+## [0.0.10] - 2026-11-03 — OpenLiate v0.0.10: Phase 1 Begins — Brand Unification, .openliate System Config, and Sarvam AI Sovereign Agent
 
 Major public milestone establishing the open-source backend layer for sovereign AI agents.
 
@@ -16,7 +16,10 @@ Major public milestone establishing the open-source backend layer for sovereign 
 - **Native Sarvam MCP Protocol (`mcp:sarvam`):** Built-in Model Context Protocol client for Sarvam AI tools and token factory infrastructure.
 - **Provider-Agnostic BYOAI Key Injection:** Generic on-the-fly execution supporting arbitrary inference providers (`SARVAM_API_KEY`, etc.) with zero vendor markup.
 
-### Cloud Automation & Scaling
+### Brand Unification & System-Level Configuration
+- **Brand Unification:** Unified brand identity strictly as **OpenLiate** across all cloud endpoints, CLI binaries, OAuth 2.1 metadata, and health checks.
+- **System-Level `.openliate` Configuration:** Global configuration stored in `~/.openliate/config.json` with multi-project fallback, eliminating duplicate API key prompts.
+- **Direct Unscoped Package:** Distributed as `openliate` with `openliate` and `liate` dual binary aliases.
 - **Neon Function Triggers:** Native integration with Neon Postgres for scale-to-zero scheduled background cron triggers.
 - **OpenLiate Brand Standardization:** Unified brand identity across all cloud endpoints, CLI binaries, OAuth 2.1 metadata, and health checks (`@openliate/liate`).
 - **Open Source Sponsorship:** Added `.github/FUNDING.yml` for community GitHub Sponsors.
