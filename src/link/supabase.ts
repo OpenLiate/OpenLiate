@@ -43,31 +43,31 @@ export interface ClientRegistration {
 
 export class SupabaseMcpOAuth {
   public static getTokenPath(): string {
-    if (process.env.LIATE_CONFIG_DIR) {
-      if (!fs.existsSync(process.env.LIATE_CONFIG_DIR)) {
-        fs.mkdirSync(process.env.LIATE_CONFIG_DIR, { recursive: true });
+    if (process.env.OPENLIATE_CONFIG_DIR) {
+      if (!fs.existsSync(process.env.OPENLIATE_CONFIG_DIR)) {
+        fs.mkdirSync(process.env.OPENLIATE_CONFIG_DIR, { recursive: true });
       }
-      return path.join(process.env.LIATE_CONFIG_DIR, "supabase_token.json");
+      return path.join(process.env.OPENLIATE_CONFIG_DIR, "supabase_token.json");
     }
 
     try {
-      const homeDir = path.join(os.homedir(), ".liate");
+      const homeDir = path.join(os.homedir(), ".openliate");
       if (!fs.existsSync(homeDir)) {
         fs.mkdirSync(homeDir, { recursive: true });
       }
       return path.join(homeDir, "supabase_token.json");
     } catch {
-      return path.resolve(process.cwd(), ".liate", "supabase_token.json");
+      return path.resolve(process.cwd(), ".openliate", "supabase_token.json");
     }
   }
 
   public static loadToken(): SupabaseTokenData | null {
     const candidatePaths = [
-      process.env.LIATE_CONFIG_DIR ? path.join(process.env.LIATE_CONFIG_DIR, "supabase_token.json") : "",
-      path.resolve(process.cwd(), ".liate", "supabase_token.json"),
-      path.resolve(process.cwd(), "..", ".liate", "supabase_token.json"),
-      path.resolve(__dirname, "..", "..", ".liate", "supabase_token.json"),
-      path.resolve(os.homedir(), ".liate", "supabase_token.json")
+      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "supabase_token.json") : "",
+      path.resolve(process.cwd(), ".openliate", "supabase_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "supabase_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "supabase_token.json"),
+      path.resolve(os.homedir(), ".openliate", "supabase_token.json")
     ].filter(Boolean);
 
     for (const p of candidatePaths) {
@@ -102,7 +102,7 @@ export class SupabaseMcpOAuth {
     fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2), "utf-8");
 
     try {
-      const mirrorPath = path.resolve(process.cwd(), ".liate", "supabase_token.json");
+      const mirrorPath = path.resolve(process.cwd(), ".openliate", "supabase_token.json");
       const mirrorDir = path.dirname(mirrorPath);
       if (!fs.existsSync(mirrorDir)) {
         fs.mkdirSync(mirrorDir, { recursive: true });
@@ -131,12 +131,12 @@ export class SupabaseMcpOAuth {
 
   public static clearToken(): void {
     const candidatePaths = [
-      process.env.LIATE_CONFIG_DIR ? path.join(process.env.LIATE_CONFIG_DIR, "supabase_token.json") : "",
+      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "supabase_token.json") : "",
       SupabaseMcpOAuth.getTokenPath(),
-      path.resolve(process.cwd(), ".liate", "supabase_token.json"),
-      path.resolve(process.cwd(), "..", ".liate", "supabase_token.json"),
-      path.resolve(__dirname, "..", "..", ".liate", "supabase_token.json"),
-      path.resolve(os.homedir(), ".liate", "supabase_token.json")
+      path.resolve(process.cwd(), ".openliate", "supabase_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "supabase_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "supabase_token.json"),
+      path.resolve(os.homedir(), ".openliate", "supabase_token.json")
     ].filter(Boolean);
 
     for (const p of candidatePaths) {
@@ -434,7 +434,7 @@ export class SupabaseMcpClient {
     const engineUrl = `${functionUrl}/run`;
 
     try {
-      const deployPath = path.resolve(process.cwd(), ".liate", "supabase_deployment.json");
+      const deployPath = path.resolve(process.cwd(), ".openliate", "supabase_deployment.json");
       const deployDir = path.dirname(deployPath);
       if (!fs.existsSync(deployDir)) {
         fs.mkdirSync(deployDir, { recursive: true });

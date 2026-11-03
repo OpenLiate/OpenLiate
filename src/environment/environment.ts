@@ -2,20 +2,36 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import type { SandboxConfig } from "./types";
+import { ConfigManager } from "../config/index";
 
 export class EnvironmentResolver {
   /**
    * Automatically loads .env and .env.local files from cwd, manifest dir, parent dirs, and home dir
    */
   public static loadEnv(targetPath?: string): void {
+    // 1. Load keys from ~/.openliate/config.json
+    try {
+      const globalConfig = ConfigManager.readSystemConfig();
+      if (globalConfig.keys) {
+        for (const [k, v] of Object.entries(globalConfig.keys)) {
+          if (!process.env[k]) {
+            process.env[k] = v;
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Load env files
     const candidates = [
       path.resolve(process.cwd(), ".env"),
       path.resolve(process.cwd(), ".env.local"),
+      path.resolve(process.cwd(), ".openliate", ".env"),
       path.resolve(process.cwd(), "..", ".env"),
       path.resolve(process.cwd(), "..", ".env.local"),
       targetPath ? path.resolve(path.dirname(targetPath), ".env") : "",
       targetPath ? path.resolve(path.dirname(targetPath), ".env.local") : "",
-      path.resolve(os.homedir(), ".liate", ".env"),
+      path.resolve(os.homedir(), ".openliate", ".env"),
+      path.resolve(os.homedir(), ".openliate", "config.env"),
       path.resolve(os.homedir(), ".env")
     ].filter(Boolean);
 

@@ -9,6 +9,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.npmrc
 
 # Build outputs
 dist/
@@ -19,7 +20,7 @@ out/
 
 # Runtime Agent Sessions & State
 sessions/
-.liate/
+.openliate/
 
 # Python artifacts
 __pycache__/

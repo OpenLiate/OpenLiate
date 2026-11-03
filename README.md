@@ -63,15 +63,21 @@
 ## <a id="instant-install"></a>[0] Instant Install (Zero Dependencies)
 
 ```bash
-# Windows (PowerShell)
+# 1-Click Run via npx (Zero local install):
+npx openliate run agent.json "Hello World"
+
+# Or Install Globally:
+npm install -g openliate
+
+# Windows (PowerShell):
 powershell -c "irm https://openliate.tech/install.ps1 | iex"
 
-# macOS / Linux (cURL)
+# macOS / Linux (cURL):
 curl -fsSL https://openliate.tech/install.sh | sh
 ```
 
-> **Prefer 1-Click Run?**  
-> Run Liate instantly inside [GitHub Codespaces](https://codespaces.new/openliate/openliate) with zero local setup.
+> **Prefer 1-Click in Browser?**  
+> Run OpenLiate instantly inside [GitHub Codespaces](https://codespaces.new/openliate/openliate) with zero local setup.
 
 
 > **Why 5 Lines? The AI Agent Architecture:**  

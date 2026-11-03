@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import path from "path";
 import fs from "fs";
 import { Agent } from "./agent/agent";
@@ -8,13 +8,14 @@ import { link, relink, unlink, linkNeon, linkVercel, linkSupabase } from "./link
 import { NeonMcpOAuth, NeonMcpClient } from "./link/neon";
 import { VercelMcpOAuth, VercelMcpClient } from "./link/vercel";
 import { startEngineServer } from "./server/engine";
+import { ConfigManager } from "./config/index";
 
-const VERSION = "0.1.0";
+const VERSION = "0.0.10";
 const BANNER = `
 ===========================================================
-  LIATE — Open Source Backend Layer for AI Agents
+  OPENLIATE — Open Source Backend Layer for AI Agents
   "Don't build AI agents. Integrate by parts."
-  Version: ${VERSION} (Standalone Autonomous Engine)
+  Version: ${VERSION}
 ===========================================================
 `;
 
@@ -46,36 +47,38 @@ async function main() {
   if (!command || command === "--help" || command === "-h" || command === "help") {
     console.log(BANNER);
     console.log(`Usage:
-  liate run <agent.json|agent-name> "<prompt>"    Execute an agent locally
-  liate serve [--port <port>]                      Start the pure Liate engine HTTP server
-  liate link                                       Link Vercel, Neon & Supabase in 1 click (2.5M Free Runs)
-  liate link --neon                                Link Neon & auto-deploy engine (1M runs, 2 vCPU, 8GB RAM)
-  liate link --vercel                              Link Vercel & auto-deploy serverless engine (1M runs)
-  liate link --vercel-daemons                      Link Vercel & auto-deploy 24/7 background daemon
-  liate link --supabase                            Link Supabase & auto-deploy Edge Function (500k runs + pgvector)
-  liate relink [--neon|--vercel|--supabase|--all]  Relink cloud via fresh OAuth & redeploy
-  liate unlink [--neon|--vercel|--supabase|--all]  Unlink cloud & clear saved credentials
-  liate env set <KEY>=<VALUE>                      Save persistent secret for engine
-  liate version                                    Show version and engine info
-  liate help                                       Show this help menu
+  openliate run <agent.json|agent-name> "<prompt>"    Execute an agent locally
+  openliate serve [--port <port>]                      Start the pure OpenLiate engine HTTP server
+  openliate link                                       Link Vercel, Neon & Supabase in 1 click (2.5M Free Runs)
+  openliate link --neon                                Link Neon & auto-deploy engine (1M runs, 2 vCPU, 8GB RAM)
+  openliate link --vercel                              Link Vercel & auto-deploy serverless engine (1M runs)
+  openliate link --vercel-daemons                      Link Vercel & auto-deploy 24/7 background daemon
+  openliate link --supabase                            Link Supabase & auto-deploy Edge Function (500k runs + pgvector)
+  openliate relink [--neon|--vercel|--supabase|--all]  Relink cloud via fresh OAuth & redeploy
+  openliate unlink [--neon|--vercel|--supabase|--all]  Unlink cloud & clear saved credentials
+  openliate env set <KEY>=<VALUE>                      Save persistent secret for engine
+  openliate version                                    Show version and engine info
+  openliate help                                       Show this help menu
+
+Note: Both 'openliate' and 'liate' can be used interchangeably.
 
 Examples:
-  liate run agent.json "Hello Agent World!"
-  liate run research-agent "Fetch https://skills.sh and summarize"
-  liate serve --port 3000
-  liate link
-  liate link --neon
-  liate link --vercel
-  liate link --supabase
-  liate relink --supabase
-  liate unlink --all
-  liate env set SARVAM_API_KEY="sk_live_..."
+  openliate run agent.json "Hello Agent World!"
+  openliate run research-agent "Fetch https://skills.sh and summarize"
+  openliate serve --port 3000
+  openliate link
+  openliate link --neon
+  openliate link --vercel
+  openliate link --supabase
+  openliate relink --supabase
+  openliate unlink --all
+  openliate env set SARVAM_API_KEY="sk_live_..."
 `);
     process.exit(0);
   }
 
   if (command === "version" || command === "--version" || command === "-v") {
-    console.log(`Liate Engine v${VERSION} (Bun native binary)`);
+    console.log(`OpenLiate v${VERSION}`);
     process.exit(0);
   }
 
@@ -85,8 +88,8 @@ Examples:
     const promptArg = args[2];
 
     if (!manifestArg || !promptArg) {
-      console.error("Error: 'liate run' requires an agent manifest or name and a prompt string.");
-      console.error("Usage: liate run <agent.json|agent-name> \"<prompt>\"");
+      console.error("Error: 'openliate run' requires an agent manifest or name and a prompt string.");
+      console.error("Usage: openliate run <agent.json|agent-name> \"<prompt>\"");
       process.exit(1);
     }
 
@@ -100,9 +103,11 @@ Examples:
     EnvironmentResolver.loadEnv(manifestPath);
 
     try {
+      await ConfigManager.ensureApiKey("SARVAM_API_KEY", { agentName: manifestArg });
+
       const agent = new Agent({ manifest: manifestPath });
-      console.log(`[Liate] Booting ${agent.name} (v${agent.version})...`);
-      console.log(`[Liate] Intent: "${agent.intent}"`);
+      console.log(`[OpenLiate] Booting ${agent.name} (v${agent.version})...`);
+      console.log(`[OpenLiate] Intent: "${agent.intent}"`);
 
       const t0 = Date.now();
       const result = await agent.run(promptArg);
@@ -116,7 +121,7 @@ Examples:
       console.log(`-----------------------------------------------------------`);
       console.log(`Model: ${result.model} | Latency: ${latency}ms | Steps: ${result.totalSteps}`);
     } catch (err: any) {
-      console.error(`[Liate Error]: ${err.message}`);
+      console.error(`[OpenLiate Error]: ${err.message}`);
       process.exit(1);
     } finally {
       await LiateMcp.closeAll();
@@ -134,7 +139,7 @@ Examples:
 
     EnvironmentResolver.loadEnv();
     const engine = startEngineServer({ port });
-    console.log(`\n[Liate OM] Pure Runtime Engine running at: http://localhost:${port}`);
+    console.log(`\n[OpenLiate OM] Pure Runtime Engine running at: http://localhost:${port}`);
     console.log(`[Endpoints]:`);
     console.log(`  - Health: GET  http://localhost:${port}/health`);
     console.log(`  - Agents: GET  http://localhost:${port}/agents`);
@@ -236,33 +241,63 @@ Examples:
     return;
   }
 
-  // 5. Env Command (liate env set KEY=VALUE)
+  // 6. Env Command (openliate env set KEY=VALUE)
   if (command === "env") {
     const sub = args[1];
     if (sub === "set") {
-      const pair = args[2];
+      const pair = args.find(a => a !== "set" && a.includes("="));
       if (!pair || !pair.includes("=")) {
-        console.error("Usage: liate env set KEY=VALUE");
+        console.error("Usage: openliate env set KEY=VALUE");
         process.exit(1);
       }
       const [k, ...rest] = pair.split("=");
       const v = rest.join("=").replace(/^["']|["']$/g, "");
+      const keyName = k.trim();
       
-      const envPath = path.join(process.cwd(), ".env.local");
-      let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf-8") : "";
-      const regex = new RegExp(`^${k}=.*$`, "m");
-      if (regex.test(content)) {
-        content = content.replace(regex, `${k}="${v}"`);
-      } else {
-        content += `\n${k}="${v}"\n`;
-      }
-      fs.writeFileSync(envPath, content.trim() + "\n", "utf-8");
-      console.log(`✔ Set ${k} in .env.local (Masked: ${v.slice(0, 4)}...${v.slice(-4)})`);
+      // Save globally in ~/.openliate/config.json
+      ConfigManager.setGlobalKey(keyName, v);
+
+      // Also save locally in .env.local if in a project directory
+      try {
+        const envPath = path.join(process.cwd(), ".env.local");
+        let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf-8") : "";
+        const regex = new RegExp(`^${keyName}=.*$`, "m");
+        if (regex.test(content)) {
+          content = content.replace(regex, `${keyName}="${v}"`);
+        } else {
+          content += `\n${keyName}="${v}"\n`;
+        }
+        fs.writeFileSync(envPath, content.trim() + "\n", "utf-8");
+      } catch {}
+
+      const masked = v.length > 8 ? `${v.slice(0, 4)}...${v.slice(-4)}` : "******";
+      console.log(`✔ Set ${keyName} in ~/.openliate/config.json & .env.local (Masked: ${masked})`);
       return;
     }
+
+    if (sub === "list" || sub === "ls") {
+      const config = ConfigManager.readSystemConfig();
+      console.log(`\nGlobal Configuration (~/.openliate/config.json):`);
+      if (config.keys && Object.keys(config.keys).length > 0) {
+        for (const [k, v] of Object.entries(config.keys)) {
+          const masked = v.length > 8 ? `${v.slice(0, 4)}...${v.slice(-4)}` : "******";
+          console.log(`  - ${k}: ${masked}`);
+        }
+      } else {
+        console.log(`  (No global keys configured yet)`);
+      }
+      console.log("");
+      return;
+    }
+
+    console.log(`Usage:
+  openliate env set KEY=VALUE    Save key globally in ~/.openliate and locally
+  openliate env list             List configured global keys
+`);
+    return;
   }
 
-  console.error(`Unknown command: '${command}'. Run 'liate help' for available commands.`);
+  console.error(`Unknown command: '${command}'. Run 'openliate help' for available commands.`);
   process.exit(1);
 }
 

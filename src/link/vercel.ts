@@ -43,17 +43,17 @@ export interface ClientRegistration {
 
 export class VercelMcpOAuth {
   public static getTokenPath(): string {
-    if (process.env.LIATE_CONFIG_DIR) {
-      if (!fs.existsSync(process.env.LIATE_CONFIG_DIR)) {
-        fs.mkdirSync(process.env.LIATE_CONFIG_DIR, { recursive: true });
+    if (process.env.OPENLIATE_CONFIG_DIR) {
+      if (!fs.existsSync(process.env.OPENLIATE_CONFIG_DIR)) {
+        fs.mkdirSync(process.env.OPENLIATE_CONFIG_DIR, { recursive: true });
       }
-      return path.join(process.env.LIATE_CONFIG_DIR, "vercel_token.json");
+      return path.join(process.env.OPENLIATE_CONFIG_DIR, "vercel_token.json");
     }
 
     const candidateDirs = [
-      path.resolve(process.cwd(), ".liate"),
-      path.resolve(process.cwd(), "..", ".liate"),
-      path.resolve(__dirname, "..", "..", ".liate")
+      path.resolve(process.cwd(), ".openliate"),
+      path.resolve(process.cwd(), "..", ".openliate"),
+      path.resolve(__dirname, "..", "..", ".openliate")
     ];
 
     for (const d of candidateDirs) {
@@ -66,23 +66,24 @@ export class VercelMcpOAuth {
     }
 
     try {
-      const homeDir = path.join(os.homedir(), ".liate");
+      const homeDir = path.join(os.homedir(), ".openliate");
       if (!fs.existsSync(homeDir)) {
         fs.mkdirSync(homeDir, { recursive: true });
       }
       return path.join(homeDir, "vercel_token.json");
     } catch {
-      return path.resolve(process.cwd(), ".liate", "vercel_token.json");
+      return path.resolve(process.cwd(), ".openliate", "vercel_token.json");
     }
   }
 
   public static loadToken(): VercelTokenData | null {
     const candidatePaths = [
+      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "vercel_token.json") : "",
       VercelMcpOAuth.getTokenPath(),
-      path.resolve(process.cwd(), ".liate", "vercel_token.json"),
-      path.resolve(process.cwd(), "..", ".liate", "vercel_token.json"),
-      path.join(os.homedir(), ".liate", "vercel_token.json")
-    ];
+      path.resolve(process.cwd(), ".openliate", "vercel_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "vercel_token.json"),
+      path.join(os.homedir(), ".openliate", "vercel_token.json")
+    ].filter(Boolean);
 
     for (const p of candidatePaths) {
       try {
@@ -116,7 +117,7 @@ export class VercelMcpOAuth {
     fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2), "utf-8");
 
     try {
-      const mirrorPath = path.resolve(process.cwd(), ".liate", "vercel_token.json");
+      const mirrorPath = path.resolve(process.cwd(), ".openliate", "vercel_token.json");
       const mirrorDir = path.dirname(mirrorPath);
       if (!fs.existsSync(mirrorDir)) {
         fs.mkdirSync(mirrorDir, { recursive: true });
@@ -138,12 +139,12 @@ export class VercelMcpOAuth {
 
   public static clearToken(): void {
     const candidatePaths = [
-      process.env.LIATE_CONFIG_DIR ? path.join(process.env.LIATE_CONFIG_DIR, "vercel_token.json") : "",
+      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "vercel_token.json") : "",
       VercelMcpOAuth.getTokenPath(),
-      path.resolve(process.cwd(), ".liate", "vercel_token.json"),
-      path.resolve(process.cwd(), "..", ".liate", "vercel_token.json"),
-      path.resolve(__dirname, "..", "..", ".liate", "vercel_token.json"),
-      path.resolve(os.homedir(), ".liate", "vercel_token.json")
+      path.resolve(process.cwd(), ".openliate", "vercel_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "vercel_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "vercel_token.json"),
+      path.resolve(os.homedir(), ".openliate", "vercel_token.json")
     ].filter(Boolean);
 
     for (const p of candidatePaths) {
@@ -506,7 +507,7 @@ CMD ["node", "dist/engine/index.js"]`;
     const engineUrl = `${deploymentUrl}/run`;
 
     try {
-      const deployPath = path.resolve(process.cwd(), ".liate", "vercel_deployment.json");
+      const deployPath = path.resolve(process.cwd(), ".openliate", "vercel_deployment.json");
       const deployDir = path.dirname(deployPath);
       if (!fs.existsSync(deployDir)) {
         fs.mkdirSync(deployDir, { recursive: true });
