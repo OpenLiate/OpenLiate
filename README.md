@@ -266,6 +266,6 @@ The **`hub/`** directory belongs to the community:
 
 <div align="center">
 
-Built from India to the World
+Built with ❤️ from India to the World
 
 </div>
