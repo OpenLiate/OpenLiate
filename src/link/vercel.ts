@@ -44,17 +44,18 @@ export interface ClientRegistration {
 
 export class VercelMcpOAuth {
   public static getTokenPath(): string {
-    if (process.env.OPENLIATE_CONFIG_DIR) {
-      if (!fs.existsSync(process.env.OPENLIATE_CONFIG_DIR)) {
-        fs.mkdirSync(process.env.OPENLIATE_CONFIG_DIR, { recursive: true });
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    if (configDir) {
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
       }
-      return path.join(process.env.OPENLIATE_CONFIG_DIR, "vercel_token.json");
+      return path.join(configDir, "vercel.json");
     }
 
     const candidateDirs = [
-      path.resolve(process.cwd(), ".openliate"),
-      path.resolve(process.cwd(), "..", ".openliate"),
-      path.resolve(__dirname, "..", "..", ".openliate")
+      path.resolve(process.cwd(), ".openliate", "link"),
+      path.resolve(process.cwd(), "..", ".openliate", "link"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link")
     ];
 
     for (const d of candidateDirs) {
@@ -62,27 +63,36 @@ export class VercelMcpOAuth {
         if (!fs.existsSync(d)) {
           fs.mkdirSync(d, { recursive: true });
         }
-        return path.join(d, "vercel_token.json");
+        return path.join(d, "vercel.json");
       } catch {}
     }
 
     try {
-      const homeDir = path.join(os.homedir(), ".openliate");
-      if (!fs.existsSync(homeDir)) {
-        fs.mkdirSync(homeDir, { recursive: true });
+      const homeLinkDir = path.join(os.homedir(), ".openliate", "link");
+      if (!fs.existsSync(homeLinkDir)) {
+        fs.mkdirSync(homeLinkDir, { recursive: true });
       }
-      return path.join(homeDir, "vercel_token.json");
+      return path.join(homeLinkDir, "vercel.json");
     } catch {
-      return path.resolve(process.cwd(), ".openliate", "vercel_token.json");
+      return path.resolve(process.cwd(), ".openliate", "link", "vercel.json");
     }
   }
 
   public static loadToken(): VercelTokenData | null {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
     const candidatePaths = [
-      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "vercel_token.json") : "",
+      configDir ? path.join(configDir, "vercel.json") : "",
+      configDir ? path.join(configDir, "vercel_token.json") : "",
       VercelMcpOAuth.getTokenPath(),
+      path.resolve(process.cwd(), ".openliate", "link", "vercel.json"),
+      path.resolve(process.cwd(), ".openliate", "link", "vercel_token.json"),
+      path.resolve(process.cwd(), ".openliate", "vercel.json"),
       path.resolve(process.cwd(), ".openliate", "vercel_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "link", "vercel.json"),
       path.resolve(process.cwd(), "..", ".openliate", "vercel_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link", "vercel.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "vercel_token.json"),
+      path.join(os.homedir(), ".openliate", "link", "vercel.json"),
       path.join(os.homedir(), ".openliate", "vercel_token.json")
     ].filter(Boolean);
 
@@ -117,8 +127,13 @@ export class VercelMcpOAuth {
     }
     fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2), "utf-8");
 
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    if (configDir) {
+      return;
+    }
+
     try {
-      const mirrorPath = path.resolve(process.cwd(), ".openliate", "vercel_token.json");
+      const mirrorPath = path.resolve(process.cwd(), ".openliate", "link", "vercel.json");
       const mirrorDir = path.dirname(mirrorPath);
       if (!fs.existsSync(mirrorDir)) {
         fs.mkdirSync(mirrorDir, { recursive: true });
@@ -139,12 +154,20 @@ export class VercelMcpOAuth {
   }
 
   public static clearToken(): void {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
     const candidatePaths = [
-      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "vercel_token.json") : "",
+      configDir ? path.join(configDir, "vercel.json") : "",
+      configDir ? path.join(configDir, "vercel_token.json") : "",
       VercelMcpOAuth.getTokenPath(),
+      path.resolve(process.cwd(), ".openliate", "link", "vercel.json"),
+      path.resolve(process.cwd(), ".openliate", "link", "vercel_token.json"),
+      path.resolve(process.cwd(), ".openliate", "vercel.json"),
       path.resolve(process.cwd(), ".openliate", "vercel_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "link", "vercel.json"),
       path.resolve(process.cwd(), "..", ".openliate", "vercel_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link", "vercel.json"),
       path.resolve(__dirname, "..", "..", ".openliate", "vercel_token.json"),
+      path.resolve(os.homedir(), ".openliate", "link", "vercel.json"),
       path.resolve(os.homedir(), ".openliate", "vercel_token.json")
     ].filter(Boolean);
 

@@ -8,11 +8,15 @@ import { ConfigManager } from "../../core/config";
 export function resolveManifestPath(input: string): string | null {
   const candidates = [
     path.resolve(process.cwd(), input),
+    path.resolve(process.cwd(), ".openliate", "agents", input, "agent.json"),
+    path.resolve(process.cwd(), ".openliate", "agents", input),
     path.resolve(process.cwd(), "hub", "agents", input, "agent.json"),
     path.resolve(process.cwd(), "hub", "agents", input),
-    path.resolve(process.cwd(), "OpenLiate", input),
+    path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents", input, "agent.json"),
+    path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents", input),
     path.resolve(process.cwd(), "OpenLiate", "hub", "agents", input, "agent.json"),
     path.resolve(process.cwd(), "OpenLiate", "hub", "agents", input),
+    path.resolve(__dirname, "..", "..", "..", ".openliate", "agents", input, "agent.json"),
     path.resolve(__dirname, "..", "..", "..", "hub", "agents", input, "agent.json"),
     path.resolve(__dirname, "..", "..", "..", "hub", "agents", input)
   ];
@@ -43,7 +47,7 @@ export async function handleRunCommand(args: string[]): Promise<void> {
   const manifestPath = resolveManifestPath(manifestArg);
   if (!manifestPath) {
     console.error(`Error: Agent manifest not found for '${manifestArg}'.`);
-    console.error(`Checked: ${path.resolve(process.cwd(), manifestArg)} and hub/agents/${manifestArg}/agent.json`);
+    console.error(`Checked: ${path.resolve(process.cwd(), manifestArg)}, .openliate/agents/${manifestArg}/agent.json, and hub/agents/${manifestArg}/agent.json`);
     process.exit(1);
   }
 

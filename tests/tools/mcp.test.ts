@@ -60,6 +60,20 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
     expect(config.args).toEqual(["mcp-server-fetch"]);
   });
 
+  test("ToolRegistry: supports custom MCP servers defined directly in .openliate/mcp.json", () => {
+    ToolRegistry.cacheMcpServer("custom-db", {
+      id: "custom-db",
+      name: "Custom Postgres",
+      transport: "http",
+      url: "https://custom-db.internal/mcp"
+    });
+
+    const config = ToolRegistry.loadMcpConfig("custom-db");
+    expect(config.id).toBe("custom-db");
+    expect(config.url).toBe("https://custom-db.internal/mcp");
+    expect(config.transport).toBe("http");
+  });
+
   test("Builtin fetch tool: has compliant schema and required parameters", () => {
     expect(fetchTool.name).toBe("fetch");
     expect(fetchTool.description).toBeDefined();

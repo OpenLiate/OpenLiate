@@ -65,8 +65,18 @@ export class FileSessionMemory implements MemoryProvider {
   private loaded: boolean = false;
 
   constructor(filePath: string, metadata?: Record<string, any>) {
-    const normalized = filePath.endsWith(".json") ? filePath : `${filePath}.json`;
-    this.filePath = path.isAbsolute(normalized) ? normalized : path.resolve(process.cwd(), normalized);
+    let normalized = filePath.endsWith(".json") ? filePath : `${filePath}.json`;
+    if (!path.isAbsolute(normalized)) {
+      // Store local sessions inside .openliate/sessions to keep workspace root clean
+      if (normalized.startsWith("sessions/") || normalized.startsWith("sessions\\")) {
+        normalized = path.join(".openliate", normalized);
+      } else if (!normalized.startsWith(".openliate")) {
+        normalized = path.join(".openliate", "sessions", normalized);
+      }
+      this.filePath = path.resolve(process.cwd(), normalized);
+    } else {
+      this.filePath = normalized;
+    }
     this.sessionId = path.basename(this.filePath, ".json");
 
     const now = new Date().toISOString();

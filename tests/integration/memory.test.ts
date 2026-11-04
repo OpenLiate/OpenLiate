@@ -5,7 +5,7 @@ import { InMemorySession, FileSessionMemory } from "../../src/layers/integration
 import { IntegrationResolver } from "../../src/layers/integration/knowledge";
 
 describe("Layer 2: [I] Integration & Memory Layer", () => {
-  const testSessionPath = path.resolve(process.cwd(), "sessions/test-integration-agent.json");
+  const testSessionPath = path.resolve(process.cwd(), ".openliate/sessions/test-integration-agent.json");
 
   afterAll(async () => {
     try {

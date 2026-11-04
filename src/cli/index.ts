@@ -20,7 +20,7 @@ export const BANNER = `
 export function printHelp(): void {
   console.log(BANNER);
   console.log(`Usage:
-  openliate init (or join)                             Configure primary AI gateway & API keys (First-time setup)
+  openliate join                                       Configure AI gateway and workspace
   openliate hub                                        Browse Hub agents or launch interactive L·I·A·T·E studio
   openliate create                                     Construct an agent step-by-step via 5-pillar L·I·A·T·E
   openliate run <agent.json|agent-name> "<prompt>"    Execute an agent locally

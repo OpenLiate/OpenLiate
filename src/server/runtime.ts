@@ -282,27 +282,35 @@ export function createRuntimeApp() {
   }
 
   function getHubAgents() {
-    const hubDir = resolveHubDir("agents");
+    const scanDirs = [
+      path.resolve(process.cwd(), ".openliate", "agents"),
+      path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents"),
+      resolveHubDir("agents")
+    ];
     const agents: Array<{ id: string; name?: string; version?: string; intent?: string; model?: string; tools?: any[] }> = [];
+    const seenIds = new Set<string>();
 
-    if (fs.existsSync(hubDir)) {
-      const dirs = fs.readdirSync(hubDir, { withFileTypes: true });
-      for (const d of dirs) {
-        if (d.isDirectory()) {
-          const manifestPath = path.join(hubDir, d.name, "agent.json");
-          if (fs.existsSync(manifestPath)) {
-            try {
-              const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-              agents.push({
-                id: d.name,
-                name: manifest.A?.name || manifest.name || d.name,
-                version: manifest.A?.version || manifest.version || "0.0.1",
-                intent: manifest.A?.intent || manifest.intent || "",
-                model: typeof manifest.L === "string" ? manifest.L : (manifest.L?.model || manifest.L?.provider || ""),
-                tools: Array.isArray(manifest.T) ? manifest.T : []
-              });
-            } catch {
-              // Ignore corrupt manifests
+    for (const dir of scanDirs) {
+      if (fs.existsSync(dir)) {
+        const dirs = fs.readdirSync(dir, { withFileTypes: true });
+        for (const d of dirs) {
+          if (d.isDirectory() && !seenIds.has(d.name)) {
+            const manifestPath = path.join(dir, d.name, "agent.json");
+            if (fs.existsSync(manifestPath)) {
+              try {
+                const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+                seenIds.add(d.name);
+                agents.push({
+                  id: d.name,
+                  name: manifest.A?.name || manifest.name || d.name,
+                  version: manifest.A?.version || manifest.version || "0.0.1",
+                  intent: manifest.A?.intent || manifest.intent || "",
+                  model: typeof manifest.L === "string" ? manifest.L : (manifest.L?.model || manifest.L?.provider || ""),
+                  tools: Array.isArray(manifest.T) ? manifest.T : []
+                });
+              } catch {
+                // Ignore corrupt manifests
+              }
             }
           }
         }
@@ -390,10 +398,14 @@ export function createRuntimeApp() {
   // 3. Hub Agent by ID (Inspect Manifest)
   const handleGetAgentById = (c: any) => {
     const id = c.req.param("id");
-    const hubDir = resolveHubDir("agents");
-    const manifestPath = path.join(hubDir, id, "agent.json");
-    if (!fs.existsSync(manifestPath)) {
-      return c.json({ error: `Agent '${id}' not found in hub/agents/` }, 404);
+    const candidatePaths = [
+      path.resolve(process.cwd(), ".openliate", "agents", id, "agent.json"),
+      path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents", id, "agent.json"),
+      path.join(resolveHubDir("agents"), id, "agent.json")
+    ];
+    const manifestPath = candidatePaths.find((p) => fs.existsSync(p));
+    if (!manifestPath) {
+      return c.json({ error: `Agent '${id}' not found in .openliate/agents/ or hub/agents/` }, 404);
     }
     try {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
@@ -472,6 +484,10 @@ export function createRuntimeApp() {
     } else if (typeof body.agent === "string") {
       const candidates = [
         path.resolve(process.cwd(), body.agent),
+        path.resolve(process.cwd(), ".openliate", "agents", body.agent, "agent.json"),
+        path.resolve(process.cwd(), ".openliate", "agents", body.agent),
+        path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents", body.agent, "agent.json"),
+        path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents", body.agent),
         path.resolve(process.cwd(), "hub", "agents", body.agent, "agent.json"),
         path.resolve(process.cwd(), "hub", "agents", body.agent),
         path.resolve(process.cwd(), "OpenLiate", "hub", "agents", body.agent, "agent.json"),

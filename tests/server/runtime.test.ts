@@ -1,4 +1,6 @@
 import { describe, it, expect } from "bun:test";
+import fs from "fs";
+import path from "path";
 import { createRuntimeApp } from "../../src/server/runtime";
 
 describe("Agent Runtime Server: LAPI HTTP & On-the-fly Execution", () => {
@@ -223,6 +225,33 @@ describe("Agent Runtime Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.id).toBe("sarvam-agent");
     expect(body.manifest).toBeDefined();
     expect(body.manifest.L).toBeDefined();
+  });
+
+  it("resolves user-created agents from .openliate/agents/<name>/agent.json", async () => {
+    const customAgentDir = path.resolve(process.cwd(), ".openliate", "agents", "custom-studio-agent");
+    fs.mkdirSync(customAgentDir, { recursive: true });
+    const manifestFile = path.join(customAgentDir, "agent.json");
+    fs.writeFileSync(manifestFile, JSON.stringify({
+      L: "sarvam/sarvam-105b",
+      A: { name: "custom_studio_agent", version: "0.0.1", intent: "Custom Test Agent" },
+      T: []
+    }), "utf-8");
+
+    try {
+      const listRes = await app.request("/hub/agents");
+      expect(listRes.status).toBe(200);
+      const listBody = await listRes.json() as any;
+      const ids = listBody.agents.map((a: any) => a.id);
+      expect(ids).toContain("custom-studio-agent");
+
+      const getRes = await app.request("/hub/agents/custom-studio-agent");
+      expect(getRes.status).toBe(200);
+      const getBody = await getRes.json() as any;
+      expect(getBody.id).toBe("custom-studio-agent");
+      expect(getBody.manifest.A.name).toBe("custom_studio_agent");
+    } finally {
+      fs.rmSync(customAgentDir, { recursive: true, force: true });
+    }
   });
 
   it("GET /hub/llm and GET /hub/models return sovereign LLM gateway definitions", async () => {

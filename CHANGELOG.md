@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.17] - 2026-11-04 — Isolated Workspace (.openliate/), Local MCP Cache, and Cloud Link Credentials
+
+Architecture and developer experience milestone establishing the dedicated `.openliate/` workspace directory, local MCP server caching, user-created agent discovery, and isolated cloud link credentials.
+
+### Isolated Workspace Architecture (`.openliate/`)
+- **User Custom Agents (`.openliate/agents/`):**
+  - `openliate create` automatically writes user-defined agents into `.openliate/agents/<name>/agent.json`.
+  - Manifest resolution in CLI (`openliate run <name>`) and Runtime Server (`POST /run`) inspects `.openliate/agents/` first before checking built-in `hub/agents/`.
+  - Hub agent discovery endpoints (`GET /hub/agents`, `GET /hub/agents/:id`) dynamically list and inspect user-created agents alongside official Hub agents.
+- **Local MCP Cache & Custom Server Registry (`.openliate/mcp.json`):**
+  - Automatically initialized during `openliate join`.
+  - Serves as a persistent cache for MCP servers (`sarvam`, `fetch`, `agentmail`, `neon`) and allows direct registration of custom MCP tools without modifying repository hub files.
+- **Isolated Cloud Link Storage (`.openliate/link/`):**
+  - Cloud credentials and OAuth tokens for Neon (`neon.json`), Vercel (`vercel.json`), and Supabase (`supabase.json`) are stored cleanly in `.openliate/link/`.
+  - Entire `.openliate/` directory is git-ignored, protecting sensitive keys and credentials from repository commits.
+- **Session Memory Routing (`.openliate/sessions/`):**
+  - Session files (`sessions/<name>.json`) automatically serialize to `.openliate/sessions/<name>.json`, eliminating loose root directories.
+
+### OpenLiate Join Flow
+- **Modernized Terminal Flow:** Clean setup banner `OpenLiate Join - Sovereign AI Agents` configuring primary AI gateway and local workspace.
+- **Removed Legacy Terminology:** Cleaned out all references to "Mesh" and standalone placeholders.
+
+### Stability & Verification
+- 66/66 passing unit and integration tests across 14 test suites with 299 assertions.
+- Production bundles: `dist/bin.js` (2.37 MB), `dist/cli/openliate.exe` (native binary), and `dist/runtime/index.js` (1.31 MB).
+
+---
+
 ## [0.0.16] - 2026-11-04 — Polished of OpenLiate : Runtime Server, Hub Endpoints, Dynamic Models, and Clean Architecture
 
 Major architecture and platform polish release establishing the OpenLiate Runtime Server, comprehensive Hub Registry API, dynamic model discovery, and clean decoupled versioning.
@@ -36,8 +64,8 @@ Major architecture and platform polish release establishing the OpenLiate Runtim
 - **Brand Harmonization:** Unified `OpenLiate` casing across all terminal banners, deployment logs, and docstrings.
 
 ### Stability & Verification
-- 63/63 passing unit and integration tests across 14 test suites with 283 assertions.
-- Production bundles: `dist/bin.js` (2.35 MB), `dist/cli/openliate.exe` (native binary), and `dist/runtime/index.js` (1.30 MB).
+- 65/65 passing unit and integration tests across 14 test suites with 291 assertions.
+- Production bundles: `dist/bin.js` (2.36 MB), `dist/cli/openliate.exe` (native binary), and `dist/runtime/index.js` (1.31 MB).
 
 ---
 

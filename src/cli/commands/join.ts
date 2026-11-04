@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import * as p from "@clack/prompts";
 import { ConfigManager } from "../../core/config";
 import { Sarvam } from "../../catalog/sarvam/index";
@@ -6,9 +8,71 @@ import { NeonMcpOAuth } from "../../catalog/neon/index";
 export const DEFAULT_JOIN_CALLBACK_PORT = 54324;
 export const JOIN_PORTAL_URL = "https://openliate.tech/join";
 
+function initWorkspaceOpenLiate(): void {
+  try {
+    const localDir = path.resolve(process.cwd(), ".openliate");
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+
+    // Ensure .openliate/sessions directory exists
+    const sessionsDir = path.join(localDir, "sessions");
+    if (!fs.existsSync(sessionsDir)) {
+      fs.mkdirSync(sessionsDir, { recursive: true });
+    }
+
+    // Ensure .openliate/agents directory exists for user-created custom agents
+    const agentsDir = path.join(localDir, "agents");
+    if (!fs.existsSync(agentsDir)) {
+      fs.mkdirSync(agentsDir, { recursive: true });
+    }
+
+    // Ensure .openliate/link directory exists for cloud link credentials (neon, vercel, supabase)
+    const linkDir = path.join(localDir, "link");
+    if (!fs.existsSync(linkDir)) {
+      fs.mkdirSync(linkDir, { recursive: true });
+    }
+
+    // Initialize .openliate/mcp.json if not present
+    const mcpJsonPath = path.join(localDir, "mcp.json");
+    if (!fs.existsSync(mcpJsonPath)) {
+      const defaultMcp = {
+        mcpServers: {
+          sarvam: {
+            name: "Sarvam AI",
+            transport: "stdio",
+            command: "uvx",
+            args: ["sarvam-mcp"],
+            env: {
+              SARVAM_API_KEY: "$SARVAM_API_KEY"
+            }
+          },
+          fetch: {
+            name: "Fetch",
+            transport: "stdio",
+            command: "uvx",
+            args: ["mcp-server-fetch"]
+          },
+          agentmail: {
+            name: "AgentMail",
+            transport: "http",
+            url: "https://mcp.agentmail.to/mcp?apiKey=$AGENTMAIL_API_KEY"
+          },
+          neon: {
+            name: "Neon",
+            transport: "http",
+            url: "https://mcp.neon.tech/mcp"
+          }
+        }
+      };
+      fs.writeFileSync(mcpJsonPath, JSON.stringify(defaultMcp, null, 2), "utf-8");
+    }
+  } catch {}
+}
+
 export async function runJoinFlow(): Promise<void> {
   console.log("");
-  p.intro("\x1b[36mOpenLiate Setup\x1b[0m");
+  p.intro("\x1b[36mOpenLiate Join - Sovereign AI Agents\x1b[0m");
   p.note("Configure your Sovereign AI Model Layer [L]\n100% Local Setup — No Accounts or Logins Required", "Welcome");
 
   // Step 1: Select Gateway
@@ -74,15 +138,17 @@ export async function runJoinFlow(): Promise<void> {
     }
   }
 
-  // Save metadata to ~/.openliate/config.json
+  // Save metadata to ~/.openliate/config.json and initialize workspace .openliate/
   const config = ConfigManager.readSystemConfig();
   if (!config.keys) config.keys = {};
   (config as any).primaryGateway = gatewayChoice;
-  (config as any).mission = "AgentYaan";
-  ConfigManager.writeSystemConfig(config);
+    ConfigManager.writeSystemConfig(config);
+
+  // Initialize workspace .openliate/ with mcp.json, sessions/, agents/, and link/
+  initWorkspaceOpenLiate();
 
   p.note(
-    `• Primary Gateway: ${gatewayChoice.toUpperCase()}\n• Configuration: Saved locally in ~/.openliate/config.json\n• Architecture: Pure Sovereign BYOAI (Zero central telemetry or rate limits)`,
+    `• Primary Gateway: ${gatewayChoice.toUpperCase()}\n• Configuration: ~/.openliate/config.json\n• MCP Servers Cache: .openliate/mcp.json\n• Custom Agents Workspace: .openliate/agents/\n• Session Memory: .openliate/sessions/\n• Cloud Link Tokens: .openliate/link/\n• Architecture: Pure Sovereign BYOAI (Zero central telemetry or rate limits)`,
     "Configuration Saved"
   );
 
@@ -94,11 +160,11 @@ export async function runJoinFlow(): Promise<void> {
     try {
       const client = Sarvam.client(finalKey || undefined);
       const res = await client.chat([
-        { role: "user", content: "Introduce Mission AgentYaan in one inspiring sentence." }
+        { role: "user", content: "Say hello and confirm connection in one short sentence." }
       ], { model: "glm5.3-flash", maxTokens: 60 });
       verifySpinner.stop(`✔ Sarvam Sovereign AI Live Verified`);
       if (res.text) {
-        console.log(`\n\x1b[32m[AgentYaan Sarvam AI Response]:\x1b[0m\n"${res.text.trim()}"\n`);
+        console.log(`\n\x1b[32m[Sarvam AI Response]:\x1b[0m\n"${res.text.trim()}"\n`);
       }
     } catch (err: any) {
       verifySpinner.stop(`✔ Configuration saved (Verification note: ${err.message})`);

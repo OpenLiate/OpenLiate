@@ -16,27 +16,37 @@ interface HubAgentSummary {
 }
 
 export function listHubAgents(): HubAgentSummary[] {
-  const hubDir = path.resolve(process.cwd(), "hub", "agents");
-  if (!fs.existsSync(hubDir)) return [];
+  const scanDirs = [
+    path.resolve(process.cwd(), ".openliate", "agents"),
+    path.resolve(process.cwd(), "hub", "agents"),
+    path.resolve(process.cwd(), "OpenLiate", "hub", "agents"),
+    path.resolve(__dirname, "..", "..", "..", "hub", "agents")
+  ];
 
-  const entries = fs.readdirSync(hubDir, { withFileTypes: true });
   const list: HubAgentSummary[] = [];
+  const seenIds = new Set<string>();
 
-  for (const ent of entries) {
-    if (ent.isDirectory()) {
-      const manifestPath = path.join(hubDir, ent.name, "agent.json");
-      if (fs.existsSync(manifestPath)) {
-        try {
-          const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-          list.push({
-            id: ent.name,
-            name: raw.A?.name || ent.name,
-            intent: raw.A?.intent || "Autonomous Sovereign Agent",
-            model: typeof raw.L === "string" ? raw.L : (raw.L?.model || "sarvam/sarvam-105b"),
-            tools: Array.isArray(raw.T) ? raw.T : [],
-            manifestPath
-          });
-        } catch {}
+  for (const dir of scanDirs) {
+    if (fs.existsSync(dir)) {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const ent of entries) {
+        if (ent.isDirectory() && !seenIds.has(ent.name)) {
+          const manifestPath = path.join(dir, ent.name, "agent.json");
+          if (fs.existsSync(manifestPath)) {
+            try {
+              const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+              seenIds.add(ent.name);
+              list.push({
+                id: ent.name,
+                name: raw.A?.name || ent.name,
+                intent: raw.A?.intent || "Autonomous Sovereign Agent",
+                model: typeof raw.L === "string" ? raw.L : (raw.L?.model || "sarvam/sarvam-105b"),
+                tools: Array.isArray(raw.T) ? raw.T : [],
+                manifestPath
+              });
+            } catch {}
+          }
+        }
       }
     }
   }
@@ -202,8 +212,8 @@ export async function handleCreateCommand(): Promise<void> {
     E: envConfig
   };
 
-  // Save to hub/agents/<agentDirName>/agent.json
-  const targetDir = path.resolve(process.cwd(), "hub", "agents", agentDirName);
+  // Save to .openliate/agents/<agentDirName>/agent.json
+  const targetDir = path.resolve(process.cwd(), ".openliate", "agents", agentDirName);
   fs.mkdirSync(targetDir, { recursive: true });
   const targetFile = path.join(targetDir, "agent.json");
   fs.writeFileSync(targetFile, JSON.stringify(manifest, null, 2) + "\n", "utf-8");
@@ -214,7 +224,7 @@ export async function handleCreateCommand(): Promise<void> {
     `[A] Harness:     ${manifest.A.name} (v${manifest.A.version})\n` +
     `[T] Tools:       ${manifest.T.length > 0 ? manifest.T.join(", ") : "None"}\n` +
     `[E] Sandbox:     ${Object.keys(manifest.E).join(", ") || "Zero secrets required"}\n\n` +
-    `Saved to: hub/agents/${agentDirName}/agent.json`,
+    `Saved to: .openliate/agents/${agentDirName}/agent.json`,
     "Agent Manifest Created Successfully"
   );
 

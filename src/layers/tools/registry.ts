@@ -82,23 +82,117 @@ export class ToolRegistry {
     };
   }
 
-  public static loadMcpConfig(serverName: string, customEnv: Record<string, string | undefined> = process.env): McpServerConfig {
-    const possiblePaths = [
-      path.resolve(process.cwd(), `hub/mcp/${serverName}.json`),
-      path.resolve(process.cwd(), `OpenLiate/hub/mcp/${serverName}.json`),
-      path.resolve(process.cwd(), "..", `hub/mcp/${serverName}.json`),
-      path.resolve(__dirname, `../../hub/mcp/${serverName}.json`),
-      path.resolve(__dirname, `../../../hub/mcp/${serverName}.json`),
-      path.resolve(__dirname, `../../../../hub/mcp/${serverName}.json`)
+  /**
+   * Resolve local workspace .openliate/mcp.json path
+   */
+  public static getMcpJsonPath(): string {
+    const candidates = [
+      path.resolve(process.cwd(), ".openliate", "mcp.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "mcp.json")
     ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) return p;
+    }
+    return path.resolve(process.cwd(), ".openliate", "mcp.json");
+  }
 
-    const foundPath = possiblePaths.find((p) => fs.existsSync(p));
-    if (!foundPath) {
-      throw new Error(`MCP definition file not found for '${serverName}' at hub/mcp/${serverName}.json`);
+  /**
+   * Reads .openliate/mcp.json if available
+   */
+  public static readWorkspaceMcpServers(): Record<string, any> {
+    const mcpJsonPath = ToolRegistry.getMcpJsonPath();
+    if (fs.existsSync(mcpJsonPath)) {
+      try {
+        const raw = fs.readFileSync(mcpJsonPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        return parsed.mcpServers || parsed || {};
+      } catch {}
+    }
+    return {};
+  }
+
+  /**
+   * Caches/writes an MCP server definition into .openliate/mcp.json
+   */
+  public static cacheMcpServer(serverName: string, config: McpServerConfig): void {
+    try {
+      const mcpJsonPath = ToolRegistry.getMcpJsonPath();
+      const dir = path.dirname(mcpJsonPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      let data: { mcpServers: Record<string, any> } = { mcpServers: {} };
+      if (fs.existsSync(mcpJsonPath)) {
+        try {
+          const raw = fs.readFileSync(mcpJsonPath, "utf-8");
+          const parsed = JSON.parse(raw);
+          data.mcpServers = parsed.mcpServers || parsed || {};
+        } catch {}
+      }
+
+      data.mcpServers[serverName] = {
+        name: config.name || serverName,
+        transport: config.transport || (config.url ? "http" : "stdio"),
+        ...(config.command ? { command: config.command } : {}),
+        ...(config.args ? { args: config.args } : {}),
+        ...(config.url ? { url: config.url } : {}),
+        ...(config.headers ? { headers: config.headers } : {}),
+        ...(config.env ? { env: config.env } : {})
+      };
+
+      fs.writeFileSync(mcpJsonPath, JSON.stringify(data, null, 2), "utf-8");
+    } catch {}
+  }
+
+  public static loadMcpConfig(serverName: string, customEnv: Record<string, string | undefined> = process.env): McpServerConfig {
+    let parsed: McpServerConfig | null = null;
+
+    // 1. Check workspace .openliate/mcp.json first (local cache & custom servers)
+    const workspaceServers = ToolRegistry.readWorkspaceMcpServers();
+    if (workspaceServers && workspaceServers[serverName]) {
+      const s = workspaceServers[serverName];
+      parsed = {
+        id: serverName,
+        name: s.name || serverName,
+        description: s.description,
+        transport: s.transport || (s.url ? "http" : "stdio"),
+        command: s.command,
+        args: s.args,
+        url: s.url,
+        headers: s.headers,
+        env: s.env
+      };
     }
 
-    const raw = fs.readFileSync(foundPath, "utf-8");
-    const parsed: McpServerConfig = JSON.parse(raw);
+    // 2. If not found in .openliate/mcp.json, search hub/mcp/<serverName>.json
+    if (!parsed) {
+      const possiblePaths = [
+        path.resolve(process.cwd(), `hub/mcp/${serverName}.json`),
+        path.resolve(process.cwd(), `OpenLiate/hub/mcp/${serverName}.json`),
+        path.resolve(process.cwd(), "..", `hub/mcp/${serverName}.json`),
+        path.resolve(__dirname, `../../hub/mcp/${serverName}.json`),
+        path.resolve(__dirname, `../../../hub/mcp/${serverName}.json`),
+        path.resolve(__dirname, `../../../../hub/mcp/${serverName}.json`)
+      ];
+
+      const foundPath = possiblePaths.find((p) => fs.existsSync(p));
+      if (!foundPath) {
+        throw new Error(`MCP definition file not found for '${serverName}' in .openliate/mcp.json or hub/mcp/${serverName}.json`);
+      }
+
+      const raw = fs.readFileSync(foundPath, "utf-8");
+      parsed = JSON.parse(raw);
+
+      // Auto-cache into workspace .openliate/mcp.json for future runs
+      if (parsed) {
+        ToolRegistry.cacheMcpServer(serverName, parsed);
+      }
+    }
+
+    if (!parsed) {
+      throw new Error(`Failed to load MCP configuration for '${serverName}'`);
+    }
 
     // Resolve environment variables in headers and URL
     const resolvedHeaders: Record<string, string> = {};

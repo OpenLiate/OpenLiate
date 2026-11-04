@@ -45,18 +45,19 @@ export class NeonMcpOAuth {
    * Path to persistent OpenLiate config (~/.openliate/neon_token.json or .openliate/neon_token.json).
    */
   public static getTokenPath(): string {
-    if (process.env.OPENLIATE_CONFIG_DIR) {
-      if (!fs.existsSync(process.env.OPENLIATE_CONFIG_DIR)) {
-        fs.mkdirSync(process.env.OPENLIATE_CONFIG_DIR, { recursive: true });
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    if (configDir) {
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
       }
-      return path.join(process.env.OPENLIATE_CONFIG_DIR, "neon_token.json");
+      return path.join(configDir, "neon.json");
     }
 
-    // Prefer workspace .openliate directory
+    // Prefer workspace .openliate/link directory
     const candidateDirs = [
-      path.resolve(process.cwd(), ".openliate"),
-      path.resolve(process.cwd(), "..", ".openliate"),
-      path.resolve(__dirname, "..", "..", ".openliate")
+      path.resolve(process.cwd(), ".openliate", "link"),
+      path.resolve(process.cwd(), "..", ".openliate", "link"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link")
     ];
 
     for (const d of candidateDirs) {
@@ -64,27 +65,35 @@ export class NeonMcpOAuth {
         if (!fs.existsSync(d)) {
           fs.mkdirSync(d, { recursive: true });
         }
-        return path.join(d, "neon_token.json");
+        return path.join(d, "neon.json");
       } catch {}
     }
 
     try {
-      const homeDir = path.join(os.homedir(), ".openliate");
-      if (!fs.existsSync(homeDir)) {
-        fs.mkdirSync(homeDir, { recursive: true });
+      const homeLinkDir = path.join(os.homedir(), ".openliate", "link");
+      if (!fs.existsSync(homeLinkDir)) {
+        fs.mkdirSync(homeLinkDir, { recursive: true });
       }
-      return path.join(homeDir, "neon_token.json");
+      return path.join(homeLinkDir, "neon.json");
     } catch {
-      return path.resolve(process.cwd(), ".openliate", "neon_token.json");
+      return path.resolve(process.cwd(), ".openliate", "link", "neon.json");
     }
   }
 
   public static loadSavedToken(): NeonTokenData | null {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
     const candidatePaths = [
-      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "neon_token.json") : "",
+      configDir ? path.join(configDir, "neon.json") : "",
+      configDir ? path.join(configDir, "neon_token.json") : "",
+      path.resolve(process.cwd(), ".openliate", "link", "neon.json"),
+      path.resolve(process.cwd(), ".openliate", "link", "neon_token.json"),
+      path.resolve(process.cwd(), ".openliate", "neon.json"),
       path.resolve(process.cwd(), ".openliate", "neon_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "link", "neon.json"),
       path.resolve(process.cwd(), "..", ".openliate", "neon_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link", "neon.json"),
       path.resolve(__dirname, "..", "..", ".openliate", "neon_token.json"),
+      path.resolve(os.homedir(), ".openliate", "link", "neon.json"),
       path.resolve(os.homedir(), ".openliate", "neon_token.json")
     ].filter(Boolean);
 
@@ -104,15 +113,20 @@ export class NeonMcpOAuth {
 
   public static saveToken(data: NeonTokenData): void {
     const p = NeonMcpOAuth.getTokenPath();
+    const pDir = path.dirname(p);
+    if (!fs.existsSync(pDir)) {
+      fs.mkdirSync(pDir, { recursive: true });
+    }
     fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
 
     // Do not modify workspace configuration if running inside an isolated test environment
-    if (process.env.OPENLIATE_CONFIG_DIR) {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    if (configDir) {
       return;
     }
 
-    // Also mirror to workspace .openliate if running from subfolder
-    const mirrorPath = path.resolve(process.cwd(), ".openliate", "neon_token.json");
+    // Also mirror to workspace .openliate/link/neon.json if running from subfolder
+    const mirrorPath = path.resolve(process.cwd(), ".openliate", "link", "neon.json");
     if (mirrorPath !== p) {
       try {
         if (!fs.existsSync(path.dirname(mirrorPath))) {
@@ -136,12 +150,20 @@ export class NeonMcpOAuth {
   }
 
   public static clearSavedToken(): void {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
     const candidatePaths = [
-      process.env.OPENLIATE_CONFIG_DIR ? path.join(process.env.OPENLIATE_CONFIG_DIR, "neon_token.json") : "",
+      configDir ? path.join(configDir, "neon.json") : "",
+      configDir ? path.join(configDir, "neon_token.json") : "",
       NeonMcpOAuth.getTokenPath(),
+      path.resolve(process.cwd(), ".openliate", "link", "neon.json"),
+      path.resolve(process.cwd(), ".openliate", "link", "neon_token.json"),
+      path.resolve(process.cwd(), ".openliate", "neon.json"),
       path.resolve(process.cwd(), ".openliate", "neon_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "link", "neon.json"),
       path.resolve(process.cwd(), "..", ".openliate", "neon_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link", "neon.json"),
       path.resolve(__dirname, "..", "..", ".openliate", "neon_token.json"),
+      path.resolve(os.homedir(), ".openliate", "link", "neon.json"),
       path.resolve(os.homedir(), ".openliate", "neon_token.json")
     ].filter(Boolean);
 
