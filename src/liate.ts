@@ -1,4 +1,15 @@
-// The 5 Sovereign LIATE Pillars (Layer 1 to 5)
+/**
+ * OpenLiate — Sovereign AI Agent Backend
+ * Universal Entrypoint: SDK Exports & Direct CLI Runner
+ *
+ * Can be imported in code:
+ *   import { Agent, MCP } from "openliate";
+ *
+ * Or executed directly via Bun / Node (matches YC demo video):
+ *   bun run src/liate.ts run hub/agents/sarvam-agent/agent.json "Hi how are you"
+ */
+
+// 1. The 5 Sovereign LIATE Pillars (Layer 1 to 5)
 export * from "./layers/llm/sarvam";
 export * from "./layers/llm/model";
 export * from "./layers/llm/hub";
@@ -17,7 +28,7 @@ export * from "./layers/tools/builtin/identity";
 export * from "./layers/environment/sandbox";
 export * from "./layers/environment/types";
 
-// Infrastructure, Core, Link & Runtime Server
+// 2. Core, Infrastructure, Cloud Link & Runtime Server
 export * from "./core/index";
 export * from "./link/neon";
 export * from "./link/vercel";
@@ -25,4 +36,14 @@ export * from "./link/supabase";
 export * from "./link/index";
 export * from "./server/runtime";
 export * from "./catalog/index";
+
+// 3. Direct CLI Runner
+import { main } from "./cli/index";
+
+if (import.meta.main || process.argv[1]?.endsWith("liate.ts")) {
+  main().catch((err) => {
+    console.error("Fatal:", err);
+    process.exit(1);
+  });
+}
 

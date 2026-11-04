@@ -1,9 +1,9 @@
 {
   "name": "openliate",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./src/liate.ts",
   "types": "./src/core/types.ts",
   "bin": {
     "openliate": "dist/bin.js",

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.18] - 2026-11-04 — Entry to OpenLiate: Runway is ready
+
+Milestone establishing `src/liate.ts` as the single hero entrypoint for OpenLiate, preparing the runway for developers and direct YC demo parity.
+
+### Unified Hero Entrypoint (`src/liate.ts`)
+- **Dual-Duty Architecture**: Single branded file serving both as the programmatic SDK export hub and direct execution entrypoint (`bun run src/liate.ts run ...`).
+- **Retired Generic Roots**: Fully eliminated generic `src/index.ts` in favor of the branded `src/liate.ts`.
+- **Runway Ready**: Verified end-to-end live execution with FastMCP stdio transport and Sarvam 105B reasoning.
+
+---
+
 ## [0.0.17] - 2026-11-04 — Isolated Workspace (.openliate/), Local MCP Cache, and Cloud Link Credentials
 
 Architecture and developer experience milestone establishing the dedicated `.openliate/` workspace directory, local MCP server caching, user-created agent discovery, and isolated cloud link credentials.
