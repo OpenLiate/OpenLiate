@@ -5,11 +5,11 @@
 
 export * from "./pg";
 export * from "./pgvector";
-export * from "./oauth";
+export * from "../../link/neon";
 
 import { NeonDatabase, type NeonDatabaseConfig } from "./pg";
 import { NeonVectorStore } from "./pgvector";
-import { NeonMcpOAuth, NeonMcpClient } from "./oauth";
+import { NeonMcpOAuth, NeonMcpClient } from "../../link/neon";
 
 export { neon, Pool, Client } from "@neondatabase/serverless";
 

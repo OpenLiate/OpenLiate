@@ -3,9 +3,9 @@
  * Powered by official '@vercel/sdk' and Vercel MCP.
  */
 
-export * from "./oauth";
+export * from "../../link/vercel";
 import { Vercel as VercelSDK } from "@vercel/sdk";
-import { VercelMcpOAuth, VercelMcpClient, runVercelLinkFlow } from "./oauth";
+import { VercelMcpOAuth, VercelMcpClient, runVercelLinkFlow } from "../../link/vercel";
 import { ConfigManager } from "../../core/config";
 
 export { Vercel as VercelSDK } from "@vercel/sdk";

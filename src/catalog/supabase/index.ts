@@ -4,10 +4,10 @@
  */
 
 export * from "./client";
-export * from "./oauth";
+export * from "../../link/supabase";
 
 import { SupabaseDatabase, type SupabaseConfig } from "./client";
-import { SupabaseMcpOAuth, SupabaseMcpClient, runSupabaseLinkFlow } from "./oauth";
+import { SupabaseMcpOAuth, SupabaseMcpClient, runSupabaseLinkFlow } from "../../link/supabase";
 
 export { createClient } from "@supabase/supabase-js";
 
