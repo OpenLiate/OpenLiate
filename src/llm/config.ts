@@ -1,4 +1,5 @@
 import type { ModelConfig } from "../core/types";
+import { OMNIROUTE_MODELS } from "./omniroute/models";
 
 export interface NormalizedModel {
   provider: "sarvam" | "omniroute" | "openai" | "anthropic" | "google" | "ollama" | "custom";
@@ -19,11 +20,13 @@ export function normalizeModelConfig(input: string | ModelConfig): NormalizedMod
         model
       };
     }
-    // auto, auto-free, or any bare model string → omniroute (the free gateway)
+    // auto, auto-free, or any bare model string in OmniRoute catalog → omniroute (the free gateway)
+    const lower = input.toLowerCase();
     if (
-      input.toLowerCase() === "auto" ||
-      input.toLowerCase() === "auto-free" ||
-      input.toLowerCase().startsWith("omniroute")
+      lower === "auto" ||
+      lower === "auto-free" ||
+      lower.startsWith("omniroute") ||
+      Boolean(OMNIROUTE_MODELS[lower])
     ) {
       return {
         provider: "omniroute",

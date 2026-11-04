@@ -69,11 +69,71 @@ export class OmniRouteGatewayClient {
     }
   }
 
-  public getModel(modelId: string): OmniRouteModelMetadata | undefined {
-    return OMNIROUTE_MODELS[modelId];
+  public getModel(modelId: string): OmniRouteModelMetadata {
+    if (OMNIROUTE_MODELS[modelId]) {
+      return OMNIROUTE_MODELS[modelId];
+    }
+    return {
+      id: modelId,
+      name: modelId,
+      providerStrategy: "auto-fallback",
+      contextWindow: 128000,
+      description: `OmniRoute dynamic model: ${modelId}`
+    };
   }
 
-  public listModels(): OmniRouteModelMetadata[] {
+  /**
+   * Fetches the live model catalog from the running OmniRoute gateway port (20128).
+   * Falls back gracefully to the core free pool if gateway is offline.
+   */
+  public async listModels(): Promise<OmniRouteModelMetadata[]> {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1000);
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (this.apiKey) {
+        headers["Authorization"] = `Bearer ${this.apiKey}`;
+      }
+      const res = await fetch(`${this.baseUrl}/models`, {
+        headers,
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const body = (await res.json()) as any;
+        const rawList = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        if (rawList.length > 0) {
+          const dynamicList: OmniRouteModelMetadata[] = rawList.map((m: any) => ({
+            id: m.id || m.modelId || m.name,
+            name: m.name || m.id || "OmniRoute Model",
+            providerStrategy: "auto-fallback",
+            contextWindow: m.context_window || m.contextWindow || 128000,
+            description: m.description || `Live model from OmniRoute gateway (${m.owned_by || m.provider || "omniroute"})`
+          }));
+
+          const hasAuto = dynamicList.some(m => m.id === "auto" || m.id === "auto-free");
+          if (!hasAuto) {
+            dynamicList.unshift(
+              {
+                id: "auto",
+                name: "OmniRoute Auto Router",
+                providerStrategy: "auto-fallback",
+                contextWindow: 128000,
+                description: "Adaptive task-based routing across 380+ providers"
+              },
+              OMNIROUTE_MODELS["auto-free"]
+            );
+          }
+          return dynamicList;
+        }
+      }
+    } catch {
+      // Gateway offline or unauthenticated — fall back to core free models
+    }
+    return Object.values(OMNIROUTE_MODELS);
+  }
+
+  public listModelsSync(): OmniRouteModelMetadata[] {
     return Object.values(OMNIROUTE_MODELS);
   }
 

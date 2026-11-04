@@ -11,7 +11,7 @@ import { VercelMcpOAuth, VercelMcpClient } from "./link/vercel";
 import { startEngineServer } from "./server/engine";
 import { ConfigManager } from "./core/config";
 
-const VERSION = "0.0.13";
+const VERSION = "0.0.14";
 const BANNER = `
 ===========================================================
   OPENLIATE — Open Source Backend Layer for AI Agents

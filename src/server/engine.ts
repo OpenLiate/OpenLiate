@@ -55,9 +55,22 @@ export function createEngineApp() {
   // =========================================================================
   // OpenAI-Compatible Gateway Routes (OmniRoute Free AI Gateway)
   // Compatible with Cursor, Claude Code, Cline, Python openai SDK, LangChain, curl
+  // Dynamically queries the running OmniRoute port (20128)
   // =========================================================================
 
-  const handleGetModels = (c: any) => {
+  const handleGetModels = async (c: any) => {
+    const authHeader = c.req.header("authorization") || c.req.header("Authorization");
+    let bearerKey: string | undefined;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.slice(7).trim();
+      if (token && token !== "none" && token !== "test") {
+        bearerKey = token;
+      }
+    }
+
+    const gateway = new OmniRouteGatewayClient(bearerKey);
+    const dynamicModels = await gateway.listModels();
+
     const list = [
       {
         id: "auto",
@@ -73,7 +86,7 @@ export function createEngineApp() {
         owned_by: "omniroute",
         description: "Zero API Key Free Pool"
       },
-      ...Object.values(OMNIROUTE_MODELS).map((m: any) => ({
+      ...dynamicModels.map((m: any) => ({
         id: m.id || m.modelId,
         object: "model",
         created: 1740000000,
