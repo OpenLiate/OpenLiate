@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.15] - 2026-11-04 — OpenLiate v0.0.15: Phase 1 [Half] — LIATE 5-Layer Restructure & Sovereign Gateway Consolidation
+
+Major architecture milestone hardening OpenLiate's core into 5 decoupled layers matching NVIDIA's 5 agent elements.
+
+### LIATE 5-Layer Architecture (`src/layers/`)
+- **[L] Model (`src/layers/llm/model.ts`):** Token factory routing for Sarvam AI Sovereign Models (`sarvam-105b`, `sarvam-2b`) and Neon AI Gateway.
+- **[I] Knowledge (`src/layers/integration/knowledge.ts`):** Dynamic state, session resolution, and memory provider lifecycle (`IntegrationResolver`).
+- **[A] Harness (`src/layers/agent/harness.ts`):** Autonomous ReAct harness and loop execution engine.
+- **[T] Tools (`src/layers/tools/registry.ts`):** MCP specification parser and tool registry for Model Context Protocol v2.
+- **[E] Sandbox (`src/layers/environment/sandbox.ts`):** Environmental sandboxing, environment variable loading, and domain boundary guardrails.
+
+### Sovereign Gateway & Provider Consolidation
+- **Purged Scraping Layer:** Completely eliminated OmniRoute scrapers, headless browser dependencies, and unauthenticated proxy logic.
+- **Neon AI Gateway Integration:** Native client for Neon AI Gateway with branch-scoped tokens (`NEON_AI_GATEWAY_TOKEN`, `NEON_AI_GATEWAY_BASE_URL`).
+- **Sarvam AI Token Factory:** Standardized Layer [L] on official Sarvam AI `/v2` OpenAI-compatible chat completions.
+
+### Stability & Builds
+- 58/58 tests passing across 14 test suites with zero breaking changes to public SDK exports.
+- Clean production bundles: `dist/bin.js` (2.34 MB) and `dist/engine/index.js` (1.30 MB).
+
+---
+
 ## [0.0.10] - 2026-11-03 — OpenLiate v0.0.10: Phase 1 Begins — Brand Unification, .openliate System Config, and Sarvam AI Sovereign Agent
 
 Major public milestone establishing the open-source backend layer for sovereign AI agents.

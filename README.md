@@ -45,9 +45,9 @@
   &nbsp;
   <a href="#instant-install"><img src="https://img.shields.io/badge/Instant_Install-Zero_Dependencies-white?labelColor=black&style=flat-square" alt="Instant Install"></a>
   &nbsp;
-  <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-skills.sh_(Vercel_Labs)_Soon-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="skills.sh (Vercel Labs) - Soon"></a>
+  <a href="#run-cloud"><img src="https://img.shields.io/badge/AI_Gateway-Neon_AI_Gateway-white?logo=neon&logoColor=00E59B&labelColor=black&style=flat-square" alt="Neon AI Gateway"></a>
   &nbsp;
-  <a href="https://www.omniroute.online/"><img src="./assets/omniroute-badge.svg" alt="OmniRoute (Soon)"></a>
+  <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-skills.sh_(Vercel_Labs)_Soon-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="skills.sh (Vercel Labs) - Soon"></a>
 </p>
 
 <br>

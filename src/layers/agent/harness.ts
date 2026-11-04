@@ -1,17 +1,16 @@
 import fs from "fs";
 import path from "path";
-import { AUM } from "../core/aum";
-import type { AgentManifest } from "../core/types";
+import { AUM } from "../../core/aum";
+import type { AgentManifest } from "../../core/types";
 import { SarvamClient } from "../llm/sarvam";
-import { OmniRouteGatewayClient } from "../llm/omniroute/gateway";
 import { normalizeModelConfig } from "../llm/config";
-import { IntegrationResolver } from "../integration/integration";
+import { IntegrationResolver } from "../integration/knowledge";
 import type { MemoryProvider } from "../integration/types";
 import { ReActLoop, type LLMFunctionCaller } from "./loop";
 import type { AgentTool, AgentContext, AgentRunResult, AgentExecutionOptions } from "./types";
 import { ToolRegistry } from "../tools/registry";
-import { EnvironmentResolver } from "../environment/environment";
-import { ConfigManager } from "../core/config";
+import { EnvironmentResolver } from "../environment/sandbox";
+import { ConfigManager } from "../../core/config";
 
 export interface AgentConfigOptions {
   manifest?: string | AgentManifest;
@@ -79,26 +78,9 @@ export class Agent {
       }, sId);
     }
 
-    // Resolve LLM Provider ([L] Layer)
-    const provider = normalizedL?.provider;
-    if (provider === "omniroute") {
-      const apiKey = options.apiKey || resolvedManifest?.E?.OMNIROUTE_API_KEY || ConfigManager.getKey("OMNIROUTE_API_KEY");
-      const client = new OmniRouteGatewayClient(apiKey);
-      this.llm = {
-        chat: async (msgs: any[], opts?: any) => {
-          const res = await client.chat(msgs, opts);
-          return {
-            text: res.text,
-            model: res.model,
-            toolCalls: res.toolCalls,
-            usage: res.usage
-          };
-        }
-      };
-    } else {
-      const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY");
-      this.llm = new SarvamClient(apiKey);
-    }
+    // Resolve LLM Provider ([L] Layer) — Sarvam AI Sovereign Stack
+    const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY");
+    this.llm = new SarvamClient(apiKey);
 
     // Collect tool specs from options or manifest ([T] Layer)
     if (options.tools) {

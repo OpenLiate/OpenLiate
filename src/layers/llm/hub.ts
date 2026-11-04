@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { resolve, join } from "path";
-import sarvamDef from "../../hub/llm/sarvam.json";
+import sarvamDef from "../../../hub/llm/sarvam.json";
 
 export interface HubLLMDefinition {
   name: string;
@@ -33,7 +33,7 @@ export class HubResolver {
     const possiblePaths = [
       resolve(process.cwd(), "hub", "llm", `${providerName}.json`),
       resolve(process.cwd(), "..", "hub", "llm", `${providerName}.json`),
-      join(__dirname, "..", "..", "hub", "llm", `${providerName}.json`)
+      join(__dirname, "..", "..", "..", "hub", "llm", `${providerName}.json`)
     ];
 
     for (const filePath of possiblePaths) {

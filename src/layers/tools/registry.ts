@@ -5,11 +5,11 @@ import type { McpServerConfig, ParsedToolSpec } from "./types";
 import { LiateMcp } from "./mcp";
 import { fetchTool } from "./builtin/fetch";
 import { identityVerifierTool } from "./builtin/identity";
-import agentmailDef from "../../hub/mcp/agentmail.json";
-import fetchDef from "../../hub/mcp/fetch.json";
-import neonDef from "../../hub/mcp/neon.json";
-import vercelDef from "../../hub/mcp/vercel.json";
-import supabaseDef from "../../hub/mcp/supabase.json";
+import agentmailDef from "../../../hub/mcp/agentmail.json";
+import fetchDef from "../../../hub/mcp/fetch.json";
+import neonDef from "../../../hub/mcp/neon.json";
+import vercelDef from "../../../hub/mcp/vercel.json";
+import supabaseDef from "../../../hub/mcp/supabase.json";
 
 export class ToolRegistry {
   public static parseSpec(spec: string): ParsedToolSpec {
@@ -91,7 +91,7 @@ export class ToolRegistry {
     const possiblePaths = [
       path.resolve(process.cwd(), `hub/mcp/${serverName}.json`),
       path.resolve(process.cwd(), "..", `hub/mcp/${serverName}.json`),
-      path.join(__dirname, "..", "..", `hub/mcp/${serverName}.json`)
+      path.join(__dirname, "..", "..", "..", `hub/mcp/${serverName}.json`)
     ];
 
     let foundPath: string | undefined;

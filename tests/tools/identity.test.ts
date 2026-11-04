@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { identityVerifierTool } from "../../src/tools/builtin/identity";
+import { identityVerifierTool } from "../../src/layers/tools/builtin/identity";
 
 describe("Layer 4: [T] Identity Verifier Tool (Aadhaar & PAN)", () => {
   test("validates valid and invalid PAN format", async () => {

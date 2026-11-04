@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import type { SandboxConfig } from "./types";
-import { ConfigManager } from "../core/config";
+import { ConfigManager } from "../../core/config";
 
 export class EnvironmentResolver {
   /**

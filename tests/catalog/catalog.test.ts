@@ -1,10 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import { Sarvam, SARVAM_MODELS } from "../../src/catalog/sarvam/index";
 import { Neon } from "../../src/catalog/neon/index";
-import { OmniRoute, OMNIROUTE_MODELS } from "../../src/llm/omniroute/index";
 import { Vercel } from "../../src/catalog/vercel/index";
 import { Supabase } from "../../src/catalog/supabase/index";
-import { Agent } from "../../src/agent/agent";
+import { Agent } from "../../src/layers/agent/harness";
 
 describe("OpenLiate Catalog (Official 2026 SDK Stack)", () => {
   it("Sarvam Catalog: exports official models and SarvamAIClient instance", () => {
@@ -32,17 +31,6 @@ describe("OpenLiate Catalog (Official 2026 SDK Stack)", () => {
     expect(db).toBeDefined();
     expect(db.sql).toBeDefined();
     expect(typeof db.createPool).toBe("function");
-  });
-
-  it("OmniRoute LLM Gateway: exports free models and gateway client", () => {
-    expect(OMNIROUTE_MODELS["auto-free"]).toBeDefined();
-    expect(OMNIROUTE_MODELS["llama-3.3-70b"]).toBeDefined();
-    expect(OMNIROUTE_MODELS["deepseek-v3"]).toBeDefined();
-
-    const gateway = OmniRoute.gateway("dummy_omni_key");
-    expect(gateway).toBeDefined();
-    expect(typeof gateway.chat).toBe("function");
-    expect(typeof gateway.isLocalRunning).toBe("function");
   });
 
   it("Vercel Catalog: exposes oauth, client, deploy, and official @vercel/sdk instance", () => {

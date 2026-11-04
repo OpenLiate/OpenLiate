@@ -3,12 +3,12 @@ import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import path from "path";
 import fs from "fs";
-import { Agent } from "../agent/agent";
-import { EnvironmentResolver } from "../environment/environment";
-import { LiateMcp } from "../tools/mcp";
-import type { MemoryProvider } from "../integration/types";
-import { InMemorySession } from "../integration/memory";
-import { OmniRouteGatewayClient, OMNIROUTE_MODELS } from "../llm/omniroute/index";
+import { Agent } from "../layers/agent/harness";
+import { EnvironmentResolver } from "../layers/environment/sandbox";
+import { LiateMcp } from "../layers/tools/mcp";
+import type { MemoryProvider } from "../layers/integration/types";
+import { InMemorySession } from "../layers/integration/memory";
+import { SarvamClient } from "../layers/llm/sarvam";
 
 const globalSessionStore = new Map<string, MemoryProvider>();
 
@@ -29,7 +29,7 @@ export function createEngineApp() {
       status: "ok",
       engine: "openliate",
       protocol: "LAPI/v1",
-      gateway: "OmniRoute",
+      gateway: "Sarvam AI & Neon Cloud Grid",
       doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
       uptime: process.uptime(),
       timestamp: new Date().toISOString()
@@ -40,7 +40,7 @@ export function createEngineApp() {
     return c.json({
       name: "OpenLiate",
       status: "running",
-      gateway: "OmniRoute",
+      gateway: "Sarvam AI & Neon Cloud Grid",
       doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
       endpoints: {
         openai_chat: "POST /v1/chat/completions",
@@ -53,61 +53,52 @@ export function createEngineApp() {
   });
 
   // =========================================================================
-  // OpenAI-Compatible Gateway Routes (OmniRoute Free AI Gateway)
+  // OpenAI-Compatible Gateway Routes (Sarvam AI & Neon AI Grid)
   // Compatible with Cursor, Claude Code, Cline, Python openai SDK, LangChain, curl
-  // Dynamically queries the running OmniRoute port (20128)
   // =========================================================================
 
-  const handleGetModels = async (c: any) => {
-    const authHeader = c.req.header("authorization") || c.req.header("Authorization");
-    let bearerKey: string | undefined;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.slice(7).trim();
-      if (token && token !== "none" && token !== "test") {
-        bearerKey = token;
-      }
-    }
-
-    const gateway = new OmniRouteGatewayClient(bearerKey);
-    const dynamicModels = await gateway.listModels();
-
+  const handleGetModels = (c: any) => {
     const list = [
       {
-        id: "auto",
+        id: "sarvam-105b",
         object: "model",
         created: 1740000000,
-        owned_by: "omniroute",
-        description: "Adaptive task-based routing across 380+ providers"
+        owned_by: "sarvam-ai",
+        description: "Sarvam AI Sovereign 105B Indic LLM"
       },
       {
-        id: "auto-free",
+        id: "sarvam-2b",
         object: "model",
         created: 1740000000,
-        owned_by: "omniroute",
-        description: "Zero API Key Free Pool"
+        owned_by: "sarvam-ai",
+        description: "Sarvam AI Sovereign 2B Fast Model"
       },
-      ...dynamicModels.map((m: any) => ({
-        id: m.id || m.modelId,
+      {
+        id: "neon/gpt-4o",
         object: "model",
         created: 1740000000,
-        owned_by: m.provider || "omniroute",
-        permission: [],
-        root: m.id || m.modelId,
-        parent: null
-      }))
+        owned_by: "neon-ai-gateway",
+        description: "Neon AI Gateway — Frontier Multi-Modal"
+      },
+      {
+        id: "neon/claude-3-5-sonnet",
+        object: "model",
+        created: 1740000000,
+        owned_by: "neon-ai-gateway",
+        description: "Neon AI Gateway — Reasoning & Coding"
+      },
+      {
+        id: "neon/meta-llama-3.3-70b",
+        object: "model",
+        created: 1740000000,
+        owned_by: "neon-ai-gateway",
+        description: "Neon AI Gateway — Open Frontier Reasoning"
+      }
     ];
-
-    // Deduplicate by id
-    const seen = new Set<string>();
-    const unique = list.filter((item) => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    });
 
     return c.json({
       object: "list",
-      data: unique
+      data: list
     });
   };
 
@@ -156,7 +147,7 @@ export function createEngineApp() {
       }
     }
 
-    // Extract provider keys passed via custom headers (e.g. x-groq-key, x-sarvam-key)
+    // Extract provider keys passed via custom headers (e.g. x-sarvam-api-key)
     const customProviders: Record<string, string> = {};
     const reqHeaders = c.req.header();
     for (const [hName, hVal] of Object.entries(reqHeaders)) {
@@ -168,12 +159,13 @@ export function createEngineApp() {
       }
     }
 
-    const gateway = new OmniRouteGatewayClient(bearerKey);
-    const model = body.model || "auto";
+    const sarvamKey = bearerKey || customProviders["sarvam"] || process.env.SARVAM_API_KEY;
+    const sarvam = new SarvamClient(sarvamKey);
+    const model = body.model || "sarvam-105b";
     const isStream = Boolean(body.stream);
 
     try {
-      const response = await gateway.chat(messages, {
+      const response = await sarvam.chat(messages, {
         model,
         temperature: body.temperature,
         maxTokens: body.max_tokens,
@@ -227,7 +219,7 @@ export function createEngineApp() {
         object: "chat.completion",
         created,
         model: response.model,
-        system_fingerprint: "fp_openliate_omniroute",
+        system_fingerprint: "fp_openliate_sovereign",
         choices: [
           {
             index: 0,
@@ -248,7 +240,7 @@ export function createEngineApp() {
       return c.json(
         {
           error: {
-            message: err.message || "OmniRoute gateway failed to complete request",
+            message: err.message || "Sovereign gateway failed to complete request",
             type: "api_error",
             code: 500
           }
@@ -473,11 +465,11 @@ export function startEngineServer(options?: EngineServerOptions) {
   const app = createEngineApp();
 
   console.log(`\n===========================================================`);
-  console.log(`  [OpenLiate] Engine & OmniRoute Gateway running on http://${host === "0.0.0.0" ? "localhost" : host}:${port}`);
+  console.log(`  [OpenLiate] Engine running on http://${host === "0.0.0.0" ? "localhost" : host}:${port}`);
   console.log(`  • OpenAI Base URL:    http://localhost:${port}/v1`);
   console.log(`  • Models Endpoint:    http://localhost:${port}/v1/models`);
   console.log(`  • Autonomous Agents:  http://localhost:${port}/run`);
-  console.log(`  • Free AI Gateway:    OmniRoute (380+ Providers / Port ${port})`);
+  console.log(`  • Sovereign AI Stack: Sarvam AI & Neon Cloud Grid`);
   console.log(`  • Doctrine: "Class is an Agent. Agent is a Function. Function is an API."`);
   console.log(`===========================================================\n`);
 

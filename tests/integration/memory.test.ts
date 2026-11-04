@@ -1,8 +1,8 @@
 import { describe, expect, test, afterAll } from "bun:test";
 import fs from "fs/promises";
 import path from "path";
-import { InMemorySession, FileSessionMemory } from "../../src/integration/memory";
-import { IntegrationResolver } from "../../src/integration/integration";
+import { InMemorySession, FileSessionMemory } from "../../src/layers/integration/memory";
+import { IntegrationResolver } from "../../src/layers/integration/knowledge";
 
 describe("Layer 2: [I] Integration & Memory Layer", () => {
   const testSessionPath = path.resolve(process.cwd(), "sessions/test-integration-agent.json");

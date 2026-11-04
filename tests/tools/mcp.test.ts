@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { ToolRegistry } from "../../src/tools/registry";
-import { fetchTool } from "../../src/tools/builtin/fetch";
-import { Agent } from "../../src/agent/agent";
-import { createAgentMcpServer } from "../../src/tools/server";
+import { ToolRegistry } from "../../src/layers/tools/registry";
+import { fetchTool } from "../../src/layers/tools/builtin/fetch";
+import { Agent } from "../../src/layers/agent/harness";
+import { createAgentMcpServer } from "../../src/layers/tools/server";
 
 describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
   test("ToolRegistry.parseSpec: parses builtin fetch tool", () => {

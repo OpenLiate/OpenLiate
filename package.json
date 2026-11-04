@@ -1,6 +1,6 @@
 {
   "name": "openliate",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
   "main": "./src/index.ts",

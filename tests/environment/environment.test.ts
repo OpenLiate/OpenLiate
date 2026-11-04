@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { EnvironmentResolver } from "../../src/environment/environment";
+import { EnvironmentResolver } from "../../src/layers/environment/sandbox";
 
 describe("Layer 5: [E] Environment & Sandbox Layer", () => {
   test("EnvironmentResolver.resolve: expands $VAR references cleanly", () => {

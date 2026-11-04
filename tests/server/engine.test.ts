@@ -12,7 +12,7 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.status).toBe("ok");
     expect(body.engine).toBe("openliate");
     expect(body.protocol).toBe("LAPI/v1");
-    expect(body.gateway).toBe("OmniRoute");
+    expect(body.gateway).toContain("Sarvam AI");
     expect(body.doctrine).toContain("Class is an Agent");
     expect(body.doctrine).toContain("OpenLiate");
   });
@@ -27,7 +27,7 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.endpoints.openai_models).toBe("GET /v1/models");
   });
 
-  it("GET /v1/models returns OpenAI-compatible models list with auto and auto-free", async () => {
+  it("GET /v1/models returns OpenAI-compatible models list with sarvam-105b and neon models", async () => {
     const res = await app.request("/v1/models");
     expect(res.status).toBe(200);
 
@@ -37,8 +37,8 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.data.length).toBeGreaterThanOrEqual(4);
 
     const modelIds = body.data.map((m: any) => m.id);
-    expect(modelIds).toContain("auto");
-    expect(modelIds).toContain("auto-free");
+    expect(modelIds).toContain("sarvam-105b");
+    expect(modelIds).toContain("neon/gpt-4o");
   });
 
   it("POST /v1/chat/completions validates required messages array", async () => {
@@ -54,19 +54,16 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.error.message).toContain("Missing or invalid 'messages' array");
   });
 
-  it("POST /v1/chat/completions handles OpenAI payload via OmniRoute gateway", async () => {
+  it("POST /v1/chat/completions handles OpenAI payload via Sovereign gateway", async () => {
     const originalFetch = globalThis.fetch;
     try {
       (globalThis as any).fetch = async (url: string, init: any) => {
         return {
           ok: true,
           json: async () => ({
-            id: "pllns-chatcmpl-test",
             choices: [
               {
-                index: 0,
-                message: { role: "assistant", content: "Greetings from Sovereign Gateway!" },
-                finish_reason: "stop"
+                message: { role: "assistant", content: "Greetings from Sovereign Gateway!" }
               }
             ],
             usage: { prompt_tokens: 10, completion_tokens: 15, total_tokens: 25 }
@@ -81,7 +78,7 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
           "Authorization": "Bearer sk-test-key"
         },
         body: JSON.stringify({
-          model: "auto-free",
+          model: "sarvam-105b",
           messages: [{ role: "user", content: "Hello Gateway" }]
         })
       });
@@ -104,12 +101,9 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
         return {
           ok: true,
           json: async () => ({
-            id: "pllns-stream-test",
             choices: [
               {
-                index: 0,
-                message: { role: "assistant", content: "Streamed content" },
-                finish_reason: "stop"
+                message: { role: "assistant", content: "Streamed content" }
               }
             ],
             usage: { prompt_tokens: 8, completion_tokens: 12, total_tokens: 20 }
@@ -119,9 +113,12 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
 
       const res = await app.request("/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer sk-test-key"
+        },
         body: JSON.stringify({
-          model: "auto-free",
+          model: "sarvam-105b",
           messages: [{ role: "user", content: "Stream test" }],
           stream: true
         })

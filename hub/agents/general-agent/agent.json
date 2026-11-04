@@ -6,12 +6,10 @@
   "A": {
     "name": "general_agent",
     "version": "1.0.0",
-    "intent": "Explain Liate: The Open Source Backend Layer for AI Agents",
+    "intent": "Explain OpenLiate: The Sovereign Backend Layer for Autonomous AI Agents",
     "maxSteps": 5
   },
-  "T": [
-    "fetch"
-  ],
+  "T": [],
   "E": {
     "SARVAM_API_KEY": "$SARVAM_API_KEY"
   }

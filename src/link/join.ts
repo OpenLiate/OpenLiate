@@ -3,9 +3,8 @@ import path from "path";
 import fs from "fs";
 import * as p from "@clack/prompts";
 import { ConfigManager } from "../core/config";
-import { Agent } from "../agent/agent";
+import { Agent } from "../layers/agent/harness";
 import { Sarvam } from "../catalog/sarvam/index";
-import { OmniRoute } from "../llm/omniroute/index";
 import { NeonMcpOAuth } from "../catalog/neon/index";
 
 export const DEFAULT_JOIN_CALLBACK_PORT = 54324;
@@ -85,18 +84,13 @@ export async function runJoinFlow(): Promise<void> {
     message: "Select your primary AI Gateway:",
     options: [
       {
-        value: "omniroute",
-        label: "OmniRoute Gateway — [Recommended]",
-        hint: "Multi-provider BYOAI token gateway · 380+ providers · omniroute.online"
-      },
-      {
         value: "sarvam",
-        label: "Sarvam AI Token Factory — [Dedicated Indic BYOAI]",
+        label: "Sarvam AI Sovereign Stack — [Recommended Sovereign Partner]",
         hint: "India's Sovereign AI (105B, 2B, Bulbul, GLM) · dashboard.sarvam.ai"
       },
       {
         value: "neon",
-        label: "Neon AI Gateway",
+        label: "Neon AI Gateway — [Enterprise Cloud Multi-Modal]",
         hint: "Serverless Postgres & AI compute gateway · mcp.neon.tech"
       }
     ]
@@ -111,16 +105,7 @@ export async function runJoinFlow(): Promise<void> {
   let finalUsername = "developer";
 
   // Step 2: Configure BYOAI Key based on choice
-  if (gatewayChoice === "omniroute") {
-    const omniPrompt = await p.text({
-      message: "Enter your OmniRoute API key (or press enter for default pool):",
-      placeholder: "omni_live_... or leave empty"
-    });
-    if (!p.isCancel(omniPrompt) && typeof omniPrompt === "string" && omniPrompt.trim()) {
-      finalKey = omniPrompt.trim();
-      ConfigManager.setGlobalKey("OMNIROUTE_API_KEY", finalKey);
-    }
-  } else if (gatewayChoice === "sarvam") {
+  if (gatewayChoice === "sarvam") {
     finalKey = await ConfigManager.ensureApiKey("SARVAM_API_KEY", {
       providerName: "Sarvam AI Token Factory (105B, GLM 5.3, Gemma 4, Bulbul)",
       docUrl: "https://dashboard.sarvam.ai"
@@ -196,18 +181,9 @@ export async function runJoinFlow(): Promise<void> {
         const res = await client.chat([
           { role: "user", content: "Introduce Mission AgentYaan in one inspiring sentence." }
         ], { model: "glm5.3-flash", maxTokens: 60 });
-        verifySpinner.stop(`✔ Sarvam Token Factory Live Verified`);
+        verifySpinner.stop(`✔ Sarvam Sovereign AI Live Verified`);
         if (res.text) {
           console.log(`\n\x1b[32m[AgentYaan Sarvam AI Response]:\x1b[0m\n"${res.text.trim()}"\n`);
-        }
-      } else if (gatewayChoice === "omniroute") {
-        const omni = OmniRoute.gateway(finalKey || undefined);
-        const res = await omni.chat([
-          { role: "user", content: "Introduce Mission AgentYaan in one inspiring sentence." }
-        ]);
-        verifySpinner.stop(`✔ OmniRoute Live Verified (${res.model} via ${res.provider})`);
-        if (res.text) {
-          console.log(`\n\x1b[32m[AgentYaan OmniRoute Response]:\x1b[0m\n"${res.text.trim()}"\n`);
         }
       } else {
         verifySpinner.stop(`✔ Gateway Configured`);

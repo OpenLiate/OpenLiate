@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { ReActLoop, type LLMFunctionCaller } from "../../src/agent/loop";
-import { Agent } from "../../src/agent/agent";
-import { InMemorySession } from "../../src/integration/memory";
-import type { AgentTool, ToolCall } from "../../src/agent/types";
-import type { SarvamMessage, SarvamChatResponse } from "../../src/llm/sarvam";
+import { ReActLoop, type LLMFunctionCaller } from "../../src/layers/agent/loop";
+import { Agent } from "../../src/layers/agent/harness";
+import { InMemorySession } from "../../src/layers/integration/memory";
+import type { AgentTool, ToolCall } from "../../src/layers/agent/types";
+import type { SarvamMessage, SarvamChatResponse } from "../../src/layers/llm/sarvam";
 
 describe("Layer 3: [A] Agent Harness & ReAct Loop", () => {
   test("ReActLoop: executes single-step conversation and records to memory", async () => {

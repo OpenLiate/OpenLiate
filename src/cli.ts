@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import path from "path";
 import fs from "fs";
-import { Agent } from "./agent/agent";
-import { EnvironmentResolver } from "./environment/environment";
-import { LiateMcp } from "./tools/mcp";
+import { Agent } from "./layers/agent/harness";
+import { EnvironmentResolver } from "./layers/environment/sandbox";
+import { LiateMcp } from "./layers/tools/mcp";
 import { link, relink, unlink, linkNeon, linkVercel, linkSupabase } from "./link/index";
 import { runJoinFlow } from "./link/join";
 import { NeonMcpOAuth, NeonMcpClient } from "./link/neon";
@@ -11,7 +11,7 @@ import { VercelMcpOAuth, VercelMcpClient } from "./link/vercel";
 import { startEngineServer } from "./server/engine";
 import { ConfigManager } from "./core/config";
 
-const VERSION = "0.0.14";
+const VERSION = "0.0.15";
 const BANNER = `
 ===========================================================
   OPENLIATE — Open Source Backend Layer for AI Agents
@@ -149,7 +149,7 @@ Examples:
             docUrl: "https://cloud.cerebras.ai"
           });
         }
-      } else if (lowerModel.includes("auto") || lowerModel.includes("omniroute")) {
+      } else if (lowerModel.includes("auto")) {
         const hasAny = process.env.GROQ_API_KEY || process.env.SARVAM_API_KEY || process.env.CEREBRAS_API_KEY || ConfigManager.getKey("GROQ_API_KEY") || ConfigManager.getKey("SARVAM_API_KEY");
         if (!hasAny) {
           await ConfigManager.ensureApiKey("GROQ_API_KEY", {

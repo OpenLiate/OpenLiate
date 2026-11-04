@@ -1,14 +1,16 @@
 {
-  "L": "omniroute/deepseek-r1-distill-llama-70b",
+  "L": "sarvam/sarvam-105b",
   "I": {
     "memory": "sessions/reasoning-agent"
   },
   "A": {
     "name": "reasoning_agent",
     "version": "1.0.0",
-    "intent": "Specialized Deep Reasoning Agent using DeepSeek R1 via OmniRoute",
+    "intent": "Deep Reasoning & Logic Agent using Sarvam Sovereign Models",
     "maxSteps": 3
   },
   "T": [],
-  "E": {}
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
 }
