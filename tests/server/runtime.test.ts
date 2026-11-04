@@ -42,7 +42,7 @@ describe("Agent Runtime Server: LAPI HTTP & On-the-fly Execution", () => {
 
     const modelIds = body.data.map((m: any) => m.id);
     expect(modelIds).toContain("sarvam-105b");
-    expect(modelIds).toContain("neon/gpt-4o");
+    expect(modelIds).toContain("claude-sonnet-4-6");
   });
 
   it("POST /chat accepts simple prompt payload via Sovereign gateway", async () => {

@@ -1,6 +1,6 @@
 {
   "name": "openliate",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
   "main": "./src/liate.ts",
@@ -35,6 +35,7 @@
     "@vercel/sdk": "1.28.56",
     "hono": "^4.7.0",
     "jszip": "3.10.2",
+    "neon-new": "0.15.1",
     "sarvamai": "1.1.15",
     "zod": "^3.24.0"
   },
