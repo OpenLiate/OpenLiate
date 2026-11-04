@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { generateUUIDv7 } from "../core/uuid";
+import { OPENLIATE_VERSION } from "../core/version";
 
 export const VERCEL_MCP_ENDPOINT = "https://mcp.vercel.com";
 export const VERCEL_REGISTER_ENDPOINT = "https://vercel.com/api/login/oauth/register";
@@ -319,7 +320,7 @@ export class VercelMcpClient {
     }
   }
 
-  public async deployEngine(options: {
+  public async deployRuntime(options: {
     name?: string;
     target?: string;
     mode?: "function" | "daemon";
@@ -327,7 +328,7 @@ export class VercelMcpClient {
   } = {}): Promise<{
     id: string;
     url: string;
-    engineUrl: string;
+    runtimeUrl: string;
     projectId?: string;
     name: string;
     mode: "function" | "daemon";
@@ -339,15 +340,15 @@ export class VercelMcpClient {
 
     let bundleCode = "";
     if (options.files && options.files.length > 0) {
-      const targetFile = options.files.find((f) => f.file === "api/index.js" || f.file === "dist/engine/index.js");
+      const targetFile = options.files.find((f) => f.file === "api/index.js" || f.file === "dist/runtime/index.js");
       if (targetFile) bundleCode = targetFile.data;
     }
 
     if (!bundleCode) {
       const candidatePaths = [
-        path.resolve(process.cwd(), "dist", "engine", "index.js"),
-        path.resolve(process.cwd(), "OpenLiate", "dist", "engine", "index.js"),
-        path.resolve(__dirname, "..", "..", "dist", "engine", "index.js")
+        path.resolve(process.cwd(), "dist", "runtime", "index.js"),
+        path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
+        path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js")
       ];
       for (const p of candidatePaths) {
         if (fs.existsSync(p)) {
@@ -359,7 +360,7 @@ export class VercelMcpClient {
 
     if (!bundleCode) {
       throw new Error(
-        "Could not locate dist/engine/index.js. Please run 'bun run build:engine' first."
+        "Could not locate dist/runtime/index.js. Please run 'bun run build:runtime' first."
       );
     }
 
@@ -381,15 +382,15 @@ export class VercelMcpClient {
       if (!dockerfileContent) {
         dockerfileContent = `FROM node:24-alpine
 WORKDIR /app
-COPY dist/engine ./dist/engine
+COPY dist/runtime ./dist/runtime
 COPY package.json ./package.json
 EXPOSE 3000
-CMD ["node", "dist/engine/index.js"]`;
+CMD ["node", "dist/runtime/index.js"]`;
       }
 
       files = [
         {
-          file: "dist/engine/index.js",
+          file: "dist/runtime/index.js",
           data: bundleCode,
           encoding: "utf-8"
         },
@@ -403,9 +404,9 @@ CMD ["node", "dist/engine/index.js"]`;
           data: JSON.stringify(
             {
               name: projectName,
-              version: "1.0.0",
+              version: OPENLIATE_VERSION,
               type: "module",
-              main: "dist/engine/index.js"
+              main: "dist/runtime/index.js"
             },
             null,
             2
@@ -420,7 +421,7 @@ CMD ["node", "dist/engine/index.js"]`;
               daemons: {
                 "openliate-daemon": {
                   entrypoint: "Dockerfile",
-                  command: ["node", "dist/engine/index.js"],
+                  command: ["node", "dist/runtime/index.js"],
                   instances: {
                     iad1: 1
                   }
@@ -445,7 +446,7 @@ CMD ["node", "dist/engine/index.js"]`;
           data: JSON.stringify(
             {
               name: projectName,
-              version: "1.0.0",
+              version: OPENLIATE_VERSION,
               type: "module",
               main: "api/index.js"
             },
@@ -504,7 +505,7 @@ CMD ["node", "dist/engine/index.js"]`;
 
     const rawUrl = deployData.alias?.[0] || deployData.url;
     const deploymentUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
-    const engineUrl = `${deploymentUrl}/run`;
+    const runtimeUrl = `${deploymentUrl}/run`;
 
     try {
       const deployPath = path.resolve(process.cwd(), ".openliate", "vercel_deployment.json");
@@ -518,7 +519,7 @@ CMD ["node", "dist/engine/index.js"]`;
           {
             projectName,
             deploymentUrl,
-            engineUrl,
+            runtimeUrl,
             id: deployData.id,
             uuid7,
             deployedAt: new Date().toISOString()
@@ -533,7 +534,7 @@ CMD ["node", "dist/engine/index.js"]`;
     return {
       id: deployData.id,
       url: deploymentUrl,
-      engineUrl,
+      runtimeUrl,
       projectId: deployData.project?.id || deployData.projectId || deployData.id,
       name: projectName,
       mode: isDaemon ? "daemon" : "function"

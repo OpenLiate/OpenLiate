@@ -1,16 +1,18 @@
 version: "3.8"
 
 services:
-  liate-engine:
+  openliate-runtime:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: liate-engine
+    container_name: openliate-runtime
     ports:
-      - "3000:3000"
+      - "7071:7071"
     environment:
-      - PORT=3000
+      - PORT=7071
       - SARVAM_API_KEY=${SARVAM_API_KEY}
+      - NEON_AI_GATEWAY_TOKEN=${NEON_AI_GATEWAY_TOKEN}
+      - NEON_AI_GATEWAY_BASE_URL=${NEON_AI_GATEWAY_BASE_URL}
       - AGENTMAIL_API_KEY=${AGENTMAIL_API_KEY}
     restart: unless-stopped
 

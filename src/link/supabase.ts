@@ -339,7 +339,7 @@ export class SupabaseMcpClient {
     return (await res.json()) as any[];
   }
 
-  public async deployEngine(options: {
+  public async deployRuntime(options: {
     slug?: string;
     projectRef?: string;
     body?: string;
@@ -348,7 +348,7 @@ export class SupabaseMcpClient {
     name: string;
     projectRef: string;
     functionUrl: string;
-    engineUrl: string;
+    runtimeUrl: string;
     mcpUrl: string;
   }> {
     const uuid7 = generateUUIDv7();
@@ -371,9 +371,9 @@ export class SupabaseMcpClient {
     let bundleCode = options.body || "";
     if (!bundleCode) {
       const candidatePaths = [
-        path.resolve(process.cwd(), "dist", "engine", "index.js"),
-        path.resolve(process.cwd(), "liate", "dist", "engine", "index.js"),
-        path.resolve(__dirname, "..", "..", "dist", "engine", "index.js")
+        path.resolve(process.cwd(), "dist", "runtime", "index.js"),
+        path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
+        path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js")
       ];
       for (const p of candidatePaths) {
         if (fs.existsSync(p)) {
@@ -384,7 +384,7 @@ export class SupabaseMcpClient {
     }
 
     if (!bundleCode) {
-      throw new Error("Could not locate dist/engine/index.js. Please run 'bun run build:engine' first.");
+      throw new Error("Could not locate dist/runtime/index.js. Please run 'bun run build:runtime' first.");
     }
 
     // Ensure Node builtins use node: prefix for Deno runtime compatibility in Supabase Edge Functions
@@ -431,7 +431,7 @@ export class SupabaseMcpClient {
     }
 
     const functionUrl = `https://${projectRef}.supabase.co/functions/v1/${fnSlug}`;
-    const engineUrl = `${functionUrl}/run`;
+    const runtimeUrl = `${functionUrl}/run`;
 
     try {
       const deployPath = path.resolve(process.cwd(), ".openliate", "supabase_deployment.json");
@@ -446,7 +446,7 @@ export class SupabaseMcpClient {
             slug: fnSlug,
             projectRef,
             functionUrl,
-            engineUrl,
+            runtimeUrl,
             uuid7,
             deployedAt: new Date().toISOString()
           },
@@ -462,7 +462,7 @@ export class SupabaseMcpClient {
       name: fnSlug,
       projectRef,
       functionUrl,
-      engineUrl,
+      runtimeUrl,
       mcpUrl: SUPABASE_MCP_ENDPOINT
     };
   }
@@ -516,11 +516,11 @@ export async function runSupabaseLinkFlow(options: {
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Liate — Supabase Linked</title>
+    <title>OpenLiate — Supabase Linked</title>
   </head>
   <body style="font-family: -apple-system, system-ui, sans-serif; padding: 40px; text-align: center; color: #111;">
     <h2>Authentication successful</h2>
-    <p>Supabase is linked to Liate. You can close this window and return to your terminal.</p>
+    <p>Supabase is linked to OpenLiate. You can close this window and return to your terminal.</p>
     <script>try { window.close(); } catch(e) {}</script>
   </body>
 </html>`);

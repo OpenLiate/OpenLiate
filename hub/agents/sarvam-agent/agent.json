@@ -5,7 +5,7 @@
   },
   "A": {
     "name": "sarvam_agent",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "intent": "Autonomous Sovereign Indic AI Agent using Sarvam MCP tools",
     "maxSteps": 5
   },

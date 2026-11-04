@@ -19,13 +19,13 @@ describe("Layer 3: [A] Agent Harness & ReAct Loop", () => {
     };
 
     const context = {
-      agentName: "liate_bot",
-      agentVersion: "1.0.0",
-      state: { intent: "Explain Liate concepts" }
+      agentName: "openliate_bot",
+      agentVersion: "0.0.1",
+      state: { intent: "Explain OpenLiate concepts" }
     };
 
     const result = await ReActLoop.execute(
-      "What is Liate's doctrine?",
+      "What is OpenLiate's doctrine?",
       mockLLM,
       memory,
       [],
@@ -42,7 +42,7 @@ describe("Layer 3: [A] Agent Harness & ReAct Loop", () => {
     const recorded = memory.getMessages();
     expect(recorded.length).toBe(2);
     expect(recorded[0].role).toBe("user");
-    expect(recorded[0].content).toBe("What is Liate's doctrine?");
+    expect(recorded[0].content).toBe("What is OpenLiate's doctrine?");
     expect(recorded[1].role).toBe("assistant");
     expect(recorded[1].content).toBe(result.text);
     expect(recorded[1].reasoningContent).toBe(result.thought);
@@ -90,7 +90,7 @@ describe("Layer 3: [A] Agent Harness & ReAct Loop", () => {
 
     const context = {
       agentName: "math_agent",
-      agentVersion: "1.0.0",
+      agentVersion: "0.0.1",
       state: { intent: "Mathematical problem solver" }
     };
 

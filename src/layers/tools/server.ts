@@ -3,20 +3,21 @@ import { z } from "zod";
 
 export interface McpAgentLike {
   name: string;
+  version?: string;
   run(prompt: string): Promise<{ text: string }>;
   [key: string]: any;
 }
 
 /**
  * OpenLiate MCP Server Exposer [Layer T]
- * Exposes an OpenLiate Agent as a standard Model Context Protocol (MCP) server
- * so external IDEs (Claude Desktop, Cursor, Antigravity) can call it directly.
+ * Exposes an OpenLiate Agent as a standard Model Context Protocol (MCP) server.
  */
 export function createAgentMcpServer(agent: McpAgentLike): McpServer {
-  const agentName = agent.name || "OpenLiateAgent";
+  const agentName = agent.name || "Agent";
+  const agentVersion = agent.version || "0.0.1";
   const server = new McpServer({
     name: `openliate-${agentName.toLowerCase()}`,
-    version: "1.0.0"
+    version: agentVersion
   });
 
   // Tool 1: Run Agent
@@ -52,9 +53,9 @@ export function createAgentMcpServer(agent: McpAgentLike): McpServer {
               {
                 status: "ok",
                 agent: agentName,
+                version: agentVersion,
                 protocol: "LAPI/v1",
-                mcpVersion: "v2",
-                doctrine: "Class is an Agent. Agent is a LAPI. That's your Backend."
+                doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend."
               },
               null,
               2

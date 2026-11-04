@@ -5,7 +5,7 @@
   },
   "A": {
     "name": "identity_agent",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "intent": "Verify and validate Indian identity credentials including 12-digit Aadhaar (Verhoeff checksum) and 10-character PAN card format with taxpayer classification.",
     "maxSteps": 5
   },

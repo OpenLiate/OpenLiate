@@ -444,7 +444,7 @@ export class NeonMcpClient {
     return Array.isArray(res) ? res : res.functions || [];
   }
 
-  public async deployEngine(options?: {
+  public async deployRuntime(options?: {
     slug?: string;
     projectId?: string;
     branchId?: string;
@@ -462,10 +462,10 @@ export class NeonMcpClient {
     invocationUrl: string;
     status: string;
   }> {
-    // 1. Build universal serverless engine bundle into dist/engine/
-    const engineDistDir = path.resolve(process.cwd(), "dist", "engine");
-    if (!fs.existsSync(engineDistDir)) {
-      fs.mkdirSync(engineDistDir, { recursive: true });
+    // 1. Build universal serverless runtime bundle into dist/runtime/
+    const runtimeDistDir = path.resolve(process.cwd(), "dist", "runtime");
+    if (!fs.existsSync(runtimeDistDir)) {
+      fs.mkdirSync(runtimeDistDir, { recursive: true });
     }
 
     const entrypoint = path.resolve(__dirname, "..", "server", "index.ts");
@@ -475,23 +475,23 @@ export class NeonMcpClient {
       format: "esm",
       minify: false,
       naming: "[name].[ext]",
-      outdir: engineDistDir
+      outdir: runtimeDistDir
     });
     if (!buildResult.success || buildResult.outputs.length === 0) {
-      throw new Error("Failed to bundle OpenLiate Engine for Neon deployment.");
+      throw new Error("Failed to bundle OpenLiate Runtime for Neon deployment.");
     }
     const bundleText = await buildResult.outputs[0].text();
 
-    // 2. Create physical package dist/engine/engine.zip for transparency and portability
+    // 2. Create physical package dist/runtime/runtime.zip for transparency and portability
     const zip = new JSZip();
     zip.file("index.js", bundleText);
     const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
-    fs.writeFileSync(path.join(engineDistDir, "engine.zip"), zipBuffer);
+    fs.writeFileSync(path.join(runtimeDistDir, "runtime.zip"), zipBuffer);
     const zipBase64 = zipBuffer.toString("base64");
 
     // 3. Resolve or Automatically Create Project "openliate"
     let projects = await this.listProjects();
-    let project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "liate");
+    let project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" );
 
     if (!project) {
       try {
@@ -501,7 +501,7 @@ export class NeonMcpClient {
         });
         project = createProjRes?.project || createProjRes;
       } catch {
-        project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "liate") || projects[0];
+        project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" ) || projects[0];
       }
     }
 
@@ -540,7 +540,7 @@ export class NeonMcpClient {
       branch = branches.find((b: any) => b.primary || b.default) || branches[0];
     }
 
-    const slug = options?.slug || "engine";
+    const slug = options?.slug || "runtime";
 
     // 6. Call deploy_function on Neon MCP
     const deployRes = await this.callTool("deploy_function", {
@@ -582,7 +582,7 @@ export class NeonMcpClient {
     return result;
   }
 
-  public async getEngineDeployment(): Promise<{
+  public async getRuntimeDeployment(): Promise<{
     deploymentId?: number;
     uuid7?: string;
     slug?: string;
@@ -621,15 +621,15 @@ export class NeonMcpClient {
       throw new Error("No Neon projects found in your account.");
     }
 
-    const project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "liate-engine") || projects[0];
+    const project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "openliate-runtime") || projects[0];
     const branches = await this.listBranches(project.id);
     const branch = branches.find((b: any) => b.primary || b.default) || branches[0];
 
     const functions = await this.listFunctions(project.id, branch.id);
-    let fn = functions.find((f: any) => f.slug?.startsWith("engine") || f.slug?.startsWith("openliate") || f.slug?.startsWith("liate") || f.id?.startsWith("openliate")) || functions[0];
+    let fn = functions.find((f: any) => f.slug?.startsWith("runtime") || f.slug?.startsWith("openliate")  || f.id?.startsWith("openliate")) || functions[0];
 
     if (!fn || !fn.invocation_url) {
-      throw new Error(`No deployed OpenLiate engine function found on branch ${branch.name}.`);
+      throw new Error(`No deployed OpenLiate runtime function found on branch ${branch.name}.`);
     }
 
     return {

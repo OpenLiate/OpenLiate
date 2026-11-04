@@ -76,7 +76,7 @@ describe("Cloud Link: Vercel MCP OAuth (https://mcp.vercel.com)", () => {
     const client = new VercelMcpClient("test_token_123");
     expect(client).toBeDefined();
     expect(typeof client.listProjects).toBe("function");
-    expect(typeof client.deployEngine).toBe("function");
+    expect(typeof client.deployRuntime).toBe("function");
     expect(typeof client.callMcp).toBe("function");
   });
 });

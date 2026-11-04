@@ -2,14 +2,9 @@ import fs from "fs";
 import path from "path";
 import type { AgentTool } from "../agent/types";
 import type { McpServerConfig, ParsedToolSpec } from "./types";
-import { LiateMcp } from "./mcp";
+import { MCP } from "./mcp";
 import { fetchTool } from "./builtin/fetch";
 import { identityVerifierTool } from "./builtin/identity";
-import agentmailDef from "../../../hub/mcp/agentmail.json";
-import fetchDef from "../../../hub/mcp/fetch.json";
-import neonDef from "../../../hub/mcp/neon.json";
-import vercelDef from "../../../hub/mcp/vercel.json";
-import supabaseDef from "../../../hub/mcp/supabase.json";
 
 export class ToolRegistry {
   public static parseSpec(spec: string): ParsedToolSpec {
@@ -90,35 +85,20 @@ export class ToolRegistry {
   public static loadMcpConfig(serverName: string, customEnv: Record<string, string | undefined> = process.env): McpServerConfig {
     const possiblePaths = [
       path.resolve(process.cwd(), `hub/mcp/${serverName}.json`),
+      path.resolve(process.cwd(), `OpenLiate/hub/mcp/${serverName}.json`),
       path.resolve(process.cwd(), "..", `hub/mcp/${serverName}.json`),
-      path.join(__dirname, "..", "..", "..", `hub/mcp/${serverName}.json`)
+      path.resolve(__dirname, `../../hub/mcp/${serverName}.json`),
+      path.resolve(__dirname, `../../../hub/mcp/${serverName}.json`),
+      path.resolve(__dirname, `../../../../hub/mcp/${serverName}.json`)
     ];
 
-    let foundPath: string | undefined;
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        foundPath = p;
-        break;
-      }
-    }
-
-    let parsed: McpServerConfig;
-    if (foundPath) {
-      const raw = fs.readFileSync(foundPath, "utf-8");
-      parsed = JSON.parse(raw);
-    } else if (serverName === "agentmail") {
-      parsed = JSON.parse(JSON.stringify(agentmailDef)) as McpServerConfig;
-    } else if (serverName === "fetch") {
-      parsed = JSON.parse(JSON.stringify(fetchDef)) as McpServerConfig;
-    } else if (serverName === "neon") {
-      parsed = JSON.parse(JSON.stringify(neonDef)) as McpServerConfig;
-    } else if (serverName === "vercel") {
-      parsed = JSON.parse(JSON.stringify(vercelDef)) as McpServerConfig;
-    } else if (serverName === "supabase") {
-      parsed = JSON.parse(JSON.stringify(supabaseDef)) as McpServerConfig;
-    } else {
+    const foundPath = possiblePaths.find((p) => fs.existsSync(p));
+    if (!foundPath) {
       throw new Error(`MCP definition file not found for '${serverName}' at hub/mcp/${serverName}.json`);
     }
+
+    const raw = fs.readFileSync(foundPath, "utf-8");
+    const parsed: McpServerConfig = JSON.parse(raw);
 
     // Resolve environment variables in headers and URL
     const resolvedHeaders: Record<string, string> = {};
@@ -180,7 +160,7 @@ export class ToolRegistry {
             headers: (item as any).headers
           };
           try {
-            const tools = await LiateMcp.discoverTools(inlineConfig);
+            const tools = await MCP.discoverTools(inlineConfig);
             resolved.push(...tools);
           } catch (err: any) {
             console.warn(`[ToolRegistry] Failed to resolve inline MCP config: ${err.message}`);
@@ -204,7 +184,7 @@ export class ToolRegistry {
         if (parsed.isMcp && parsed.serverName) {
           try {
             const config = this.loadMcpConfig(parsed.serverName, customEnv);
-            const tools = await LiateMcp.discoverTools(config, parsed.selectedTools);
+            const tools = await MCP.discoverTools(config, parsed.selectedTools);
             resolved.push(...tools);
           } catch (err: any) {
             console.warn(`[ToolRegistry] Failed to resolve MCP server '${parsed.serverName}': ${err.message}`);

@@ -2,8 +2,9 @@ import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { AgentTool } from "../agent/types";
 import type { McpServerConfig } from "./types";
+import { OPENLIATE_VERSION } from "../../core/version";
 
-export class OpenLiateMcp {
+export class MCP {
   private static activeClients: Client[] = [];
   private static activeTransports: any[] = [];
 
@@ -79,7 +80,7 @@ export class OpenLiateMcp {
       const client = new Client(
         {
           name: `openliate-${config.name}`,
-          version: "1.0.0"
+          version: OPENLIATE_VERSION
         },
         {
           capabilities: {},
@@ -121,7 +122,7 @@ export class OpenLiateMcp {
 
       return registeredTools;
     } catch (err: any) {
-      console.warn(`[OpenLiateMcp] Stdio discovery failed for ${config.name}: ${err.message}`);
+      console.warn(`[MCP] Stdio discovery failed for ${config.name}: ${err.message}`);
       return [];
     }
   }
@@ -215,10 +216,8 @@ export class OpenLiateMcp {
 
       return registeredTools;
     } catch (err: any) {
-      console.warn(`[OpenLiateMcp] HTTP discovery failed for ${config.name}: ${err.message}`);
+      console.warn(`[MCP] HTTP discovery failed for ${config.name}: ${err.message}`);
       return [];
     }
   }
 }
-
-export const LiateMcp = OpenLiateMcp;

@@ -1,5 +1,5 @@
 /**
- * OPENLIATE — Open Source Backend Layer for AI Agents
+ * OpenLiate — Open Source Backend Layer for AI Agents
  * 
  * "If Stripe did payments in 7 lines of code, why not AI Agents in 5 lines of code?"
  * "Don't build AI agents. Integrate by parts."

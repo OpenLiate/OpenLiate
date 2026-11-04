@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.16] - 2026-11-04 — Polished of OpenLiate : Runtime Server, Hub Endpoints, Dynamic Models, and Clean Architecture
+
+Major architecture and platform polish release establishing the OpenLiate Runtime Server, comprehensive Hub Registry API, dynamic model discovery, and clean decoupled versioning.
+
+### OpenLiate Hub Registry API (`/hub`)
+- **Complete Hub Manifest (`GET /hub`):** Returns all available assets in the OpenLiate Hub across agents, LLMs, and MCP tools with aggregate resource counts.
+- **Granular Hub Endpoints:**
+  - `GET /hub/agents` and `GET /agents`: Lists all pre-configured autonomous agents with models, versions, and intents.
+  - `GET /hub/agents/:id` and `GET /agents/:id`: Returns the full parsed manifest (`agent.json`) for individual inspection.
+  - `GET /hub/llm` and `GET /hub/models`: Dynamic catalog of sovereign LLM definitions.
+  - `GET /hub/mcp` and `GET /hub/tools`: Dynamic catalog of Model Context Protocol tool servers.
+
+### Runtime Server Modernization
+- **Direct Runtime Server (`src/server/runtime.ts`):** Shifted from legacy `engine` to direct `runtime` server (`createRuntimeApp`, `startRuntimeServer`).
+- **Production Bundles in `dist/runtime/`:** Updated build pipelines, Dockerfile, and docker-compose to target `dist/runtime/index.js` as `openliate-runtime`.
+- **Cloud Orchestration Updates:** Updated Neon, Vercel, and Supabase deployment handlers to `deployRuntime` and `dist/runtime`.
+
+### Dynamic Layer [L] & Neon AI Gateway
+- **Zero Model Hardcoding:** Removed all hardcoded model arrays and fallback strings; dynamically resolves models via `hub/llm/*.json`.
+- **Official Neon AI Gateway (`hub/llm/neon.json`):** Integrated native Neon AI Gateway model definitions with branch-scoped bearer authentication.
+- **Dynamic Routing:** Requests across `/chat` and `/v1/chat/completions` route dynamically through `LLMRouter` with generic header forwarding.
+
+### Clean Naming & Decoupled Versioning
+- **Zero-Alias Architecture:** Eliminated legacy aliases (`LiateMcp`, `createEngineApp`). Exposes pure, modern APIs: `Agent`, `createAgent`, `create`, `MCP`, and `createRuntimeApp`.
+- **Decoupled Agent Manifest Lifecycle:** OpenLiate release version (`0.0.16`) is maintained in `package.json` and `src/core/version.ts`, while individual agent manifests (`hub/agents/*/agent.json`, root `agent.json`) manage their own versioning starting at `0.0.1`.
+- **Dynamic Agent MCP Exposer:** `createAgentMcpServer(agent)` dynamically exposes the agent's individual version (`agent.version || "0.0.1"`).
+- **Brand Harmonization:** Unified `OpenLiate` casing across all terminal banners, deployment logs, and docstrings.
+
+### Stability & Verification
+- 63/63 passing unit and integration tests across 14 test suites with 283 assertions.
+- Production bundles: `dist/bin.js` (2.35 MB), `dist/cli/openliate.exe` (native binary), and `dist/runtime/index.js` (1.30 MB).
+
+---
+
 ## [0.0.15] - 2026-11-04 — OpenLiate v0.0.15: Phase 1 [Half] — LIATE 5-Layer Restructure & Sovereign Gateway Consolidation
 
 Major architecture milestone hardening OpenLiate's core into 5 decoupled layers matching NVIDIA's 5 agent elements.

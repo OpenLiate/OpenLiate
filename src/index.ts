@@ -17,12 +17,12 @@ export * from "./layers/tools/builtin/identity";
 export * from "./layers/environment/sandbox";
 export * from "./layers/environment/types";
 
-// Infrastructure, Core, Link & Engine
+// Infrastructure, Core, Link & Runtime Server
 export * from "./core/index";
 export * from "./link/neon";
 export * from "./link/vercel";
 export * from "./link/supabase";
 export * from "./link/index";
-export * from "./server/engine";
+export * from "./server/runtime";
 export * from "./catalog/index";
 

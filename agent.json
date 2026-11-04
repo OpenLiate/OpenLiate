@@ -1,12 +1,12 @@
 {
   "L": "sarvam/sarvam-105b",
   "I": {
-    "memory": "sessions/liate-agent"
+    "memory": "sessions/openliate-agent"
   },
   "A": {
-    "name": "liate_agent",
-    "version": "1.0.0",
-    "intent": "Explain Liate: The Open Source Backend Layer for AI Agents",
+    "name": "openliate_agent",
+    "version": "0.0.1",
+    "intent": "Explain OpenLiate: The Open Source Backend Layer for AI Agents",
     "maxSteps": 5
   },
   "T": [

@@ -174,14 +174,14 @@ export class ConfigManager {
     const existing = this.getKey(keyName);
     if (existing) return existing;
 
-    const providerName = options.providerName || (keyName === "SARVAM_API_KEY" ? "Sarvam AI (105B Sovereign Model)" : keyName);
+    const providerName = options.providerName || (keyName === "SARVAM_API_KEY" ? "Sarvam AI Sovereign Token Factory" : keyName);
     const docUrl = options.docUrl || (keyName === "SARVAM_API_KEY" ? "https://dashboard.sarvam.ai" : "https://docs.openliate.tech");
 
     const isTTY = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
     if (isTTY) {
       console.log("");
-      p.intro(`\x1b[36mOpenLiate Engine Setup\x1b[0m`);
+      p.intro(`\x1b[36mOpenLiate Runtime Setup\x1b[0m`);
       p.note(
         `Agent${options.agentName ? ` '${options.agentName}'` : ""} requires ${providerName} to execute.\n🔗 Get your API key at: ${docUrl}`,
         `Missing Key: ${keyName}`

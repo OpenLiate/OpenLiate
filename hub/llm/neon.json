@@ -1,0 +1,23 @@
+{
+  "name": "neon",
+  "provider": "neon",
+  "version": "v1",
+  "base_url": "$NEON_AI_GATEWAY_BASE_URL",
+  "endpoint": "$NEON_AI_GATEWAY_BASE_URL/v1/chat/completions",
+  "default_model": "neon/gpt-4o",
+  "available_models": [
+    "neon/gpt-4o",
+    "neon/claude-3-5-sonnet",
+    "neon/meta-llama-3.3-70b"
+  ],
+  "headers": {
+    "Authorization": "Bearer $NEON_AI_GATEWAY_TOKEN",
+    "Content-Type": "application/json"
+  },
+  "features": {
+    "tool_calling": true,
+    "streaming": true,
+    "reasoning": true
+  }
+}
+

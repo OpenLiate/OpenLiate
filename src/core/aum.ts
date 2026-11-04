@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AgentManifest } from "../engine/types";
+import type { AgentManifest } from "./types";
 
 export const AUMSchema = z.object({
   L: z.union([
@@ -20,7 +20,7 @@ export const AUMSchema = z.object({
   }).optional().default({}),
   A: z.object({
     name: z.string().min(1, "Agent name is required"),
-    version: z.string().optional().default("1.0.0"),
+    version: z.string().optional().default("0.0.1"),
     intent: z.string().optional(),
     author: z.string().optional(),
     skills: z.union([z.string(), z.array(z.string())]).optional(),

@@ -1,9 +1,11 @@
-import { createEngineApp } from "./engine";
+import { createRuntimeApp } from "./runtime";
 import { serve } from "@hono/node-server";
 
-const app = createEngineApp();
+export * from "./runtime";
 
-const port = parseInt(process.env.PORT || "3000", 10);
+const app = createRuntimeApp();
+
+const port = parseInt(process.env.PORT || "7071", 10);
 const host = process.env.HOST || "0.0.0.0";
 
 // When run in Deno (Supabase Edge Functions)
@@ -16,7 +18,7 @@ if (typeof (globalThis as any).Deno !== "undefined" && typeof (globalThis as any
       port,
       hostname: host
     });
-    console.log(`[OpenLiate] Engine running on Bun (http://${host}:${port})`);
+    console.log(`[OpenLiate] Runtime running on Bun (http://${host}:${port})`);
   } else {
     try {
       serve({
@@ -24,7 +26,7 @@ if (typeof (globalThis as any).Deno !== "undefined" && typeof (globalThis as any
         port,
         hostname: host
       });
-      console.log(`[OpenLiate] Engine running on Node.js (http://${host}:${port})`);
+      console.log(`[OpenLiate] Runtime running on Node.js (http://${host}:${port})`);
     } catch {}
   }
 }

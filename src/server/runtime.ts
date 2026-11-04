@@ -5,29 +5,32 @@ import path from "path";
 import fs from "fs";
 import { Agent } from "../layers/agent/harness";
 import { EnvironmentResolver } from "../layers/environment/sandbox";
-import { LiateMcp } from "../layers/tools/mcp";
+import { MCP } from "../layers/tools/mcp";
 import type { MemoryProvider } from "../layers/integration/types";
 import { InMemorySession } from "../layers/integration/memory";
-import { SarvamClient } from "../layers/llm/sarvam";
+import { LLMRouter } from "../layers/llm/model";
+import { HubResolver } from "../layers/llm/hub";
+import { OPENLIATE_VERSION } from "../core/version";
 
 const globalSessionStore = new Map<string, MemoryProvider>();
 
-export interface EngineServerOptions {
+export interface RuntimeServerOptions {
   port?: number;
   host?: string;
 }
 
-export function createEngineApp() {
+export function createRuntimeApp() {
   const app = new Hono();
 
-  // Enable CORS so any frontend, IDE, or tool (Cursor, Claude Code, Cline, etc.) can call the gateway
+  // Enable CORS
   app.use("*", cors());
 
-  // Health and engine information
+  // Health and runtime information
   app.get("/health", (c) => {
     return c.json({
       status: "ok",
-      engine: "openliate",
+      runtime: "openliate",
+      version: OPENLIATE_VERSION,
       protocol: "LAPI/v1",
       gateway: "Sarvam AI & Neon Cloud Grid",
       doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
@@ -39,62 +42,61 @@ export function createEngineApp() {
   app.get("/", (c) => {
     return c.json({
       name: "OpenLiate",
+      version: OPENLIATE_VERSION,
       status: "running",
       gateway: "Sarvam AI & Neon Cloud Grid",
       doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
       endpoints: {
-        openai_chat: "POST /v1/chat/completions",
-        openai_models: "GET /v1/models",
+        chat: "POST /chat",
+        models: "GET /models",
+        openliate_hub: "GET /hub",
+        openliate_agents: "GET /hub/agents",
+        openliate_llm: "GET /hub/llm",
+        openliate_mcp: "GET /hub/mcp",
         openliate_run: "POST /run",
-        openliate_agents: "GET /agents",
-        health: "GET /health"
+        health: "GET /health",
+        openai_chat: "POST /v1/chat/completions",
+        openai_models: "GET /v1/models"
       }
     });
   });
 
   // =========================================================================
-  // OpenAI-Compatible Gateway Routes (Sarvam AI & Neon AI Grid)
-  // Compatible with Cursor, Claude Code, Cline, Python openai SDK, LangChain, curl
+  // Models & Chat Routes
   // =========================================================================
 
   const handleGetModels = (c: any) => {
-    const list = [
-      {
-        id: "sarvam-105b",
-        object: "model",
-        created: 1740000000,
-        owned_by: "sarvam-ai",
-        description: "Sarvam AI Sovereign 105B Indic LLM"
-      },
-      {
-        id: "sarvam-2b",
-        object: "model",
-        created: 1740000000,
-        owned_by: "sarvam-ai",
-        description: "Sarvam AI Sovereign 2B Fast Model"
-      },
-      {
-        id: "neon/gpt-4o",
-        object: "model",
-        created: 1740000000,
-        owned_by: "neon-ai-gateway",
-        description: "Neon AI Gateway — Frontier Multi-Modal"
-      },
-      {
-        id: "neon/claude-3-5-sonnet",
-        object: "model",
-        created: 1740000000,
-        owned_by: "neon-ai-gateway",
-        description: "Neon AI Gateway — Reasoning & Coding"
-      },
-      {
-        id: "neon/meta-llama-3.3-70b",
-        object: "model",
-        created: 1740000000,
-        owned_by: "neon-ai-gateway",
-        description: "Neon AI Gateway — Open Frontier Reasoning"
-      }
+    const candidateHubDirs = [
+      path.resolve(process.cwd(), "hub", "llm"),
+      path.resolve(process.cwd(), "OpenLiate", "hub", "llm"),
+      path.resolve(__dirname, "../../hub/llm"),
+      path.resolve(__dirname, "../../../hub/llm")
     ];
+    const hubDir = candidateHubDirs.find((d) => fs.existsSync(d));
+    const list: any[] = [];
+
+    if (hubDir) {
+      const files = fs.readdirSync(hubDir).filter((f) => f.endsWith(".json"));
+      for (const file of files) {
+        try {
+          const raw = fs.readFileSync(path.join(hubDir, file), "utf-8");
+          const def = JSON.parse(raw);
+          if (Array.isArray(def.available_models)) {
+            for (const modelId of def.available_models) {
+              list.push({
+                id: modelId,
+                object: "model",
+                created: 1740000000,
+                owned_by: `${def.provider || def.name}-ai`,
+                description: `${def.name} (${modelId}) Model`
+              });
+            }
+          }
+        } catch {
+          // Skip corrupt file
+        }
+      }
+    }
 
     return c.json({
       object: "list",
@@ -123,12 +125,16 @@ export function createEngineApp() {
       );
     }
 
-    const messages = body.messages;
+    let messages = body.messages;
+    if (!messages && (body.prompt || body.message)) {
+      messages = [{ role: "user", content: body.prompt || body.message }];
+    }
+
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return c.json(
         {
           error: {
-            message: "Missing or invalid 'messages' array in request body",
+            message: "Missing or invalid 'messages' array or 'prompt' in request body",
             type: "invalid_request_error",
             code: 400
           }
@@ -147,29 +153,35 @@ export function createEngineApp() {
       }
     }
 
-    // Extract provider keys passed via custom headers (e.g. x-sarvam-api-key)
-    const customProviders: Record<string, string> = {};
+    const customEnv: Record<string, string> = { ...process.env as Record<string, string> };
+    if (bearerKey) {
+      customEnv["SARVAM_API_KEY"] = bearerKey;
+      customEnv["NEON_AI_GATEWAY_TOKEN"] = bearerKey;
+    }
+
     const reqHeaders = c.req.header();
-    for (const [hName, hVal] of Object.entries(reqHeaders)) {
-      if (typeof hVal === "string" && hVal) {
-        if (hName.startsWith("x-") && hName.endsWith("-key")) {
-          const prov = hName.slice(2, -4).replace(/-/g, "_").toLowerCase();
-          customProviders[prov] = hVal;
-        }
+    for (const [headerName, headerVal] of Object.entries(reqHeaders)) {
+      if (headerName.startsWith("x-") && typeof headerVal === "string" && headerVal) {
+        const envKey = headerName.slice(2).replace(/-/g, "_").toUpperCase();
+        customEnv[envKey] = headerVal;
       }
     }
 
-    const sarvamKey = bearerKey || customProviders["sarvam"] || process.env.SARVAM_API_KEY;
-    const sarvam = new SarvamClient(sarvamKey);
-    const model = body.model || "sarvam-105b";
+    const defaultHubDef = HubResolver.loadLLM("sarvam");
+    const requestedModel = body.model || defaultHubDef.default_model;
     const isStream = Boolean(body.stream);
 
+    const router = new LLMRouter();
     try {
-      const response = await sarvam.chat(messages, {
-        model,
-        temperature: body.temperature,
-        maxTokens: body.max_tokens,
-      });
+      const response = await router.complete(
+        {
+          model: requestedModel,
+          temperature: body.temperature,
+          maxTokens: body.max_tokens,
+        },
+        messages,
+        customEnv
+      );
 
       const responseId = `chatcmpl-${Math.random().toString(36).slice(2)}`;
       const created = Math.floor(Date.now() / 1000);
@@ -250,23 +262,28 @@ export function createEngineApp() {
     }
   };
 
+  app.post("/chat", handleChatCompletions);
   app.post("/v1/chat/completions", handleChatCompletions);
   app.post("/api/v1/chat/completions", handleChatCompletions);
   app.post("/chat/completions", handleChatCompletions);
 
   // =========================================================================
-  // OpenLiate LAPI Autonomous Agent Routes
+  // OpenLiate Hub & Autonomous Agent Routes
   // =========================================================================
 
-  // List available agents in OpenLiate Hub
-  app.get("/agents", (c) => {
-    const candidateHubDirs = [
-      path.resolve(process.cwd(), "hub", "agents"),
-      path.resolve(process.cwd(), "OpenLiate", "hub", "agents"),
-      path.resolve(__dirname, "../../hub/agents")
+  function resolveHubDir(subDir: "agents" | "llm" | "mcp"): string {
+    const candidateDirs = [
+      path.resolve(process.cwd(), "hub", subDir),
+      path.resolve(process.cwd(), "OpenLiate", "hub", subDir),
+      path.resolve(__dirname, "../../hub", subDir),
+      path.resolve(__dirname, "../../../hub", subDir)
     ];
-    const hubDir = candidateHubDirs.find((d) => fs.existsSync(d)) || candidateHubDirs[0];
-    const agents: Array<{ id: string; name?: string; intent?: string; model?: string }> = [];
+    return candidateDirs.find((d) => fs.existsSync(d)) || candidateDirs[0];
+  }
+
+  function getHubAgents() {
+    const hubDir = resolveHubDir("agents");
+    const agents: Array<{ id: string; name?: string; version?: string; intent?: string; model?: string; tools?: any[] }> = [];
 
     if (fs.existsSync(hubDir)) {
       const dirs = fs.readdirSync(hubDir, { withFileTypes: true });
@@ -279,8 +296,10 @@ export function createEngineApp() {
               agents.push({
                 id: d.name,
                 name: manifest.A?.name || manifest.name || d.name,
+                version: manifest.A?.version || manifest.version || "0.0.1",
                 intent: manifest.A?.intent || manifest.intent || "",
-                model: typeof manifest.L === "string" ? manifest.L : (manifest.L?.model || manifest.L?.provider || "")
+                model: typeof manifest.L === "string" ? manifest.L : (manifest.L?.model || manifest.L?.provider || ""),
+                tools: Array.isArray(manifest.T) ? manifest.T : []
               });
             } catch {
               // Ignore corrupt manifests
@@ -289,9 +308,118 @@ export function createEngineApp() {
         }
       }
     }
+    return agents;
+  }
 
-    return c.json({ agents });
+  function getHubLLMs() {
+    const hubDir = resolveHubDir("llm");
+    const llms: any[] = [];
+
+    if (fs.existsSync(hubDir)) {
+      const files = fs.readdirSync(hubDir).filter((f) => f.endsWith(".json"));
+      for (const f of files) {
+        try {
+          const filePath = path.join(hubDir, f);
+          const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+          llms.push({
+            id: data.provider || data.name || path.basename(f, ".json"),
+            name: data.name || data.provider,
+            version: data.version,
+            default_model: data.default_model,
+            available_models: data.available_models || [],
+            features: data.features || {}
+          });
+        } catch {}
+      }
+    }
+    return llms;
+  }
+
+  function getHubMCPs() {
+    const hubDir = resolveHubDir("mcp");
+    const mcps: any[] = [];
+
+    if (fs.existsSync(hubDir)) {
+      const files = fs.readdirSync(hubDir).filter((f) => f.endsWith(".json"));
+      for (const f of files) {
+        try {
+          const filePath = path.join(hubDir, f);
+          const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+          mcps.push({
+            id: data.id || path.basename(f, ".json"),
+            name: data.name || data.id,
+            description: data.description || "",
+            transport: data.transport || "stdio",
+            command: data.command,
+            args: data.args,
+            url: data.url
+          });
+        } catch {}
+      }
+    }
+    return mcps;
+  }
+
+  // 1. Complete OpenLiate Hub Registry
+  app.get("/hub", (c) => {
+    const agents = getHubAgents();
+    const llm = getHubLLMs();
+    const mcp = getHubMCPs();
+    return c.json({
+      hub: "openliate",
+      version: OPENLIATE_VERSION,
+      counts: {
+        agents: agents.length,
+        llm: llm.length,
+        mcp: mcp.length
+      },
+      agents,
+      llm,
+      mcp
+    });
   });
+
+  // 2. Hub Agents
+  const handleGetAgents = (c: any) => {
+    const agents = getHubAgents();
+    return c.json({ agents });
+  };
+  app.get("/hub/agents", handleGetAgents);
+  app.get("/agents", handleGetAgents);
+
+  // 3. Hub Agent by ID (Inspect Manifest)
+  const handleGetAgentById = (c: any) => {
+    const id = c.req.param("id");
+    const hubDir = resolveHubDir("agents");
+    const manifestPath = path.join(hubDir, id, "agent.json");
+    if (!fs.existsSync(manifestPath)) {
+      return c.json({ error: `Agent '${id}' not found in hub/agents/` }, 404);
+    }
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+      return c.json({ id, manifest });
+    } catch (err: any) {
+      return c.json({ error: `Failed to read manifest for '${id}': ${err.message}` }, 500);
+    }
+  };
+  app.get("/hub/agents/:id", handleGetAgentById);
+  app.get("/agents/:id", handleGetAgentById);
+
+  // 4. Hub LLMs / Models
+  const handleGetHubLLM = (c: any) => {
+    const llm = getHubLLMs();
+    return c.json({ llm });
+  };
+  app.get("/hub/llm", handleGetHubLLM);
+  app.get("/hub/models", handleGetHubLLM);
+
+  // 5. Hub MCP Tools
+  const handleGetHubMCP = (c: any) => {
+    const mcp = getHubMCPs();
+    return c.json({ mcp });
+  };
+  app.get("/hub/mcp", handleGetHubMCP);
+  app.get("/hub/tools", handleGetHubMCP);
 
   // Run any AI agent on the fly (Dynamic ReAct Loop Execution)
   app.post("/run", async (c) => {
@@ -452,24 +580,28 @@ export function createEngineApp() {
           delete process.env[k];
         }
       }
-      await LiateMcp.closeAll();
+      await MCP.closeAll();
     }
   });
 
   return app;
 }
 
-export function startEngineServer(options?: EngineServerOptions) {
-  const port = options?.port || 20128;
+export function startRuntimeServer(options?: RuntimeServerOptions) {
+  const port = options?.port || 7071;
   const host = options?.host || "0.0.0.0";
-  const app = createEngineApp();
+  const app = createRuntimeApp();
 
   console.log(`\n===========================================================`);
-  console.log(`  [OpenLiate] Engine running on http://${host === "0.0.0.0" ? "localhost" : host}:${port}`);
-  console.log(`  • OpenAI Base URL:    http://localhost:${port}/v1`);
-  console.log(`  • Models Endpoint:    http://localhost:${port}/v1/models`);
-  console.log(`  • Autonomous Agents:  http://localhost:${port}/run`);
-  console.log(`  • Sovereign AI Stack: Sarvam AI & Neon Cloud Grid`);
+  console.log(`  [OpenLiate] Agent Runtime Server on http://${host === "0.0.0.0" ? "localhost" : host}:${port}`);
+  console.log(`  • Invoke Agent API:   POST http://localhost:${port}/run`);
+  console.log(`  • Hub Registry:       GET  http://localhost:${port}/hub`);
+  console.log(`  • Hub Agents:         GET  http://localhost:${port}/hub/agents`);
+  console.log(`  • Hub LLMs:           GET  http://localhost:${port}/hub/llm`);
+  console.log(`  • Hub MCP Tools:      GET  http://localhost:${port}/hub/mcp`);
+  console.log(`  • Health & Status:    GET  http://localhost:${port}/health`);
+  console.log(`  • Chat API:           POST http://localhost:${port}/chat`);
+  console.log(`  • Model Layer [L]:    Sarvam AI & Neon AI Gateway`);
   console.log(`  • Doctrine: "Class is an Agent. Agent is a Function. Function is an API."`);
   console.log(`===========================================================\n`);
 
@@ -502,3 +634,5 @@ export function startEngineServer(options?: EngineServerOptions) {
     }
   };
 }
+
+export default createRuntimeApp;

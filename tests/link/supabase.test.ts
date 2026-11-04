@@ -73,7 +73,7 @@ describe("Cloud Link: Supabase MCP OAuth (https://mcp.supabase.com)", () => {
     const client = new SupabaseMcpClient("test_token_123");
     expect(client).toBeDefined();
     expect(typeof client.listProjects).toBe("function");
-    expect(typeof client.deployEngine).toBe("function");
+    expect(typeof client.deployRuntime).toBe("function");
     expect(typeof client.callMcp).toBe("function");
   });
 });

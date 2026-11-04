@@ -11,6 +11,7 @@ import type { AgentTool, AgentContext, AgentRunResult, AgentExecutionOptions } f
 import { ToolRegistry } from "../tools/registry";
 import { EnvironmentResolver } from "../environment/sandbox";
 import { ConfigManager } from "../../core/config";
+import { OPENLIATE_VERSION } from "../../core/version";
 
 export interface AgentConfigOptions {
   manifest?: string | AgentManifest;
@@ -54,7 +55,7 @@ export class Agent {
 
     // Resolve Name, Version, and Intent from manifest or programmatic options
     this.name = options.name || resolvedManifest?.A?.name || "unnamed_agent";
-    this.version = options.version || resolvedManifest?.A?.version || "1.0.0";
+    this.version = options.version || resolvedManifest?.A?.version || "0.0.1";
     this.intent = options.intent || resolvedManifest?.A?.intent || "Autonomous AI Agent";
     this.maxSteps = resolvedManifest?.A?.maxSteps ?? 10;
 
@@ -220,4 +221,12 @@ export class Agent {
       }
     };
   }
+}
+
+export function createAgent(options?: AgentConfigOptions | string): Agent {
+  return new Agent(typeof options === "string" ? { manifest: options } : options);
+}
+
+export function create(options?: AgentConfigOptions | string): Agent {
+  return createAgent(options);
 }

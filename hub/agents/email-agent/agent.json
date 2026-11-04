@@ -5,7 +5,7 @@
   },
   "A": {
     "name": "email_agent",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "intent": "Autonomous Email Management Agent",
     "maxSteps": 5
   },

@@ -1,6 +1,6 @@
 {
   "name": "openliate",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
   "main": "./src/index.ts",
@@ -11,17 +11,17 @@
   },
   "files": [
     "dist/bin.js",
-    "dist/engine",
+    "dist/runtime",
     "src",
     "hub"
   ],
   "scripts": {
     "test": "bun test",
-    "build": "bun run build:bin && bun run build:cli && bun run build:engine",
-    "build:bin": "bun build ./src/cli.ts --target node --format esm --outfile dist/bin.js",
-    "build:cli": "bun build ./src/cli.ts --compile --outfile dist/cli/openliate",
-    "build:engine": "bun build ./src/server/index.ts --target node --format esm --outfile dist/engine/index.js",
-    "serve": "bun run dist/engine/index.js",
+    "build": "bun run build:bin && bun run build:cli && bun run build:runtime",
+    "build:bin": "bun build ./src/cli/index.ts --target node --format esm --outfile dist/bin.js",
+    "build:cli": "bun build ./src/cli/index.ts --compile --outfile dist/cli/openliate",
+    "build:runtime": "bun build ./src/server/index.ts --target node --format esm --outfile dist/runtime/index.js",
+    "serve": "bun run dist/runtime/index.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

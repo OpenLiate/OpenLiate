@@ -73,7 +73,7 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
       I: { memory: ":memory:" },
       A: {
         name: "tool_agent",
-        version: "1.0.0",
+        version: "0.0.1",
         intent: "Tool Tester"
       },
       T: ["fetch"],
