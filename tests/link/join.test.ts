@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { DEFAULT_JOIN_CALLBACK_PORT, JOIN_PORTAL_URL } from "../../src/link/join";
+import { DEFAULT_JOIN_CALLBACK_PORT, JOIN_PORTAL_URL } from "../../src/cli/commands/join";
 import { ConfigManager } from "../../src/core/config";
 
 describe("OpenLiate Join & Workspace Setup", () => {
