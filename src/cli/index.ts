@@ -21,7 +21,7 @@ export function printHelp(): void {
   console.log(BANNER);
   console.log(`Usage:
   openliate join                                       Configure AI gateway and workspace
-  openliate hub                                        Browse Hub agents or launch interactive L·I·A·T·E studio
+  openliate hub                                        Browse and inspect OpenLiate Hub agents
   openliate create                                     Construct an agent step-by-step via 5-pillar L·I·A·T·E
   openliate run <agent.json|agent-name> "<prompt>"    Execute an agent locally
   openliate serve [--port <port>]                      Start the Agent-as-an-API HTTP server (default: 7071)
@@ -74,7 +74,7 @@ export async function main(): Promise<void> {
     return;
   }
 
-  // 2. Hub / Studio Command
+  // 2. Hub Command
   if (command === "hub") {
     await handleHubCommand();
     return;

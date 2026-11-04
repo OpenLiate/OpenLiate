@@ -56,7 +56,7 @@ export function listHubAgents(): HubAgentSummary[] {
 
 export async function handleCreateCommand(): Promise<void> {
   console.log("");
-  p.intro("\x1b[36mOpenLiate — 5-Pillar L·I·A·T·E Agent Studio\x1b[0m");
+  p.intro("\x1b[36mOpenLiate — 5-Pillar L·I·A·T·E Agent Builder\x1b[0m");
   p.note(
     "Construct an autonomous agent aligned with the 5 Sovereign Pillars:\n" +
     "[L] Model  ->  [I] Knowledge  ->  [A] Harness  ->  [T] Tools  ->  [E] Sandbox",
@@ -271,7 +271,7 @@ export async function handleCreateCommand(): Promise<void> {
 
 export async function handleHubCommand(): Promise<void> {
   console.log("");
-  p.intro("\x1b[36mOpenLiate Hub & Studio\x1b[0m");
+  p.intro("\x1b[36mOpenLiate Hub\x1b[0m");
 
   const action = await p.select({
     message: "Select an action:",
