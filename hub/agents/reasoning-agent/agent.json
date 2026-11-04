@@ -1,0 +1,14 @@
+{
+  "L": "omniroute/deepseek-r1-distill-llama-70b",
+  "I": {
+    "memory": "sessions/reasoning-agent"
+  },
+  "A": {
+    "name": "reasoning_agent",
+    "version": "1.0.0",
+    "intent": "Specialized Deep Reasoning Agent using DeepSeek R1 via OmniRoute",
+    "maxSteps": 3
+  },
+  "T": [],
+  "E": {}
+}

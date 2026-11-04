@@ -1,7 +1,7 @@
 import type { ModelConfig } from "../core/types";
 
 export interface NormalizedModel {
-  provider: "sarvam" | "openai" | "anthropic" | "google" | "ollama" | "custom";
+  provider: "sarvam" | "omniroute" | "openai" | "anthropic" | "google" | "ollama" | "custom";
   model: string;
   temperature?: number;
   maxTokens?: number;
@@ -17,6 +17,17 @@ export function normalizeModelConfig(input: string | ModelConfig): NormalizedMod
       return {
         provider: mapProvider(provider),
         model
+      };
+    }
+    // auto, auto-free, or any bare model string → omniroute (the free gateway)
+    if (
+      input.toLowerCase() === "auto" ||
+      input.toLowerCase() === "auto-free" ||
+      input.toLowerCase().startsWith("omniroute")
+    ) {
+      return {
+        provider: "omniroute",
+        model: input
       };
     }
     return {
@@ -36,6 +47,7 @@ export function normalizeModelConfig(input: string | ModelConfig): NormalizedMod
 
 function mapProvider(provider: string): NormalizedModel["provider"] {
   const p = provider.toLowerCase();
+  if (p === "omniroute") return "omniroute";
   if (p === "sarvam") return "sarvam";
   if (p === "openai") return "openai";
   if (p === "anthropic" || p === "claude") return "anthropic";
@@ -43,4 +55,3 @@ function mapProvider(provider: string): NormalizedModel["provider"] {
   if (p === "ollama") return "ollama";
   return "custom";
 }
-

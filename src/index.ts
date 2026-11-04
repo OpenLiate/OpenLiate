@@ -21,4 +21,5 @@ export * from "./link/vercel";
 export * from "./link/supabase";
 export * from "./link/index";
 export * from "./server/engine";
+export * from "./catalog/index";
 

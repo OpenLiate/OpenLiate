@@ -3,13 +3,15 @@ import path from "path";
 import { AUM } from "../core/aum";
 import type { AgentManifest } from "../core/types";
 import { SarvamClient } from "../llm/sarvam";
+import { OmniRouteGatewayClient } from "../catalog/omniroute/gateway";
 import { normalizeModelConfig } from "../llm/config";
 import { IntegrationResolver } from "../integration/integration";
 import type { MemoryProvider } from "../integration/types";
-import { ReActLoop } from "./loop";
+import { ReActLoop, type LLMFunctionCaller } from "./loop";
 import type { AgentTool, AgentContext, AgentRunResult, AgentExecutionOptions } from "./types";
 import { ToolRegistry } from "../tools/registry";
 import { EnvironmentResolver } from "../environment/environment";
+import { ConfigManager } from "../core/config";
 
 export interface AgentConfigOptions {
   manifest?: string | AgentManifest;
@@ -30,7 +32,7 @@ export class Agent {
   public readonly model: string;
   public readonly manifest?: AgentManifest;
   private memory: MemoryProvider;
-  private llm: SarvamClient;
+  private llm: LLMFunctionCaller;
   private tools: Map<string, AgentTool> = new Map();
   private maxSteps: number = 10;
   private toolsInitialized: boolean = false;
@@ -78,8 +80,25 @@ export class Agent {
     }
 
     // Resolve LLM Provider ([L] Layer)
-    const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY;
-    this.llm = new SarvamClient(apiKey);
+    const provider = normalizedL?.provider;
+    if (provider === "omniroute") {
+      const apiKey = options.apiKey || resolvedManifest?.E?.OMNIROUTE_API_KEY || ConfigManager.getKey("OMNIROUTE_API_KEY");
+      const client = new OmniRouteGatewayClient(apiKey);
+      this.llm = {
+        chat: async (msgs: any[], opts?: any) => {
+          const res = await client.chat(msgs, opts);
+          return {
+            text: res.text,
+            model: res.model,
+            toolCalls: res.toolCalls,
+            usage: res.usage
+          };
+        }
+      };
+    } else {
+      const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY");
+      this.llm = new SarvamClient(apiKey);
+    }
 
     // Collect tool specs from options or manifest ([T] Layer)
     if (options.tools) {
@@ -161,5 +180,62 @@ export class Agent {
         temperature: options.temperature
       }
     );
+  }
+
+  /**
+   * Converts this Agent into a standard Web Request / API Route handler.
+   * Compatible with Next.js App Router (route.ts), Vercel Edge, Hono, Node.js, and Cloudflare Workers.
+   *
+   * Usage:
+   *   export const POST = agent.toHandler();
+   */
+  public toHandler(): (req: Request) => Promise<Response> {
+    return async (req: Request): Promise<Response> => {
+      try {
+        let body: any = {};
+        if (req.method === "POST") {
+          body = await req.json();
+        }
+
+        const prompt = body.prompt || body.message || body.input;
+        if (!prompt || typeof prompt !== "string") {
+          return new Response(
+            JSON.stringify({ error: "Missing required 'prompt' string in request body." }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const sessionId = body.sessionId || body.session;
+        if (sessionId && this.memory && typeof (this.memory as any).setSessionId === "function") {
+          (this.memory as any).setSessionId(sessionId);
+        }
+
+        const result = await this.run(prompt, {
+          model: body.model,
+          maxSteps: body.maxSteps,
+          systemPrompt: body.systemPrompt
+        });
+
+        return new Response(
+          JSON.stringify({
+            text: result.text,
+            thought: result.thought,
+            model: result.model,
+            steps: result.totalSteps,
+            durationMs: result.durationMs,
+            agent: {
+              name: this.name,
+              version: this.version
+            }
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      } catch (err: any) {
+        return new Response(
+          JSON.stringify({ error: err.message || "Agent execution failed." }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    };
   }
 }

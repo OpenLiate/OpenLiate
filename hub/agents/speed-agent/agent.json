@@ -1,0 +1,14 @@
+{
+  "L": "omniroute/cerebras",
+  "I": {
+    "memory": "sessions/speed-agent"
+  },
+  "A": {
+    "name": "speed_agent",
+    "version": "1.0.0",
+    "intent": "Ultra-Fast Inference Agent using Cerebras via OmniRoute",
+    "maxSteps": 3
+  },
+  "T": [],
+  "E": {}
+}

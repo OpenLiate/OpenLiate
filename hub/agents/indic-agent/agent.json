@@ -1,0 +1,14 @@
+{
+  "L": "sarvam/sarvam-2b",
+  "I": {
+    "memory": "sessions/indic-agent"
+  },
+  "A": {
+    "name": "indic_agent",
+    "version": "1.0.0",
+    "intent": "Sovereign Indian Language Agent using Sarvam 2B",
+    "maxSteps": 3
+  },
+  "T": [],
+  "E": {}
+}

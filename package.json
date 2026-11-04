@@ -1,6 +1,6 @@
 {
   "name": "openliate",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Open Source Backend Layer for AI Agents",
   "type": "module",
   "main": "./src/index.ts",
@@ -30,8 +30,12 @@
     "@modelcontextprotocol/client": "2.4.0",
     "@modelcontextprotocol/core": "2.4.0",
     "@modelcontextprotocol/server": "2.4.0",
+    "@neondatabase/serverless": "1.2.0",
+    "@supabase/supabase-js": "2.118.0",
+    "@vercel/sdk": "1.28.56",
     "hono": "^4.7.0",
     "jszip": "3.10.2",
+    "sarvamai": "1.1.15",
     "zod": "^3.24.0"
   },
   "devDependencies": {

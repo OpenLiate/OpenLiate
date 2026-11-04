@@ -12,8 +12,130 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.status).toBe("ok");
     expect(body.engine).toBe("openliate");
     expect(body.protocol).toBe("LAPI/v1");
+    expect(body.gateway).toBe("OmniRoute");
     expect(body.doctrine).toContain("Class is an Agent");
     expect(body.doctrine).toContain("OpenLiate");
+  });
+
+  it("GET / returns all endpoint maps including openai_chat and openai_models", async () => {
+    const res = await app.request("/");
+    expect(res.status).toBe(200);
+
+    const body = await res.json() as any;
+    expect(body.name).toBe("OpenLiate");
+    expect(body.endpoints.openai_chat).toBe("POST /v1/chat/completions");
+    expect(body.endpoints.openai_models).toBe("GET /v1/models");
+  });
+
+  it("GET /v1/models returns OpenAI-compatible models list with auto and auto-free", async () => {
+    const res = await app.request("/v1/models");
+    expect(res.status).toBe(200);
+
+    const body = await res.json() as any;
+    expect(body.object).toBe("list");
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.length).toBeGreaterThanOrEqual(4);
+
+    const modelIds = body.data.map((m: any) => m.id);
+    expect(modelIds).toContain("auto");
+    expect(modelIds).toContain("auto-free");
+  });
+
+  it("POST /v1/chat/completions validates required messages array", async () => {
+    const res = await app.request("/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json() as any;
+    expect(body.error).toBeDefined();
+    expect(body.error.message).toContain("Missing or invalid 'messages' array");
+  });
+
+  it("POST /v1/chat/completions handles OpenAI payload via OmniRoute gateway", async () => {
+    const originalFetch = globalThis.fetch;
+    try {
+      (globalThis as any).fetch = async (url: string, init: any) => {
+        return {
+          ok: true,
+          json: async () => ({
+            id: "pllns-chatcmpl-test",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "Greetings from Sovereign Gateway!" },
+                finish_reason: "stop"
+              }
+            ],
+            usage: { prompt_tokens: 10, completion_tokens: 15, total_tokens: 25 }
+          })
+        };
+      };
+
+      const res = await app.request("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer sk-test-key"
+        },
+        body: JSON.stringify({
+          model: "auto-free",
+          messages: [{ role: "user", content: "Hello Gateway" }]
+        })
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json() as any;
+      expect(body.id).toBeDefined();
+      expect(body.object).toBe("chat.completion");
+      expect(body.choices[0].message.content).toBe("Greetings from Sovereign Gateway!");
+      expect(body.choices[0].finish_reason).toBe("stop");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("POST /v1/chat/completions supports streaming SSE format when stream: true", async () => {
+    const originalFetch = globalThis.fetch;
+    try {
+      (globalThis as any).fetch = async (url: string, init: any) => {
+        return {
+          ok: true,
+          json: async () => ({
+            id: "pllns-stream-test",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "Streamed content" },
+                finish_reason: "stop"
+              }
+            ],
+            usage: { prompt_tokens: 8, completion_tokens: 12, total_tokens: 20 }
+          })
+        };
+      };
+
+      const res = await app.request("/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "auto-free",
+          messages: [{ role: "user", content: "Stream test" }],
+          stream: true
+        })
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toContain("text/event-stream");
+      const text = await res.text();
+      expect(text).toContain("data: ");
+      expect(text).toContain("[DONE]");
+      expect(text).toContain("Streamed content");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("GET /agents lists pre-configured agents from Liate Hub", async () => {
@@ -53,7 +175,6 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
       })
     });
 
-    // In local test without active live LLM response, it executes the loop or returns standard result
     const body = await res.json() as any;
     expect(res.status === 200 || res.status === 500).toBe(true);
     if (res.status === 200) {
@@ -83,4 +204,3 @@ describe("Pure Engine Server: LAPI HTTP & On-the-fly Execution", () => {
     }
   });
 });
-

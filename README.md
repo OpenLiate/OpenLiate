@@ -147,7 +147,14 @@ Run agents anywhere on your own hardware with full Dual-MCP superpowers:
 # 1. Native Standalone CLI
 liate run agent.json "Hello Agent World!"
 
-# 2. Production Docker Engine (Node 24 + Python 3.14 + Astral uv + npx)
+# 2. Local AI Gateway & Engine Server (ekaRoute 1.62B+ Free Token Gateway · OpenAI Compatible)
+openliate serve --port 3000
+
+# Connect Cursor, Claude Code, Cline, Copilot, or Python SDK to your local port:
+export OPENAI_BASE_URL="http://localhost:3000/v1"
+export OPENAI_API_KEY="any-key"
+
+# 3. Production Docker Engine (Node 24 + Python 3.14 + Astral uv + npx)
 docker compose up -d
 ```
 

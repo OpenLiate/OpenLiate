@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
 import path from "path";
 import fs from "fs";
 import { Agent } from "../agent/agent";
@@ -7,6 +8,7 @@ import { EnvironmentResolver } from "../environment/environment";
 import { LiateMcp } from "../tools/mcp";
 import type { MemoryProvider } from "../integration/types";
 import { InMemorySession } from "../integration/memory";
+import { OmniRouteGatewayClient, OMNIROUTE_MODELS } from "../catalog/omniroute/index";
 
 const globalSessionStore = new Map<string, MemoryProvider>();
 
@@ -18,7 +20,7 @@ export interface EngineServerOptions {
 export function createEngineApp() {
   const app = new Hono();
 
-  // Enable CORS so any frontend (React, Next.js, mobile app) can call the engine
+  // Enable CORS so any frontend, IDE, or tool (Cursor, Claude Code, Cline, etc.) can call the gateway
   app.use("*", cors());
 
   // Health and engine information
@@ -27,6 +29,7 @@ export function createEngineApp() {
       status: "ok",
       engine: "openliate",
       protocol: "LAPI/v1",
+      gateway: "OmniRoute",
       doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
       uptime: process.uptime(),
       timestamp: new Date().toISOString()
@@ -37,13 +40,218 @@ export function createEngineApp() {
     return c.json({
       name: "OpenLiate",
       status: "running",
+      gateway: "OmniRoute",
+      doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
       endpoints: {
-        health: "GET /health",
-        agents: "GET /agents",
-        run: "POST /run"
+        openai_chat: "POST /v1/chat/completions",
+        openai_models: "GET /v1/models",
+        openliate_run: "POST /run",
+        openliate_agents: "GET /agents",
+        health: "GET /health"
       }
     });
   });
+
+  // =========================================================================
+  // OpenAI-Compatible Gateway Routes (OmniRoute Free AI Gateway)
+  // Compatible with Cursor, Claude Code, Cline, Python openai SDK, LangChain, curl
+  // =========================================================================
+
+  const handleGetModels = (c: any) => {
+    const list = [
+      {
+        id: "auto",
+        object: "model",
+        created: 1740000000,
+        owned_by: "omniroute",
+        description: "Adaptive task-based routing across 380+ providers"
+      },
+      {
+        id: "auto-free",
+        object: "model",
+        created: 1740000000,
+        owned_by: "omniroute",
+        description: "Zero API Key Free Pool"
+      },
+      ...Object.values(OMNIROUTE_MODELS).map((m: any) => ({
+        id: m.id || m.modelId,
+        object: "model",
+        created: 1740000000,
+        owned_by: m.provider || "omniroute",
+        permission: [],
+        root: m.id || m.modelId,
+        parent: null
+      }))
+    ];
+
+    // Deduplicate by id
+    const seen = new Set<string>();
+    const unique = list.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+
+    return c.json({
+      object: "list",
+      data: unique
+    });
+  };
+
+  app.get("/v1/models", handleGetModels);
+  app.get("/api/v1/models", handleGetModels);
+  app.get("/models", handleGetModels);
+
+  const handleChatCompletions = async (c: any) => {
+    let body: any = {};
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(
+        {
+          error: {
+            message: "Invalid JSON in request body",
+            type: "invalid_request_error",
+            code: 400
+          }
+        },
+        400
+      );
+    }
+
+    const messages = body.messages;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return c.json(
+        {
+          error: {
+            message: "Missing or invalid 'messages' array in request body",
+            type: "invalid_request_error",
+            code: 400
+          }
+        },
+        400
+      );
+    }
+
+    // Extract authorization key if provided (Bearer ...)
+    const authHeader = c.req.header("authorization") || c.req.header("Authorization");
+    let bearerKey: string | undefined;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.slice(7).trim();
+      if (token && token !== "none" && token !== "test") {
+        bearerKey = token;
+      }
+    }
+
+    // Extract provider keys passed via custom headers (e.g. x-groq-key, x-sarvam-key)
+    const customProviders: Record<string, string> = {};
+    const reqHeaders = c.req.header();
+    for (const [hName, hVal] of Object.entries(reqHeaders)) {
+      if (typeof hVal === "string" && hVal) {
+        if (hName.startsWith("x-") && hName.endsWith("-key")) {
+          const prov = hName.slice(2, -4).replace(/-/g, "_").toLowerCase();
+          customProviders[prov] = hVal;
+        }
+      }
+    }
+
+    const gateway = new OmniRouteGatewayClient(bearerKey);
+    const model = body.model || "auto";
+    const isStream = Boolean(body.stream);
+
+    try {
+      const response = await gateway.chat(messages, {
+        model,
+        temperature: body.temperature,
+        maxTokens: body.max_tokens,
+      });
+
+      const responseId = `chatcmpl-${Math.random().toString(36).slice(2)}`;
+      const created = Math.floor(Date.now() / 1000);
+      const assistantContent = response.text || "";
+
+      if (isStream) {
+        const streamHeaders = {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive"
+        };
+
+        const chunk1 = {
+          id: responseId,
+          object: "chat.completion.chunk",
+          created,
+          model: response.model,
+          choices: [
+            {
+              index: 0,
+              delta: { role: "assistant", content: assistantContent },
+              finish_reason: null
+            }
+          ]
+        };
+
+        const chunk2 = {
+          id: responseId,
+          object: "chat.completion.chunk",
+          created,
+          model: response.model,
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: "stop"
+            }
+          ]
+        };
+
+        const sseBody = `data: ${JSON.stringify(chunk1)}\n\ndata: ${JSON.stringify(chunk2)}\n\ndata: [DONE]\n\n`;
+        return new Response(sseBody, { headers: streamHeaders });
+      }
+
+      return c.json({
+        id: responseId,
+        object: "chat.completion",
+        created,
+        model: response.model,
+        system_fingerprint: "fp_openliate_omniroute",
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: assistantContent
+            },
+            finish_reason: "stop"
+          }
+        ],
+        usage: {
+          prompt_tokens: response.usage?.promptTokens || 0,
+          completion_tokens: response.usage?.completionTokens || 0,
+          total_tokens: response.usage?.totalTokens || 0
+        }
+      });
+    } catch (err: any) {
+      return c.json(
+        {
+          error: {
+            message: err.message || "OmniRoute gateway failed to complete request",
+            type: "api_error",
+            code: 500
+          }
+        },
+        500
+      );
+    }
+  };
+
+  app.post("/v1/chat/completions", handleChatCompletions);
+  app.post("/api/v1/chat/completions", handleChatCompletions);
+  app.post("/chat/completions", handleChatCompletions);
+
+  // =========================================================================
+  // OpenLiate LAPI Autonomous Agent Routes
+  // =========================================================================
 
   // List available agents in OpenLiate Hub
   app.get("/agents", (c) => {
@@ -247,21 +455,34 @@ export function createEngineApp() {
 }
 
 export function startEngineServer(options?: EngineServerOptions) {
-  const port = options?.port || 3000;
+  const port = options?.port || 20128;
   const host = options?.host || "0.0.0.0";
   const app = createEngineApp();
 
-  console.log(`[OpenLiate] Starting Pure Engine Server on port ${port}...`);
-  console.log(`[OpenLiate] Doctrine: "Class is an Agent. Agent is a Function. Function is an API."`);
+  console.log(`\n===========================================================`);
+  console.log(`  [OpenLiate] Engine & OmniRoute Gateway running on http://${host === "0.0.0.0" ? "localhost" : host}:${port}`);
+  console.log(`  • OpenAI Base URL:    http://localhost:${port}/v1`);
+  console.log(`  • Models Endpoint:    http://localhost:${port}/v1/models`);
+  console.log(`  • Autonomous Agents:  http://localhost:${port}/run`);
+  console.log(`  • Free AI Gateway:    OmniRoute (380+ Providers / Port ${port})`);
+  console.log(`  • Doctrine: "Class is an Agent. Agent is a Function. Function is an API."`);
+  console.log(`===========================================================\n`);
 
   // Native Bun / Node server
-  const server = (globalThis as any).Bun?.serve
-    ? (globalThis as any).Bun.serve({
-        fetch: app.fetch,
-        port,
-        hostname: host
-      })
-    : null;
+  let server: any;
+  if ((globalThis as any).Bun?.serve) {
+    server = (globalThis as any).Bun.serve({
+      fetch: app.fetch,
+      port,
+      hostname: host
+    });
+  } else {
+    server = serve({
+      fetch: app.fetch,
+      port,
+      hostname: host
+    });
+  }
 
   return {
     app,
@@ -270,8 +491,9 @@ export function startEngineServer(options?: EngineServerOptions) {
     close: () => {
       if (server?.stop) {
         server.stop();
+      } else if (server?.close) {
+        server.close();
       }
     }
   };
 }
-

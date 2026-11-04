@@ -11,7 +11,7 @@ import { VercelMcpOAuth, VercelMcpClient } from "./link/vercel";
 import { startEngineServer } from "./server/engine";
 import { ConfigManager } from "./core/config";
 
-const VERSION = "0.0.12";
+const VERSION = "0.0.13";
 const BANNER = `
 ===========================================================
   OPENLIATE — Open Source Backend Layer for AI Agents
@@ -25,7 +25,11 @@ function resolveManifestPath(input: string): string | null {
     path.resolve(process.cwd(), input),
     path.resolve(process.cwd(), "hub", "agents", input, "agent.json"),
     path.resolve(process.cwd(), "hub", "agents", input),
-    path.resolve(__dirname, "..", "hub", "agents", input, "agent.json")
+    path.resolve(process.cwd(), "OpenLiate", input),
+    path.resolve(process.cwd(), "OpenLiate", "hub", "agents", input, "agent.json"),
+    path.resolve(process.cwd(), "OpenLiate", "hub", "agents", input),
+    path.resolve(__dirname, "..", "hub", "agents", input, "agent.json"),
+    path.resolve(__dirname, "..", "hub", "agents", input)
   ];
 
   for (const c of candidates) {
@@ -50,7 +54,7 @@ async function main() {
     console.log(`Usage:
   openliate join                                       Join Mission AgentYaan, claim @handle & BYOAI setup
   openliate run <agent.json|agent-name> "<prompt>"    Execute an agent locally
-  openliate serve [--port <port>]                      Start the pure OpenLiate engine HTTP server
+  openliate serve [--port <port>]                      Start the pure OpenLiate engine HTTP server (default: 20128)
   openliate link                                       Link Vercel, Neon & Supabase in 1 click (2.5M Free Runs)
   openliate link --neon                                Link Neon & auto-deploy engine (1M runs, 2 vCPU, 8GB RAM)
   openliate link --vercel                              Link Vercel & auto-deploy serverless engine (1M runs)
@@ -68,7 +72,7 @@ Examples:
   openliate join
   openliate run agent.json "Hello Agent World!"
   openliate run research-agent "Fetch https://skills.sh and summarize"
-  openliate serve --port 3000
+  openliate serve --port 20128
   openliate link
   openliate link --neon
   openliate link --vercel
@@ -117,7 +121,44 @@ Examples:
     EnvironmentResolver.loadEnv(manifestPath);
 
     try {
-      await ConfigManager.ensureApiKey("SARVAM_API_KEY", { agentName: manifestArg });
+      const rawJson = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+      const modelStr = typeof rawJson.L === "string" ? rawJson.L : rawJson.L?.model || "";
+      const lowerModel = modelStr.toLowerCase();
+
+      if (lowerModel.includes("sarvam") || manifestArg.includes("sarvam") || manifestArg.includes("indic")) {
+        await ConfigManager.ensureApiKey("SARVAM_API_KEY", {
+          agentName: manifestArg,
+          providerName: "Sarvam AI Token Factory (Free Credits at https://dashboard.sarvam.ai)",
+          docUrl: "https://dashboard.sarvam.ai"
+        });
+      } else if (lowerModel.includes("groq") || lowerModel.includes("coder") || manifestArg.includes("code")) {
+        const hasGroq = process.env.GROQ_API_KEY || ConfigManager.getKey("GROQ_API_KEY");
+        if (!hasGroq) {
+          await ConfigManager.ensureApiKey("GROQ_API_KEY", {
+            agentName: manifestArg,
+            providerName: "Groq Fast LPUs (Free Tier at https://console.groq.com/keys)",
+            docUrl: "https://console.groq.com/keys"
+          });
+        }
+      } else if (lowerModel.includes("cerebras") || manifestArg.includes("speed")) {
+        const hasCerebras = process.env.CEREBRAS_API_KEY || ConfigManager.getKey("CEREBRAS_API_KEY");
+        if (!hasCerebras) {
+          await ConfigManager.ensureApiKey("CEREBRAS_API_KEY", {
+            agentName: manifestArg,
+            providerName: "Cerebras Wafer-Scale Fast Inference (Free Tier at https://cloud.cerebras.ai)",
+            docUrl: "https://cloud.cerebras.ai"
+          });
+        }
+      } else if (lowerModel.includes("auto") || lowerModel.includes("omniroute")) {
+        const hasAny = process.env.GROQ_API_KEY || process.env.SARVAM_API_KEY || process.env.CEREBRAS_API_KEY || ConfigManager.getKey("GROQ_API_KEY") || ConfigManager.getKey("SARVAM_API_KEY");
+        if (!hasAny) {
+          await ConfigManager.ensureApiKey("GROQ_API_KEY", {
+            agentName: manifestArg,
+            providerName: "Groq Fast LPUs (Free Tier at https://console.groq.com/keys)",
+            docUrl: "https://console.groq.com/keys"
+          });
+        }
+      }
 
       const agent = new Agent({ manifest: manifestPath });
       console.log(`[OpenLiate] Booting ${agent.name} (v${agent.version})...`);
@@ -145,20 +186,15 @@ Examples:
 
   // 2. Serve Command (Pure Engine HTTP Server)
   if (command === "serve") {
-    let port = 3000;
+    let port = 20128;
     const portIdx = args.indexOf("--port");
     if (portIdx !== -1 && args[portIdx + 1]) {
-      port = parseInt(args[portIdx + 1], 10) || 3000;
+      port = parseInt(args[portIdx + 1], 10) || 20128;
     }
 
     EnvironmentResolver.loadEnv();
-    const engine = startEngineServer({ port });
-    console.log(`\n[OpenLiate OM] Pure Runtime Engine running at: http://localhost:${port}`);
-    console.log(`[Endpoints]:`);
-    console.log(`  - Health: GET  http://localhost:${port}/health`);
-    console.log(`  - Agents: GET  http://localhost:${port}/agents`);
-    console.log(`  - Run:    POST http://localhost:${port}/run\n`);
-    console.log(`Ready to execute AI agents on the fly.`);
+    startEngineServer({ port });
+    console.log(`Ready to serve Cursor, Claude Code, Cline, Python SDK, and Autonomous Agents.`);
 
     // Keep process alive
     return;
