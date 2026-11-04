@@ -33,6 +33,7 @@ export interface NeonTokenData {
   refresh_token?: string;
   saved_at: string;
   projectId?: string;
+  email?: string;
 }
 
 export interface ClientRegistration {

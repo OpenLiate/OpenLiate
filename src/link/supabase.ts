@@ -32,6 +32,7 @@ export interface SupabaseTokenData {
   refresh_token?: string;
   project_ref?: string;
   organization?: string;
+  email?: string;
   mcp_url?: string;
   saved_at: string;
 }

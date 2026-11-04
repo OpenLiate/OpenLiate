@@ -33,6 +33,7 @@ export interface VercelTokenData {
   refresh_token?: string;
   user_id?: string;
   team_id?: string;
+  email?: string;
   scope?: string;
   saved_at: string;
 }
