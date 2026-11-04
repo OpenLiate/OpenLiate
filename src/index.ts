@@ -6,6 +6,7 @@ export * from "./integration/memory";
 export * from "./integration/types";
 export * from "./integration/integration";
 export * from "./llm/sarvam";
+export * from "./llm/omniroute/index";
 export * from "./llm/llm";
 export * from "./llm/hub";
 export * from "./tools/types";

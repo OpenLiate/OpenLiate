@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { Sarvam, SARVAM_MODELS } from "../../src/catalog/sarvam/index";
 import { Neon } from "../../src/catalog/neon/index";
-import { OmniRoute, OMNIROUTE_MODELS } from "../../src/catalog/omniroute/index";
+import { OmniRoute, OMNIROUTE_MODELS } from "../../src/llm/omniroute/index";
 import { Vercel } from "../../src/catalog/vercel/index";
 import { Supabase } from "../../src/catalog/supabase/index";
 import { Agent } from "../../src/agent/agent";
@@ -34,7 +34,7 @@ describe("OpenLiate Catalog (Official 2026 SDK Stack)", () => {
     expect(typeof db.createPool).toBe("function");
   });
 
-  it("OmniRoute Catalog: exports free models and gateway client", () => {
+  it("OmniRoute LLM Gateway: exports free models and gateway client", () => {
     expect(OMNIROUTE_MODELS["auto-free"]).toBeDefined();
     expect(OMNIROUTE_MODELS["llama-3.3-70b"]).toBeDefined();
     expect(OMNIROUTE_MODELS["deepseek-v3"]).toBeDefined();

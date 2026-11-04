@@ -3,7 +3,7 @@ import path from "path";
 import { AUM } from "../core/aum";
 import type { AgentManifest } from "../core/types";
 import { SarvamClient } from "../llm/sarvam";
-import { OmniRouteGatewayClient } from "../catalog/omniroute/gateway";
+import { OmniRouteGatewayClient } from "../llm/omniroute/gateway";
 import { normalizeModelConfig } from "../llm/config";
 import { IntegrationResolver } from "../integration/integration";
 import type { MemoryProvider } from "../integration/types";

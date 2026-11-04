@@ -8,7 +8,7 @@ import { EnvironmentResolver } from "../environment/environment";
 import { LiateMcp } from "../tools/mcp";
 import type { MemoryProvider } from "../integration/types";
 import { InMemorySession } from "../integration/memory";
-import { OmniRouteGatewayClient, OMNIROUTE_MODELS } from "../catalog/omniroute/index";
+import { OmniRouteGatewayClient, OMNIROUTE_MODELS } from "../llm/omniroute/index";
 
 const globalSessionStore = new Map<string, MemoryProvider>();
 

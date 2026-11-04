@@ -1,6 +1,6 @@
 import { normalizeModelConfig } from "./config";
 import { SarvamClient, type SarvamMessage, type SarvamChatResponse } from "./sarvam";
-import { OmniRouteGatewayClient } from "../catalog/omniroute/gateway";
+import { OmniRouteGatewayClient } from "./omniroute/gateway";
 import type { ModelConfig } from "../core/types";
 
 export interface LLMMessage {

@@ -5,7 +5,7 @@ import * as p from "@clack/prompts";
 import { ConfigManager } from "../core/config";
 import { Agent } from "../agent/agent";
 import { Sarvam } from "../catalog/sarvam/index";
-import { OmniRoute } from "../catalog/omniroute/index";
+import { OmniRoute } from "../llm/omniroute/index";
 import { NeonMcpOAuth } from "../catalog/neon/index";
 
 export const DEFAULT_JOIN_CALLBACK_PORT = 54324;
