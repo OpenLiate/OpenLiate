@@ -48,15 +48,15 @@
   &nbsp;
   <a href="#run-cloud"><img src="https://img.shields.io/badge/AI_Gateway-Neon_AI_Gateway-white?logo=neon&logoColor=00E59B&labelColor=black&style=flat-square" alt="Neon AI Gateway"></a>
   &nbsp;
-  <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-skills.sh_(Vercel_Labs)_Soon-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="skills.sh (Vercel Labs) - Soon"></a>
+  <a href="https://skills.sh"><img src="https://img.shields.io/badge/Agent_Skills-1.26M%2B_skills.sh_(Live)-white?labelColor=black&logo=vercel&logoColor=white&style=flat-square" alt="1.26M+ skills.sh"></a>
 </p>
 
 <br>
 
 > **#1 Milestone: Liate — Selected for India's Sarvam AI Startup Program 2026** <sup>IN</sup>  
-> Open Source Backend Layer for AI Agents by [OpenLiate](https://github.com/openliate) · Creator [@iamazent](https://github.com/iamazent)
+> Open Source Backend Layer for AI Agents by [OpenLiate](https://github.com/openliate) · Creator [@gitdevinod](https://github.com/gitdevinod)
 > 
-> **#2 Milestone: Neon Cloud Developer Runway — $350 Compute & AI Gateway Credits** <sup>CLOUD</sup>  
+> **#2 Milestone: Neon Cloud Developer Runway — Compute & AI Gateway Credits** <sup>CLOUD</sup>  
 > Powering serverless Postgres compute, 63-model AI Gateway routing, and sovereign agent execution · [Neon Cloud](https://neon.tech)
 
 <br>
@@ -69,12 +69,24 @@
 
 ## <a id="instant-install"></a>[0] Instant Install (Zero Dependencies)
 
+> [!NOTE]
+> **CLI Command Clarity (`openliate` & `liate`):**  
+> Both the full canonical binary **`openliate`** and the fast punchy alias **`liate`** are installed together and work interchangeably across all commands:
+> - `openliate run agent.json` = `liate run agent.json`
+> - `openliate add skills <name>` = `liate add skills <name>`
+>
+> Feel free to use the short, punchy `liate` in your daily terminal workflow, or `openliate` in CI/CD pipelines and scripts.
+
 ```bash
 # 1-Click Run via npx (Zero local install):
 npx openliate run agent.json "Hello World"
 
 # Or Install Globally:
 npm install -g openliate
+
+# Both commands are immediately available:
+liate run agent.json "Hello World"
+openliate run agent.json "Hello World"
 
 # Windows (PowerShell):
 powershell -c "irm https://openliate.tech/install.ps1 | iex"
@@ -93,9 +105,9 @@ curl -fsSL https://openliate.tech/install.sh | sh
 ```jsonc
 {
   "L": "sarvam/sarvam-105b",                                                          // [L] LLM / Model: Text, Reasoning (Sarvam 105B), Decisions, Multimodal
-  "I": { "memory": "sessions/hello-agent" },                                          // [I] Integration / Knowledge: Session Memory, State, Neon Postgres, Frameworks
-  "A": { "name": "hello_agent", "intent": "Autonomous Agent", "skills": ["vercel/nextjs"] }, // [A] Agent / Harness: Name, Intent, Vercel skills.sh (1.5M+ skills), ReAct Loop
-  "T": ["fetch"],                                                                     // [T] Tools: MCP v2 (Local Stdio & Remote SSE), Custom APIs
+  "I": { "memory": "sessions/hello-agent" },                                          // [I] Integration / Knowledge: Session Memory, State, Neon Postgres, Context.dev
+  "A": { "name": "hello_agent", "intent": "Autonomous Agent", "skills": ["vercel/nextjs"] }, // [A] Agent / Harness: Name, Intent, Vercel skills.sh (1.26M+ skills), ReAct Loop
+  "T": ["fetch"],                                                                     // [T] Tools: MCP v2 (Local Stdio & Remote SSE), Neon Compute Tools, Custom APIs
   "E": { "SARVAM_API_KEY": "$SARVAM_API_KEY" }                                        // [E] Environment / Sandbox: Secrets, Cloud Execution, Guardrails
 }
 ```
@@ -151,7 +163,7 @@ Run agents anywhere on your own hardware with full Dual-MCP superpowers:
 # 1. Native Standalone CLI
 liate run agent.json "Hello Agent World!"
 
-# 2. Local AI Gateway & Engine Server (ekaRoute 1.62B+ Free Token Gateway · OpenAI Compatible)
+# 2. Local AI Gateway & Engine Server (OpenAI-Compatible Local LAPI Gateway /v1)
 openliate serve --port 3000
 
 # Connect Cursor, Claude Code, Cline, Copilot, or Python SDK to your local port:
@@ -194,7 +206,7 @@ liate unlink --all            # Safely clear all tokens from disk and .env.local
 liate env set SARVAM_API_KEY="your-key-here"
 ```
 
-* **Neon Functions (1,000,000 / mo):** Linux Node.js (**2 vCPU, 8 GB RAM**) co-located directly with serverless Postgres + `pgvector` and automated Neon Cron triggers.
+* **Neon Functions (1,000,000 / mo):** Linux Node.js (**2 vCPU, 8 GB RAM**) co-located directly with serverless Postgres + `pgvector` and automated Neon Cron triggers. Plus **all 13 Context.dev serverless modules** running natively on Neon compute.
 * **Vercel Functions & Daemons (1,000,000 / mo):** Fluid Compute functions for Next.js apps, plus 24/7 background agent runners via October 15, 2026 **Vercel Daemons** (`Dockerfile`).
 * **Supabase Edge (500,000 / mo):** Deno V8 edge functions co-located with Postgres auth and realtime database webhooks.
 * **Zero Cross-Region Latency:** Compute lives in the same data center as your database—eliminating network bottlenecks.
@@ -207,12 +219,12 @@ VALUES ('0 * * * *', '{"L": "sarvam/sarvam-105b", "A": {"name": "auditor"}, ...}
 
 ---
 
-### #3 Run in Worldwide Edge Cloud (Anycast BGP Edge Grid · *Coming Soon*)
+### #3 Run in Worldwide Edge Cloud (Phase 2 Expansion · Anycast BGP Edge Grid · In Progress)
 
 Distribute agents across 300+ to 500+ global Points of Presence (PoPs) using Anycast BGP routing for sub-10ms response times worldwide:
 
 ```bash
-# Link your edge cloud providers (Coming Soon in v0.2.0)
+# Link your edge cloud providers (Phase 2 Expansion in v0.0.21+)
 liate link --cloudflare
 liate link --azion
 ```
@@ -277,13 +289,13 @@ Every agent implements the **Agent Unified Manifest (AUM)** across 5 decoupled p
 
 | Layer | Name | Core (Built-in) | Community PRs |
 |---|---|---|---|
-| **L** | **Large Models** | Sarvam AI (`hub/llm/sarvam.json`) <sup>IN</sup> | Add Claude, Nano Banana, SeaDance, OpenJev... |
-| **I** | **Integration** | Libraries (Zod), in-memory state, persistent memory | Add Neon Postgres, LlamaIndex, Redis, webhooks, repos... |
-| **A** | **Agent** | Name, intent, ReAct loop, Vercel `skills.sh` inject | Add subagents, multi-agent swarms, wrap CrewAI/LangGraph... |
-| **T** | **Tools** | MCP v2 (Local stdio & Remote SSE) | Add filesystem, GitHub, remote MCP servers... |
+| **L** | **Large Models** | Sarvam AI (`hub/llm/sarvam.json`) <sup>IN</sup> | Add Claude, DeepSeek-R1, Nano Banana, SeaDance, OpenJev... |
+| **I** | **Integration** | Libraries (Zod), in-memory state, persistent memory, Neon Postgres (13 Context.dev modules) | Add LlamaIndex, Redis, webhooks, repos... |
+| **A** | **Agent** | Name, intent, ReAct loop, 1.26M+ `skills.sh` dynamic resolution | Add subagents, multi-agent swarms, wrap CrewAI/LangGraph... |
+| **T** | **Tools** | MCP v2 (Local stdio & Remote SSE), 13 Context.dev Serverless Tools | Add filesystem, GitHub, remote MCP servers... |
 | **E** | **Environment** | Pure `.env` key reader & edge sandbox | Add edge isolate configs... |
 
-> **Unifying the Two Greatest Standards:** Liate natively unifies **Vercel Labs' `skills.sh`** (1.5M+ portable domain skills injected into Layer **[A]**) and **Anthropic's Model Context Protocol (MCP)** (modular tools and actuators in Layer **[T]**). Zero custom glue code required.
+> **Unifying the Two Greatest Standards:** Liate natively unifies **Vercel Labs' `skills.sh`** (1.26M+ portable domain skills injected into Layer **[A]**) and **Anthropic's Model Context Protocol (MCP)** (modular tools and actuators in Layer **[T]**). Zero custom glue code required.
 
 ---
 
