@@ -17,20 +17,20 @@ export class Vercel {
   public static readonly oauth = VercelMcpOAuth;
 
   public static client(token?: string): VercelMcpClient {
-    return new VercelMcpClient(token);
+    return new VercelMcpClient(token || VercelMcpOAuth.loadToken()?.access_token || "");
   }
 
   public static sdk(bearerToken?: string): VercelSDK {
     const token =
       bearerToken ||
       process.env.VERCEL_TOKEN ||
-      VercelMcpOAuth.loadSavedToken()?.access_token ||
+      VercelMcpOAuth.loadToken()?.access_token ||
       ConfigManager.getKey("VERCEL_TOKEN") ||
       "";
     return new VercelSDK({ bearerToken: token });
   }
 
   public static deploy(key?: string, isDaemon: boolean = false) {
-    return runVercelLinkFlow(key, isDaemon);
+    return runVercelLinkFlow();
   }
 }

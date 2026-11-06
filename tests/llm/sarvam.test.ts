@@ -17,6 +17,8 @@ describe("Layer 1: [L] Large Models Layer", () => {
     expect(hubDef.endpoint).toBe("https://api.sarvam.ai/v2/chat/completions");
     expect(hubDef.available_models).toContain("glm5.3");
     expect(hubDef.available_models).toContain("sarvam-105b");
+    expect(hubDef.available_models).toContain("sarvam-prism");
+    expect((hubDef as any).systemone_endpoint).toBe("https://api.sarvam.ai/v2/systemone");
   });
 
   it("should parse AUM manifest with 5 layers and resolve environment keys", () => {
@@ -30,12 +32,12 @@ describe("Layer 1: [L] Large Models Layer", () => {
 
     const parsed = AUM.parse(rawManifest);
     expect(parsed.L).toBe("sarvam/glm5.3");
-    expect(parsed.A.name).toBe("test_agent");
+    expect((parsed.A as any).name).toBe("test_agent");
 
     const resolved = AUM.resolveEnvironment(parsed, {
       SARVAM_API_KEY: "mock_test_key_12345"
     });
-    expect(resolved.E.SARVAM_API_KEY).toBe("mock_test_key_12345");
+    expect(resolved.E?.SARVAM_API_KEY).toBe("mock_test_key_12345");
   });
 });
 

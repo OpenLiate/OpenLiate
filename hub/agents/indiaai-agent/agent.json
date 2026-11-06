@@ -1,0 +1,19 @@
+{
+  "L": "indiaai/eka-1",
+  "I": {
+    "memory": "sessions/indiaai-agent"
+  },
+  "A": {
+    "name": "indiaai_agent",
+    "version": "1.0.0",
+    "intent": "Sovereign Indian AI agent powered by EKA-1 — 26.3B params, 22 Indian languages, agentic workflows",
+    "maxSteps": 5
+  },
+  "T": [
+    "mcp:fetch"
+  ],
+  "E": {
+    "SOKET_API_KEY": "$SOKET_API_KEY"
+  }
+}
+

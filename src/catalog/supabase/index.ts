@@ -22,11 +22,11 @@ export class Supabase {
   public static readonly oauth = SupabaseMcpOAuth;
 
   public static client(token?: string): SupabaseMcpClient {
-    return new SupabaseMcpClient(token);
+    return new SupabaseMcpClient(token || SupabaseMcpOAuth.loadToken()?.access_token || "");
   }
 
   public static deploy(key?: string) {
-    return runSupabaseLinkFlow(key);
+    return runSupabaseLinkFlow();
   }
 }
 

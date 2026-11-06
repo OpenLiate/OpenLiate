@@ -4,14 +4,19 @@
   "version": "v2",
   "base_url": "https://api.sarvam.ai/v2",
   "endpoint": "https://api.sarvam.ai/v2/chat/completions",
+  "systemone_endpoint": "https://api.sarvam.ai/v2/systemone",
   "default_model": "sarvam-105b",
   "available_models": [
+    "sarvam-prism",
     "sarvam-105b",
     "sarvam-105b-conversations",
     "glm5.3",
     "glm5.3-flash",
     "gemma4",
+    "gemma-4",
     "deepseekv4.1-flash-1017",
+    "deepseek-v4.1-flash",
+    "mimo-v2.6-flash",
     "kimi-k3"
   ],
   "headers": {
@@ -22,6 +27,7 @@
   "features": {
     "tool_calling": true,
     "streaming": true,
-    "reasoning": true
+    "reasoning": true,
+    "system_one_decisions": true
   }
 }

@@ -6,15 +6,8 @@
 import { SarvamAIClient, SarvamAIError } from "sarvamai";
 import { ConfigManager } from "../../core/config";
 import { DEFAULT_SARVAM_LLM, SARVAM_MODELS, type SarvamModelMetadata } from "./models";
-
-export interface SarvamChatOptions {
-  model?: string;
-  temperature?: number;
-  maxTokens?: number;
-  tools?: any[];
-  systemPrompt?: string;
-  stream?: boolean;
-}
+import type { SarvamChatOptions } from "../../layers/llm/sarvam";
+export type { SarvamChatOptions };
 
 export interface SarvamChatResult {
   text: string;
@@ -124,7 +117,7 @@ export class SarvamCatalogClient {
     return await this.raw.textToSpeech.convert({
       text,
       language_code: (options.languageCode as any) || "hi-IN",
-      speaker: options.speaker || "meera",
+      speaker: (options.speaker as any) || "meera",
       pace: options.pace ?? 1.0,
       model: options.model || "bulbul:v4-flash"
     });

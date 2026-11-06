@@ -159,6 +159,20 @@ export class ConfigManager {
   }
 
   /**
+   * Remove an API key globally from ~/.openliate/config.json
+   */
+  public static removeGlobalKey(keyName: string): boolean {
+    const config = this.readSystemConfig();
+    if (config.keys && keyName in config.keys) {
+      delete config.keys[keyName];
+      this.writeSystemConfig(config);
+      delete process.env[keyName];
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Ensure an API key exists. If missing:
    * - In interactive TTY terminal: Prompts user with a clean @clack/prompts box, saves to ~/.openliate/config.json
    * - In non-TTY / CI: Throws a formatted error with instructions

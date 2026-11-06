@@ -1,0 +1,16 @@
+{
+  "L": "sarvam/sarvam-prism",
+  "I": {
+    "memory": "sessions/prism-agent"
+  },
+  "A": {
+    "name": "login_guard",
+    "version": "1.0.0",
+    "intent": "Evaluate user login attempts and security context to detect anomalies, credential risk, and authorize secure access",
+    "maxSteps": 1
+  },
+  "T": [],
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+  }
+}

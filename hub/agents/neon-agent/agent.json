@@ -1,0 +1,21 @@
+{
+  "L": "neon/gpt-5-4-nano",
+  "I": {
+    "memory": "sessions/neon-agent"
+  },
+  "A": {
+    "name": "neon_agent",
+    "version": "0.1.1",
+    "intent": "Autonomous Sovereign Agent powered by Neon AI Gateway & Serverless Postgres",
+    "maxSteps": 5
+  },
+  "T": [
+    "mcp:neon"
+  ],
+  "E": {
+    "NEON_AI_GATEWAY_TOKEN": "$NEON_AI_GATEWAY_TOKEN",
+    "NEON_AI_GATEWAY_BASE_URL": "$NEON_AI_GATEWAY_BASE_URL",
+    "DATABASE_URL": "$DATABASE_URL"
+  }
+}
+

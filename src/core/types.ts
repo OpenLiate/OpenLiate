@@ -56,7 +56,7 @@ export interface LayerA {
   system?: string;
   maxTurns?: number;
   /** Portable agent skills from Vercel Labs (skills.sh) or local SKILL.md rules */
-  skills?: string[];
+  skills?: string | string[];
   subagents?: LayerA[];
   [key: string]: unknown;
 }
@@ -66,13 +66,20 @@ export interface LayerA {
  * Any Tool: MCP v2 (Local Stdio & Remote SSE), Custom REST APIs, Actuators.
  */
 export interface ToolDefinition {
-  name: string;
+  name?: string;
   description?: string;
+  command?: string;
+  args?: string[];
+  url?: string;
+  tools?: string[];
   parameters?: Record<string, unknown>;
   execute?: (args: Record<string, unknown>) => Promise<unknown> | unknown;
+  [key: string]: unknown;
 }
 
-export type LayerT = Array<string | ToolDefinition>;
+export type LayerT =
+  | Array<string | ToolDefinition>
+  | Record<string, ToolDefinition | string | Record<string, unknown>>;
 
 /**
  * [E] Environment Layer
@@ -94,12 +101,5 @@ export interface AgentManifest {
 /**
  * Standard Result returned from an Agent execution run
  */
-export interface AgentRunResult {
-  agent: string;
-  answer: string;
-  turns: number;
-  latencyMs: number;
-  toolsExecuted: number;
-  error?: string;
-}
+export type { AgentRunResult } from "../layers/agent/types";
 

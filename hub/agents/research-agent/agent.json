@@ -1,18 +1,22 @@
 {
   "L": "sarvam/sarvam-105b",
   "I": {
-    "memory": "sessions/research-agent"
+    "memory": "sessions/research-agent",
+    "context": "neon/context-dev"
   },
   "A": {
-    "name": "research_agent",
-    "version": "0.0.1",
-    "intent": "Autonomous Web Research and Knowledge Extraction Agent",
+    "name": "research-agent",
+    "version": "1.0.0",
+    "intent": "Autonomous Web Intelligence Agent powered by Neon Functions Context.dev",
+    "skills": [
+      "vercel-labs/skills/find-skills"
+    ],
     "maxSteps": 5
   },
-  "T": [
-    "mcp:fetch"
-  ],
+  "T": {},
   "E": {
-    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+    "SARVAM_API_KEY": "$SARVAM_API_KEY",
+    "CONTEXT_DEV_API_KEY": "$CONTEXT_DEV_API_KEY",
+    "CONTEXT_FUNCTION_TOKEN": "$CONTEXT_FUNCTION_TOKEN"
   }
 }

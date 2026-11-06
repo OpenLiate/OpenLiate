@@ -2,12 +2,14 @@ import path from "path";
 import fs from "fs";
 import { ConfigManager } from "../../core/config";
 
-export async function handleEnvCommand(args: string[]): Promise<void> {
-  const sub = args[1];
-  if (sub === "set") {
-    const pair = args.find(a => a !== "set" && a.includes("="));
+export async function handleKeyCommand(args: string[]): Promise<void> {
+  const sub = args[1]?.toLowerCase();
+
+  // Set / Add / Update Key
+  if (sub === "set" || sub === "add" || sub === "update") {
+    const pair = args.find(a => a !== sub && a.includes("="));
     if (!pair || !pair.includes("=")) {
-      console.error("Usage: openliate env set KEY=VALUE");
+      console.error("Usage: liate key set KEY=VALUE (or: liate key add KEY=VALUE)");
       process.exit(1);
     }
     const [k, ...rest] = pair.split("=");
@@ -31,28 +33,61 @@ export async function handleEnvCommand(args: string[]): Promise<void> {
     } catch {}
 
     const masked = v.length > 8 ? `${v.slice(0, 4)}...${v.slice(-4)}` : "******";
-    console.log(`✔ Set ${keyName} in ~/.openliate/config.json & .env.local (Masked: ${masked})`);
+    console.log(`[OK] Saved key '${keyName}' (Masked: ${masked})`);
     return;
   }
 
-  if (sub === "list" || sub === "ls") {
+  // List Keys
+  if (sub === "list" || sub === "ls" || !sub) {
     const config = ConfigManager.readSystemConfig();
-    console.log(`\nGlobal Configuration (~/.openliate/config.json):`);
+    console.log(`\nConfigured Keys (~/.openliate/config.json):`);
     if (config.keys && Object.keys(config.keys).length > 0) {
       for (const [k, v] of Object.entries(config.keys)) {
         const masked = v.length > 8 ? `${v.slice(0, 4)}...${v.slice(-4)}` : "******";
         console.log(`  - ${k}: ${masked}`);
       }
     } else {
-      console.log(`  (No global keys configured yet)`);
+      console.log(`  (No keys configured yet. Add with: liate key set KEY=VALUE)`);
     }
     console.log("");
     return;
   }
 
+  // Remove / Rm / Delete / Unset Key
+  if (sub === "rm" || sub === "remove" || sub === "delete" || sub === "unset") {
+    const keyName = args[2]?.trim();
+    if (!keyName) {
+      console.error("Usage: liate key rm <KEY_NAME>");
+      process.exit(1);
+    }
+
+    const removed = ConfigManager.removeGlobalKey(keyName);
+
+    // Remove from local .env.local if present
+    try {
+      const envPath = path.join(process.cwd(), ".env.local");
+      if (fs.existsSync(envPath)) {
+        let content = fs.readFileSync(envPath, "utf-8");
+        const regex = new RegExp(`^${keyName}=.*$\n?`, "m");
+        content = content.replace(regex, "");
+        fs.writeFileSync(envPath, content, "utf-8");
+      }
+    } catch {}
+
+    if (removed) {
+      console.log(`[OK] Removed key '${keyName}'`);
+    } else {
+      console.log(`Key '${keyName}' was not found in ~/.openliate/config.json`);
+    }
+    return;
+  }
+
   console.log(`Usage:
-  openliate env set KEY=VALUE    Save key globally in ~/.openliate and locally
-  openliate env list             List configured global keys
+  liate key set <KEY>=<VALUE>    Save or update an API key
+  liate key list                 List configured keys (masked)
+  liate key rm <KEY>             Remove an API key
 `);
 }
 
+// Backward-compatible alias
+export const handleEnvCommand = handleKeyCommand;

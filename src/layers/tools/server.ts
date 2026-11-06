@@ -21,13 +21,13 @@ export function createAgentMcpServer(agent: McpAgentLike): McpServer {
   });
 
   // Tool 1: Run Agent
-  server.registerTool(
+  (server as any).registerTool(
     `${agentName.toLowerCase()}_run`,
     {
       description: `Execute cognitive reasoning using the ${agentName} agent.`,
-      inputSchema: z.object({
+      inputSchema: {
         prompt: z.string().describe("The prompt or instruction to execute")
-      })
+      }
     },
     async ({ prompt }: { prompt: string }) => {
       const result = await agent.run(prompt);
@@ -38,11 +38,11 @@ export function createAgentMcpServer(agent: McpAgentLike): McpServer {
   );
 
   // Tool 2: Agent Health & Status
-  server.registerTool(
+  (server as any).registerTool(
     `${agentName.toLowerCase()}_health`,
     {
       description: `Check the status of the ${agentName} agent.`,
-      inputSchema: z.object({})
+      inputSchema: {}
     },
     async () => {
       return {

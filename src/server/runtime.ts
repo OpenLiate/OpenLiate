@@ -11,6 +11,7 @@ import { InMemorySession } from "../layers/integration/memory";
 import { LLMRouter } from "../layers/llm/model";
 import { HubResolver } from "../layers/llm/hub";
 import { OPENLIATE_VERSION } from "../core/version";
+import { skillsRouter } from "../routes/skills";
 
 const globalSessionStore = new Map<string, MemoryProvider>();
 
@@ -25,6 +26,10 @@ export function createRuntimeApp() {
   // Enable CORS
   app.use("*", cors());
 
+  // Mount Skills Router (skills.sh & Edge Dynamic Resolver)
+  app.route("/lapi/v1/skills", skillsRouter);
+  app.route("/skills", skillsRouter);
+
   // Health and runtime information
   app.get("/health", (c) => {
     return c.json({
@@ -33,8 +38,8 @@ export function createRuntimeApp() {
       version: OPENLIATE_VERSION,
       protocol: "LAPI/v1",
       gateway: "Sarvam AI & Neon Cloud Grid",
-      doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
-      uptime: process.uptime(),
+      doctrine: "OpenLiate — Built for Sovereign AI Agents From India to the World",
+      uptime: typeof process !== "undefined" && typeof process.uptime === "function" ? process.uptime() : 0,
       timestamp: new Date().toISOString()
     });
   });
@@ -45,7 +50,7 @@ export function createRuntimeApp() {
       version: OPENLIATE_VERSION,
       status: "running",
       gateway: "Sarvam AI & Neon Cloud Grid",
-      doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend.",
+      doctrine: "OpenLiate — Built for Sovereign AI Agents From India to the World",
       endpoints: {
         chat: "POST /chat",
         models: "GET /models",
@@ -53,6 +58,8 @@ export function createRuntimeApp() {
         openliate_agents: "GET /hub/agents",
         openliate_llm: "GET /hub/llm",
         openliate_mcp: "GET /hub/mcp",
+        openliate_skills: "GET /lapi/v1/skills",
+        openliate_skills_resolve: "POST /lapi/v1/skills/resolve",
         openliate_run: "POST /run",
         health: "GET /health",
         openai_chat: "POST /v1/chat/completions",
@@ -510,6 +517,20 @@ export function createRuntimeApp() {
               break;
             }
           }
+        }
+      }
+    }
+
+    if (!manifestPath && !inlineManifest) {
+      const defaultCandidates = [
+        path.resolve(process.cwd(), "agent.json"),
+        path.resolve(__dirname, "agent.json"),
+        path.resolve(__dirname, "..", "agent.json")
+      ];
+      for (const p of defaultCandidates) {
+        if (fs.existsSync(p)) {
+          manifestPath = p;
+          break;
         }
       }
     }

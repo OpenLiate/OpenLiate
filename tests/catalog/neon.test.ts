@@ -194,5 +194,153 @@ describe("Neon Catalog — Comprehensive Sprint 1 Suite", () => {
       expect(content.features.embeddings).toBe(true);
     });
   });
+
+  describe("5. Neon AI Gateway Provider & Hub Agent", () => {
+    it("Neon.gateway / Neon.ai: instantiates gateway client with model helper", () => {
+      const gw = Neon.gateway({
+        baseURL: "https://mock-gateway.neon.tech",
+        apiKey: "nt_live_mock_token"
+      });
+      expect(gw).toBeDefined();
+      expect(typeof gw.model).toBe("function");
+      expect(typeof gw.generate).toBe("function");
+      expect(typeof gw.stream).toBe("function");
+
+      const model = gw.model("gpt-5-4-nano");
+      expect(model).toBeDefined();
+      expect((model as any).modelId).toBe("gpt-5-4-nano");
+    });
+
+    it("Neon hub agent: verifies hub/agents/neon-agent/agent.json follows L·I·A·T·E structure", () => {
+      const agentPath = path.resolve(__dirname, "../../hub/agents/neon-agent/agent.json");
+      expect(fs.existsSync(agentPath)).toBe(true);
+
+      const manifest = JSON.parse(fs.readFileSync(agentPath, "utf-8"));
+      expect(manifest.L).toBe("neon/gpt-5-4-nano");
+      expect(manifest.I.memory).toBe("sessions/neon-agent");
+      expect(manifest.A.name).toBe("neon_agent");
+      expect(manifest.A.version).toBe("0.1.1");
+      expect(manifest.T).toContain("mcp:neon");
+      expect(manifest.E.NEON_AI_GATEWAY_TOKEN).toBe("$NEON_AI_GATEWAY_TOKEN");
+    });
+  });
+
+  describe("6. Neon Functions Context.dev Web Data Integration (Layer [I])", () => {
+    it("Neon.context: instantiates ContextDevClient and provides all 13 Context.dev capabilities", async () => {
+      const ctx = Neon.context();
+      expect(ctx).toBeDefined();
+
+      const searchResults = await ctx.search("Neon serverless Postgres");
+      expect(Array.isArray(searchResults)).toBe(true);
+      expect(searchResults.length).toBeGreaterThan(0);
+      expect(searchResults[0].url).toBeDefined();
+
+      const scrapeResult = await ctx.scrape("https://neon.com");
+      expect(scrapeResult.markdown).toContain("neon.com");
+
+      const answer = await ctx.answers("What is Neon serverless Postgres?");
+      expect(typeof answer).toBe("string");
+
+      const brand = await ctx.brand("neon.com");
+      expect(brand.domain).toBe("neon.com");
+      expect(brand.name).toBe("neon");
+
+      const urls = await ctx.mapUrls("openliate.tech");
+      expect(urls.domain).toBe("openliate.tech");
+      expect(Array.isArray(urls.urls)).toBe(true);
+
+      const crawlResult = await ctx.crawl("https://openliate.tech");
+      expect(crawlResult.results.length).toBeGreaterThan(0);
+
+      const styleguide = await ctx.styleguide("openliate.tech");
+      expect(styleguide.domain).toBe("openliate.tech");
+
+      const brands = await ctx.brandSearch("neon");
+      expect(Array.isArray(brands)).toBe(true);
+
+      const people = await ctx.peopleSearch("Vinod Hatti");
+      expect(Array.isArray(people)).toBe(true);
+
+      const companies = await ctx.companySearch("Neon");
+      expect(Array.isArray(companies)).toBe(true);
+
+      const enriched = await ctx.peopleEnrich({ name: "Vinod Hatti" });
+      expect(enriched).toBeDefined();
+
+      const news = await ctx.news("OpenLiate");
+      expect(Array.isArray(news)).toBe(true);
+
+      const parsed = await ctx.parseFile("test content", { extension: "txt" });
+      expect(typeof parsed).toBe("string");
+    });
+
+    it("ContextDevClient.asTools: produces 13 compliant OpenLiate AgentTools", () => {
+      const ctx = Neon.context();
+      const tools = ctx.asTools();
+      expect(tools.length).toBe(13);
+
+      const toolNames = tools.map(t => t.name);
+      expect(toolNames).toContain("web_search");
+      expect(toolNames).toContain("web_scrape");
+      expect(toolNames).toContain("web_answers");
+      expect(toolNames).toContain("brand_retrieve");
+      expect(toolNames).toContain("web_map_urls");
+      expect(toolNames).toContain("web_crawl");
+      expect(toolNames).toContain("brand_search");
+      expect(toolNames).toContain("web_styleguide");
+      expect(toolNames).toContain("people_search");
+      expect(toolNames).toContain("company_search");
+      expect(toolNames).toContain("people_enrich");
+      expect(toolNames).toContain("news_search");
+      expect(toolNames).toContain("file_parse");
+
+      const searchTool = tools.find(t => t.name === "web_search");
+      expect(searchTool?.description).toContain("Context.dev");
+      expect(typeof searchTool?.execute).toBe("function");
+    });
+
+    it("Agent Harness: automatically injects all 13 Context.dev tools from Layer [I]", async () => {
+      const { Agent } = await import("../../src/layers/agent/harness");
+      const agent = new Agent({
+        manifest: {
+          L: "sarvam/sarvam-105b",
+          I: {
+            memory: ":memory:",
+            context: "neon/context-dev"
+          },
+          A: {
+            name: "test-context-agent",
+            intent: "Testing Context.dev injection"
+          }
+        }
+      });
+
+      const tools = await agent.getTools();
+      const names = tools.map(t => t.name);
+      expect(names).toContain("web_search");
+      expect(names).toContain("web_scrape");
+      expect(names).toContain("web_answers");
+      expect(names).toContain("brand_retrieve");
+      expect(names).toContain("web_map_urls");
+      expect(names).toContain("web_crawl");
+      expect(names).toContain("brand_search");
+      expect(names).toContain("web_styleguide");
+      expect(names).toContain("people_search");
+      expect(names).toContain("company_search");
+      expect(names).toContain("people_enrich");
+      expect(names).toContain("news_search");
+      expect(names).toContain("file_parse");
+    });
+
+    it("research-agent manifest: verifies hub/agents/research-agent/agent.json follows L·I·A·T·E", () => {
+      const agentPath = path.resolve(__dirname, "../../hub/agents/research-agent/agent.json");
+      expect(fs.existsSync(agentPath)).toBe(true);
+
+      const manifest = JSON.parse(fs.readFileSync(agentPath, "utf-8"));
+      expect(manifest.L).toBe("sarvam/sarvam-105b");
+      expect(manifest.I.context).toBe("neon/context-dev");
+      expect(manifest.A.name).toBe("research-agent");
+    });
+  });
 });
 

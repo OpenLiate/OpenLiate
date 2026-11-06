@@ -8,12 +8,16 @@ export * from "./pg";
 export * from "./pgvector";
 export * from "./claimable";
 export * from "./schedule";
+export * from "./gateway";
+export * from "./context";
 export * from "../../link/neon";
 
 import { NeonDatabase, type NeonDatabaseConfig } from "./pg";
 import { NeonVectorStore } from "./pgvector";
 import { createClaimableDatabase, type ClaimableNeonOptions, type ClaimableNeonResult } from "./claimable";
 import { createScheduledHandler, NeonScheduler, NeonTriggers, type NeonScheduledHandler } from "./schedule";
+import { NeonAiGateway, type NeonGatewayConfig } from "./gateway";
+import { ContextDevClient, type ContextDevConfig } from "./context";
 import { NeonMcpOAuth, NeonMcpClient } from "../../link/neon";
 
 export { neon, Pool, Client } from "@neondatabase/serverless";
@@ -79,6 +83,29 @@ export class Neon {
    */
   public static triggers(apiUrl?: string): NeonTriggers {
     return new NeonTriggers(apiUrl);
+  }
+
+  /**
+   * Neon AI Gateway client powered by '@neon/ai-sdk-provider'
+   */
+  public static gateway(config?: NeonGatewayConfig): NeonAiGateway {
+    return new NeonAiGateway(config);
+  }
+
+  /**
+   * Alias for Neon AI Gateway
+   */
+  public static ai(config?: NeonGatewayConfig): NeonAiGateway {
+    return new NeonAiGateway(config);
+  }
+
+  /**
+   * Neon Functions Context.dev Web Data integration
+   * Reference: https://neon.com/functions/templates/context-dev
+   * Docs: https://neon.com/docs/compute/functions/templates
+   */
+  public static context(config?: ContextDevConfig): ContextDevClient {
+    return new ContextDevClient(config);
   }
 
   /**

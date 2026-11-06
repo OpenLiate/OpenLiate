@@ -18,6 +18,7 @@ export interface SarvamChatOptions {
   endpoint?: string;
   tools?: any[];
   toolChoice?: string | object;
+  systemPrompt?: string;
 }
 
 export interface SarvamChatResponse {
@@ -64,7 +65,7 @@ export class SarvamClient {
         return item;
       }),
       temperature: options?.temperature ?? 0.2,
-      max_tokens: options?.maxTokens ?? 2048
+      max_tokens: options?.maxTokens ?? 4096
     };
 
     if (options?.tools && options.tools.length > 0) {
@@ -76,6 +77,44 @@ export class SarvamClient {
 
     if (options?.reasoningEffort) {
       payload.reasoning_effort = options.reasoningEffort;
+    }
+
+    // High-speed System-1 Decision routing for Sarvam Prism
+    if (model.toLowerCase().includes("prism")) {
+      const lastUserMsg = [...messages].reverse().find(m => m.role === "user")?.content || "";
+      const systemMsg = messages.find(m => m.role === "system")?.content;
+
+      const result = await this.decide(lastUserMsg, {
+        decision: {
+          type: "choice",
+          instructions: systemMsg || "Evaluate the input state and select the appropriate decision.",
+          criteria: {
+            "allow": "Legitimate, safe, and valid request matching normal authorized behavior",
+            "challenge_mfa": "Suspicious, ambiguous, or requires secondary verification",
+            "block": "Malicious, invalid, high-risk, credential attack, or fraudulent attempt"
+          }
+        }
+      }, { apiKey: key, model });
+
+      const ans = result.answers?.decision || Object.values(result.answers || {})[0];
+      const selectedChoice = ans?.choice ? ans.choice.toUpperCase() : "EVALUATED";
+      const confidence = ans?.confidence !== undefined ? `${(ans.confidence * 100).toFixed(2)}%` : "";
+      const probSummary = ans?.probabilities
+        ? Object.entries(ans.probabilities).map(([k, v]: [string, any]) => `  - ${k}: ${(v * 100).toFixed(2)}%`).join("\n")
+        : "";
+
+      const text = `[Sarvam Prism System-1 Decision]\nDecision: ${selectedChoice} (Confidence: ${confidence})\nState: "${lastUserMsg}"\nCalibrated Probabilities:\n${probSummary}`;
+
+      return {
+        text,
+        reasoningContent: `Single forward-pass System-1 inference via Sarvam Prism (<44ms)`,
+        model,
+        usage: {
+          promptTokens: result.usage?.input_tokens || 0,
+          completionTokens: result.usage?.output_tokens || 0,
+          totalTokens: result.usage?.input_tokens || 0
+        }
+      };
     }
 
     const response = await fetch(url, {
@@ -132,5 +171,55 @@ export class SarvamClient {
         totalTokens: data.usage?.total_tokens || 0
       }
     };
+  }
+
+  /**
+   * Sarvam Prism (System-1 Decision Model)
+   * High-speed single forward-pass calibrated probabilities (<50ms).
+   * Endpoint: POST https://api.sarvam.ai/v2/systemone
+   */
+  public async decide(
+    state: string | object,
+    questions: Record<string, {
+      type: "noul" | "choice" | "score";
+      instructions: string;
+      criteria?: Record<string, string> | any;
+    }>,
+    options?: { apiKey?: string; model?: string }
+  ): Promise<{
+    model: string;
+    answers: Record<string, any>;
+    usage?: { input_tokens: number; output_tokens: number };
+  }> {
+    const key = options?.apiKey || this.apiKey || process.env.SARVAM_API_KEY;
+    if (!key) {
+      throw new Error("Missing SARVAM_API_KEY. Please provide it via options or environment variable.");
+    }
+
+    const model = options?.model || "sarvam-prism";
+    const url = (this.hubDef as any).systemone_endpoint || "https://api.sarvam.ai/v2/systemone";
+
+    const payload = {
+      model,
+      state: typeof state === "object" ? JSON.stringify(state) : state,
+      questions
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-subscription-key": key,
+        "Authorization": `Bearer ${key}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Sarvam Prism API /v2/systemone error (${response.status}): ${errText}`);
+    }
+
+    return (await response.json()) as any;
   }
 }

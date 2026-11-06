@@ -58,16 +58,22 @@ export class MCP {
     const filterSet = toolFilter && toolFilter.length > 0 ? new Set(toolFilter.map(t => t.toLowerCase())) : null;
 
     try {
+      const isWin = process.platform === "win32";
       const containerSafeEnv: Record<string, string> = {
-        HOME: "/tmp",
-        npm_config_cache: "/tmp/.npm",
+        ...(isWin ? {} : { HOME: process.env.HOME || "/tmp" }),
+        npm_config_cache: isWin ? (process.env.TEMP || "/tmp") : "/tmp/.npm",
         npm_config_update_notifier: "false",
         ...process.env,
         ...(config.env || {})
       };
 
+      let resolvedCommand = config.command || "npx";
+      if (isWin && (resolvedCommand === "npx" || resolvedCommand === "npm" || resolvedCommand === "pnpm")) {
+        resolvedCommand = `${resolvedCommand}.cmd`;
+      }
+
       const transport = new StdioClientTransport({
-        command: config.command || "npx",
+        command: resolvedCommand,
         args: config.args || [],
         env: containerSafeEnv
       });
@@ -172,6 +178,8 @@ export class MCP {
       });
 
       if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        console.warn(`[MCP] Remote HTTP server '${config.name}' returned status ${res.status}: ${errBody || res.statusText}`);
         return [];
       }
 

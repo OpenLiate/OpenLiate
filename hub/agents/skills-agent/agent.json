@@ -1,0 +1,21 @@
+{
+  "L": "sarvam/sarvam-105b",
+  "I": {
+    "memory": "sessions/skills-agent"
+  },
+  "A": {
+    "name": "skills-agent",
+    "version": "1.0.0",
+    "intent": "Technical Architecture Reviewer and Plan Stress-Tester",
+    "skills": [
+      "# Grill Me Skill\n\nWhen a user presents a design, architecture plan, or implementation strategy:\n1. Interrogate Assumptions: Challenge potential bottlenecks, single points of failure, concurrency limits, and latency spikes.\n2. Ask Targeted Questions: Ask exactly 2 to 3 sharp, technical questions designed to expose edge cases.\n3. Do not accept vague answers: Push for concrete numbers, caching strategies, and rollback mechanisms.\n4. Format: Respond with clear, numbered grilling questions and potential vulnerability areas."
+    ],
+    "maxSteps": 5
+  },
+  "T": {},
+  "E": {
+    "SARVAM_API_KEY": "$SARVAM_API_KEY",
+    "MAX_TURNS": "10"
+  }
+}
+

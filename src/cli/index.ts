@@ -3,6 +3,7 @@ import { runJoinFlow } from "./commands/join";
 import { handleRunCommand } from "./commands/run";
 import { handleServeCommand } from "./commands/serve";
 import { handleLinkCommand, handleRelinkCommand, handleUnlinkCommand } from "./commands/link";
+import { handleDeployCommand } from "./commands/deploy";
 import { handleEnvCommand } from "./commands/env";
 import { handleHubCommand, handleCreateCommand } from "./commands/hub";
 import { OPENLIATE_VERSION } from "../core/version";
@@ -11,41 +12,56 @@ export const VERSION = OPENLIATE_VERSION;
 
 export const BANNER = `
 ===========================================================
-  OpenLiate — Open Source Backend Layer for AI Agents
-  "Don't build AI agents. Integrate by parts."
-  Version: ${VERSION}
+  OpenLiate - Open Source Backend Layer for AI Agents
+  "Built for Sovereign AI Agents From India to the World"
+  Version: ${VERSION} (MIT)
 ===========================================================
 `;
 
 export function printHelp(): void {
   console.log(BANNER);
   console.log(`Usage:
-  openliate join                                       Configure AI gateway and workspace
-  openliate hub                                        Browse and inspect OpenLiate Hub agents
-  openliate create                                     Construct an agent step-by-step via 5-pillar L·I·A·T·E
-  openliate run <agent.json|agent-name> "<prompt>"    Execute an agent locally
-  openliate serve [--port <port>]                      Start the Agent-as-an-API HTTP server (default: 7071)
-  openliate link [neon|vercel|supabase]                Link multi-cloud infrastructure & database (2.5M Free Runs)
-  openliate relink [neon|vercel|supabase|all]          Relink cloud via fresh OAuth & redeploy
-  openliate unlink [neon|vercel|supabase|all]          Unlink cloud & clear saved credentials
-  openliate env set <KEY>=<VALUE>                      Save persistent secret for runtime
-  openliate env list                                   List configured global keys
-  openliate version                                    Show version and runtime info
-  openliate help                                       Show this help menu
+  liate join                                           Join Mission AgentYaan (Claim sovereign identity)
+  liate hub                                            Get sovereign agents from hub
+  liate create                                         Define agent.json in 5 lines
+  liate run <agent.json|agent-name> "<prompt>"         Run an agent locally
+  liate serve [--port <port>]                          Serve agent as HTTP API (default: 7071)
+  liate link [neon|vercel|supabase]                    Link cloud database & compute (BYOC)
+  liate relink [neon|vercel|supabase|all]              Relink cloud via fresh OAuth
+  liate unlink [neon|vercel|supabase|all]              Unlink cloud & remove credentials
+  liate deploy [neon|vercel|supabase]                  Deploy OpenLiate Runtime Engine to connected cloud
+  liate deploy <agent> [--to neon|vercel|supabase]     Deploy a dedicated agent as a standalone cloud endpoint
+  liate key set <KEY>=<VALUE>                          Save or update an API key
+  liate key list                                       List configured keys (masked)
+  liate key rm <KEY>                                   Remove an API key
+  liate version                                        Show version and runtime info
+  liate help                                           Show this help menu
+
+Note:
+  Both 'liate' and 'openliate' commands can be used interchangeably.
 
 Examples:
-  openliate hub
-  openliate create
-  openliate run sarvam-agent "Namaste, who are you?"
-  openliate run identity-agent "Verify PAN ABCPE1234F"
-  openliate run research-agent "Fetch https://skills.sh and summarize"
-  openliate serve --port 7071
-  openliate link neon
-  openliate link vercel
-  openliate link supabase
-  openliate relink supabase
-  openliate unlink all
-  openliate env set SARVAM_API_KEY="sk_live_..."
+  liate hub
+  liate create
+  liate run sarvam-agent "Namaste, who are you?"
+  liate run indiaai-agent "EKA-1 Indian Sovereign reasoning"
+  liate run neon-agent "Hello from Neon AI Gateway"
+  liate serve --port 7071
+  liate link neon
+  liate link vercel
+  liate link supabase
+  liate deploy neon
+  liate deploy sarvam-agent --to neon
+  liate key set SARVAM_API_KEY="sk_live_..."
+  liate key list
+  liate key rm SARVAM_API_KEY
+
+Workspace Storage (.openliate/):
+  .openliate/config.json                               Global runtime & API keys configuration
+  .openliate/sessions/                                 Persistent agent conversation memory
+  .openliate/agents/                                   Custom agent definitions created locally
+  .openliate/mcp.json                                  Cached & custom MCP servers configuration
+  .openliate/link/                                     Multi-cloud credentials (Neon, Vercel, Supabase)
 `);
 }
 
@@ -89,7 +105,7 @@ export async function main(): Promise<void> {
   // 4. Run Command
   if (command === "run") {
     await handleRunCommand(args);
-    return;
+    process.exit(0);
   }
 
   // 3. Serve Command
@@ -101,25 +117,31 @@ export async function main(): Promise<void> {
   // 4. Link Command
   if (command === "link") {
     await handleLinkCommand(args);
-    return;
+    process.exit(0);
   }
 
   // 5. Relink Command
   if (command === "relink") {
     await handleRelinkCommand(args);
-    return;
+    process.exit(0);
   }
 
   // 6. Unlink Command
   if (command === "unlink") {
     await handleUnlinkCommand(args);
-    return;
+    process.exit(0);
   }
 
-  // 7. Env Command
-  if (command === "env") {
+  // 7. Deploy Command
+  if (command === "deploy") {
+    await handleDeployCommand(args);
+    process.exit(0);
+  }
+
+  // 8. Key & Env Commands
+  if (command === "key" || command === "keys" || command === "env") {
     await handleEnvCommand(args);
-    return;
+    process.exit(0);
   }
 
   console.error(`Unknown command: '${command}'. Run 'openliate help' for available commands.`);

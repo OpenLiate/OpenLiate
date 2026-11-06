@@ -1,18 +1,34 @@
 {
   "L": "sarvam/sarvam-105b",
   "I": {
-    "memory": "sessions/openliate-agent"
+    "memory": "sessions/liate-agent",
+    "context": "neon/context-dev"
   },
   "A": {
-    "name": "openliate_agent",
-    "version": "0.0.1",
-    "intent": "Explain OpenLiate: The Open Source Backend Layer for AI Agents",
+    "name": "liate-agent",
+    "version": "1.0.0",
+    "intent": "Autonomous Sovereign Agent powered by Sarvam AI",
+    "skills": [
+      "vercel-labs/skills/find-skills",
+      "mattpocock/skills/grill-me"
+    ],
     "maxSteps": 5
   },
-  "T": [
-    "mcp:fetch"
-  ],
+  "T": {
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time"
+      ],
+      "tools": [
+        "*"
+      ]
+    }
+  },
   "E": {
-    "SARVAM_API_KEY": "$SARVAM_API_KEY"
+    "SARVAM_API_KEY": "$SARVAM_API_KEY",
+    "CONTEXT_DEV_API_KEY": "$CONTEXT_DEV_API_KEY",
+    "CONTEXT_FUNCTION_TOKEN": "$CONTEXT_FUNCTION_TOKEN",
+    "MAX_TURNS": "10"
   }
 }

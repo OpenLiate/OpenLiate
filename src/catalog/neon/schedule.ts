@@ -371,5 +371,6 @@ export class NeonTriggers {
 /**
  * Alias for NeonTriggers aligning with Neon "Schedule a function" terminology
  */
+export type NeonScheduler = NeonTriggers;
 export const NeonScheduler = NeonTriggers;
 

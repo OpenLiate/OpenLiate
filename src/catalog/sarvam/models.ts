@@ -23,6 +23,24 @@ export interface SarvamModelMetadata {
 }
 
 export const SARVAM_MODELS: Record<string, SarvamModelMetadata> = {
+  // System-1 Decisions API (/v2/systemone)
+  "sarvam-prism": {
+    id: "sarvam-prism",
+    name: "Sarvam Prism",
+    category: "decision",
+    contextWindow: 128000,
+    languages: 22,
+    toolCalling: false,
+    reasoning: false,
+    pricing: {
+      inputPerMillion: 10,
+      cachedInputPerMillion: 3,
+      outputPerMillion: 0
+    },
+    description: "Open-weight System-1 decision model built on Sarvam 105B with sub-50ms single forward-pass calibrated probabilities.",
+    recommendedFor: "Autonomous agent routing, triage, intent classification, and security guardrails."
+  },
+
   // LLMs — Token Factory (/v2/chat/completions)
   "sarvam-105b": {
     id: "sarvam-105b",
@@ -213,20 +231,6 @@ export const SARVAM_MODELS: Record<string, SarvamModelMetadata> = {
     languages: 23,
     description: "Formal style, numeral control, and long-form document translation across 23 Indian languages.",
     recommendedFor: "Legal, governmental, and enterprise cross-language translation."
-  },
-
-  // Decision
-  "sarvam-prism": {
-    id: "sarvam-prism",
-    name: "Sarvam Prism",
-    category: "decision",
-    languages: 23,
-    pricing: {
-      inputPerMillion: 4,
-      outputPerMillion: 0
-    },
-    description: "Calibrated decision model for yes/no, choice scoring, and content classification in Indian languages and Hinglish.",
-    recommendedFor: "Safety guardrails, sentiment routing, and intent classification."
   }
 };
 

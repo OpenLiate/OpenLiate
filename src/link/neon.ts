@@ -6,6 +6,8 @@ import os from "os";
 import JSZip from "jszip";
 import { generateUUIDv7 } from "../core/uuid";
 import { ConfigManager } from "../core/config";
+import { base64url, generatePKCE, type ClientRegistration } from "../core/pkce";
+export { base64url, generatePKCE, type ClientRegistration };
 
 export const NEON_MCP_ENDPOINT = "https://mcp.neon.tech/mcp";
 export const NEON_REGISTER_ENDPOINT = "https://mcp.neon.tech/api/register";
@@ -14,31 +16,12 @@ export const NEON_TOKEN_ENDPOINT = "https://mcp.neon.tech/api/token";
 export const DEFAULT_CALLBACK_PORT = 54321;
 export const DEFAULT_CALLBACK_URL = `http://localhost:${DEFAULT_CALLBACK_PORT}/callback`;
 
-export function base64url(buffer: Buffer): string {
-  return buffer
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-export function generatePKCE() {
-  const codeVerifier = base64url(randomBytes(32));
-  const codeChallenge = base64url(createHash("sha256").update(codeVerifier).digest());
-  return { codeVerifier, codeChallenge };
-}
-
 export interface NeonTokenData {
   access_token: string;
   refresh_token?: string;
   saved_at: string;
   projectId?: string;
   email?: string;
-}
-
-export interface ClientRegistration {
-  client_id: string;
-  client_secret?: string;
 }
 
 export class NeonMcpOAuth {
@@ -329,7 +312,7 @@ export class NeonMcpOAuth {
             return;
           }
 
-          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Connection": "close" });
           res.end(`<!DOCTYPE html>
 <html>
   <head>
@@ -491,19 +474,49 @@ export class NeonMcpClient {
       fs.mkdirSync(runtimeDistDir, { recursive: true });
     }
 
-    const entrypoint = path.resolve(__dirname, "..", "server", "index.ts");
-    const buildResult = await (globalThis as any).Bun.build({
-      entrypoints: [entrypoint],
-      target: "node",
-      format: "esm",
-      minify: false,
-      naming: "[name].[ext]",
-      outdir: runtimeDistDir
-    });
-    if (!buildResult.success || buildResult.outputs.length === 0) {
-      throw new Error("Failed to bundle OpenLiate Runtime for Neon deployment.");
+    const candidatePaths = [
+      path.resolve(process.cwd(), "dist", "runtime", "index.js"),
+      path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "runtime", "index.js"),
+      path.resolve(__dirname, "runtime", "index.js"),
+      path.resolve(process.cwd(), "runtime", "index.js")
+    ];
+
+    let bundleText = "";
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          const c = fs.readFileSync(p, "utf-8");
+          if (c && c.length > 0) {
+            bundleText = c;
+            break;
+          }
+        } catch {}
+      }
     }
-    const bundleText = await buildResult.outputs[0].text();
+
+    if (!bundleText && (globalThis as any).Bun?.build) {
+      try {
+        const entrypoint = path.resolve(__dirname, "..", "server", "index.ts");
+        const buildResult = await (globalThis as any).Bun.build({
+          entrypoints: [entrypoint],
+          target: "node",
+          format: "esm",
+          minify: false,
+          naming: "[name].[ext]",
+          outdir: runtimeDistDir
+        });
+        if (buildResult.success && buildResult.outputs.length > 0) {
+          bundleText = await buildResult.outputs[0].text();
+        }
+      } catch {}
+    }
+
+    if (!bundleText) {
+      throw new Error("Failed to resolve OpenLiate Runtime bundle (dist/runtime/index.js). Run 'bun run build' first.");
+    }
 
     // 2. Create physical package dist/runtime/runtime.zip for transparency and portability
     const zip = new JSZip();
@@ -574,12 +587,36 @@ export class NeonMcpClient {
       runtime: "nodejs24"
     });
 
-    // 7. Query function details to retrieve live invocation URL
-    const fnRes = await this.callTool("get_function", {
-      project_id: project.id,
-      branch_id: branch.id,
-      slug
-    });
+    // 7. Poll function status until ready (max 30s)
+    let fnRes: any = null;
+    let invocationUrl = "";
+    let finalStatus = deployRes?.status || "building";
+
+    for (let attempt = 1; attempt <= 12; attempt++) {
+      try {
+        fnRes = await this.callTool("get_function", {
+          project_id: project.id,
+          branch_id: branch.id,
+          slug
+        });
+
+        invocationUrl = fnRes?.invocation_url || fnRes?.current_deployment?.invocation_url || "";
+        finalStatus = fnRes?.current_deployment?.status || fnRes?.status || finalStatus;
+
+        if (invocationUrl && finalStatus !== "building") {
+          break;
+        }
+      } catch {}
+
+      if (attempt < 12) {
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+    }
+
+    // Deterministic fallback if invocation_url was empty during build
+    if (!invocationUrl && branch?.id) {
+      invocationUrl = `https://${branch.id}-${slug}.compute.c-15.us-east-1.aws.neon.tech/`;
+    }
 
     const result = {
       deploymentId: deployRes?.id || fnRes?.current_deployment?.id || 0,
@@ -589,13 +626,160 @@ export class NeonMcpClient {
       projectName: project.name,
       branchId: branch.id,
       branchName: branch.name || targetBranchName,
-      invocationUrl: fnRes?.invocation_url || "",
-      status: fnRes?.current_deployment?.status || deployRes?.status || "unknown"
+      invocationUrl: invocationUrl || fnRes?.invocation_url || "",
+      status: finalStatus
     };
 
     // Persist deployment metadata
     try {
       const deployPath = path.resolve(process.cwd(), ".openliate", "neon_deployment.json");
+      if (!fs.existsSync(path.dirname(deployPath))) {
+        fs.mkdirSync(path.dirname(deployPath), { recursive: true });
+      }
+      fs.writeFileSync(deployPath, JSON.stringify(result, null, 2), "utf-8");
+    } catch {}
+
+    return result;
+  }
+
+
+  public async deployAgent(manifestPath: string, options?: {
+    agentName?: string;
+    branchName?: string;
+  }): Promise<{
+    deploymentId: number;
+    uuid7: string;
+    agentName: string;
+    slug: string;
+    projectId: string;
+    projectName: string;
+    branchId: string;
+    branchName: string;
+    invocationUrl: string;
+    status: string;
+  }> {
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`Agent manifest not found at: ${manifestPath}`);
+    }
+    const manifestRaw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    const rawName = options?.agentName || manifestRaw.A?.name || path.basename(path.dirname(manifestPath));
+    const cleanAgentName = rawName.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+    const slug = `agent-${cleanAgentName}`.slice(0, 32);
+
+    // 1. Resolve runtime bundle
+    const candidatePaths = [
+      path.resolve(process.cwd(), "dist", "runtime", "index.js"),
+      path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "runtime", "index.js"),
+      path.resolve(__dirname, "runtime", "index.js"),
+      path.resolve(process.cwd(), "runtime", "index.js")
+    ];
+
+    let bundleText = "";
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          const c = fs.readFileSync(p, "utf-8");
+          if (c && c.length > 0) {
+            bundleText = c;
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    if (!bundleText) {
+      throw new Error("Failed to resolve OpenLiate Runtime bundle (dist/runtime/index.js). Run 'bun run build' first.");
+    }
+
+    // 2. Create physical package bundling index.js + agent.json
+    const zip = new JSZip();
+    zip.file("index.js", bundleText);
+    zip.file("agent.json", JSON.stringify(manifestRaw, null, 2));
+    const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+    const zipBase64 = zipBuffer.toString("base64");
+
+    // 3. Resolve Project
+    let projects = await this.listProjects();
+    let project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" );
+    if (!project) {
+      try {
+        const createProjRes = await this.callTool("create_project", {
+          name: "OpenLiate",
+          branch: { name: "main" }
+        });
+        project = createProjRes?.project || createProjRes;
+      } catch {
+        project = projects[0];
+      }
+    }
+
+    if (!project) {
+      throw new Error("Unable to resolve or create a Neon project for OpenLiate.");
+    }
+
+    // 4. Resolve branch (main/primary)
+    const branches = await this.listBranches(project.id);
+    const branch = branches.find((b: any) => b.primary || b.default) || branches[0];
+
+    // 5. Call deploy_function
+    const uuid7 = generateUUIDv7();
+    const deployRes = await this.callTool("deploy_function", {
+      project_id: project.id,
+      branch_id: branch.id,
+      slug,
+      zip: zipBase64,
+      runtime: "nodejs24"
+    });
+
+    // 6. Poll function status until ready (max 30s)
+    let fnRes: any = null;
+    let invocationUrl = "";
+    let finalStatus = deployRes?.status || "building";
+
+    for (let attempt = 1; attempt <= 12; attempt++) {
+      try {
+        fnRes = await this.callTool("get_function", {
+          project_id: project.id,
+          branch_id: branch.id,
+          slug
+        });
+
+        invocationUrl = fnRes?.invocation_url || fnRes?.current_deployment?.invocation_url || "";
+        finalStatus = fnRes?.current_deployment?.status || fnRes?.status || finalStatus;
+
+        if (invocationUrl && finalStatus !== "building") {
+          break;
+        }
+      } catch {}
+
+      if (attempt < 12) {
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+    }
+
+    if (!invocationUrl && branch?.id) {
+      invocationUrl = `https://${branch.id}-${slug}.compute.c-15.us-east-1.aws.neon.tech/`;
+    }
+
+    const result = {
+      deploymentId: deployRes?.id || fnRes?.current_deployment?.id || 0,
+      uuid7,
+      agentName: rawName,
+      slug,
+      projectId: project.id,
+      projectName: project.name,
+      branchId: branch.id,
+      branchName: branch.name,
+      invocationUrl: invocationUrl || fnRes?.invocation_url || "",
+      status: finalStatus
+    };
+
+    // Persist agent deployment metadata
+    try {
+      const deployPath = path.resolve(process.cwd(), ".openliate", `neon_deployment_${cleanAgentName}.json`);
       if (!fs.existsSync(path.dirname(deployPath))) {
         fs.mkdirSync(path.dirname(deployPath), { recursive: true });
       }

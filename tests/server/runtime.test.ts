@@ -15,7 +15,7 @@ describe("Agent Runtime Server: LAPI HTTP & On-the-fly Execution", () => {
     expect(body.runtime || body.engine).toBe("openliate");
     expect(body.protocol).toBe("LAPI/v1");
     expect(body.gateway).toContain("Sarvam AI");
-    expect(body.doctrine).toContain("Class is an Agent");
+    expect(body.doctrine).toContain("Built for Sovereign AI Agents From India to the World");
     expect(body.doctrine).toContain("OpenLiate");
   });
 

@@ -5,6 +5,8 @@ import path from "path";
 import os from "os";
 import { generateUUIDv7 } from "../core/uuid";
 import { OPENLIATE_VERSION } from "../core/version";
+import { base64url, generatePKCE, type ClientRegistration } from "../core/pkce";
+export { base64url, generatePKCE, type ClientRegistration };
 
 export const VERCEL_MCP_ENDPOINT = "https://mcp.vercel.com";
 export const VERCEL_REGISTER_ENDPOINT = "https://vercel.com/api/login/oauth/register";
@@ -14,19 +16,6 @@ export const VERCEL_API_ENDPOINT = "https://api.vercel.com";
 export const DEFAULT_VERCEL_CALLBACK_PORT = 54322;
 export const DEFAULT_VERCEL_CALLBACK_URL = `http://localhost:${DEFAULT_VERCEL_CALLBACK_PORT}/callback`;
 
-export function base64url(buffer: Buffer): string {
-  return buffer
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-export function generatePKCE() {
-  const codeVerifier = base64url(randomBytes(32));
-  const codeChallenge = base64url(createHash("sha256").update(codeVerifier).digest());
-  return { codeVerifier, codeChallenge };
-}
 
 export interface VercelTokenData {
   access_token: string;
@@ -38,10 +27,6 @@ export interface VercelTokenData {
   saved_at: string;
 }
 
-export interface ClientRegistration {
-  client_id: string;
-  client_secret?: string;
-}
 
 export class VercelMcpOAuth {
   public static getTokenPath(): string {
@@ -593,7 +578,9 @@ export async function runVercelLinkFlow(options: {
           if (error) {
             res.writeHead(400, { "Content-Type": "text/html" });
             res.end(`<h3>Vercel MCP Link Failed</h3><p>${error}</p>`);
-            server.close();
+            try { (server as any).closeAllConnections?.(); } catch {}
+          try { (server as any).unref?.(); } catch {}
+          server.close();
             return reject(new Error(`Vercel OAuth Error: ${error}`));
           }
 
@@ -604,7 +591,7 @@ export async function runVercelLinkFlow(options: {
             return reject(new Error("State mismatch or missing authorization code"));
           }
 
-          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Connection": "close" });
           res.end(`<!DOCTYPE html>
 <html>
   <head>

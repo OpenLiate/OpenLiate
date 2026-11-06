@@ -42,3 +42,11 @@ pnpm-debug.log*
 # OS Files
 .DS_Store
 Thumbs.db
+.neon
+
+# Scratch & Local Probing Scripts
+scripts/test-*
+scripts/probe-*
+scripts/inspect-*
+scripts/create-*
+*.local.*

@@ -14,10 +14,12 @@ export const AUMSchema = z.object({
   ]),
   I: z.object({
     memory: z.string().optional(),
+    context: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
     system: z.string().optional(),
     skills: z.union([z.string(), z.array(z.string())]).optional(),
-    database: z.string().optional()
-  }).optional().default({}),
+    database: z.string().optional(),
+    webhooks: z.array(z.string()).optional()
+  }).passthrough().optional().default({}),
   A: z.object({
     name: z.string().min(1, "Agent name is required"),
     version: z.string().optional().default("0.0.1"),
@@ -28,10 +30,10 @@ export const AUMSchema = z.object({
     subagents: z.array(z.string()).optional()
   }),
   T: z.union([
-    z.array(z.union([z.string(), z.record(z.any())])),
-    z.record(z.any())
+    z.array(z.union([z.string(), z.record(z.string(), z.any())])),
+    z.record(z.string(), z.any())
   ]).optional().default([]),
-  E: z.record(z.string()).optional().default({})
+  E: z.record(z.string(), z.string()).optional().default({})
 });
 
 export class AUM {

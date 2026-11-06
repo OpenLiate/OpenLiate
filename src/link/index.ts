@@ -1,7 +1,10 @@
+import { HubResolver } from "../layers/llm/hub";
 import { NeonMcpOAuth, NeonMcpClient, generatePKCE } from "./neon";
 import { VercelMcpOAuth, VercelMcpClient, runVercelLinkFlow } from "./vercel";
 import { SupabaseMcpOAuth, SupabaseMcpClient, runSupabaseLinkFlow } from "./supabase";
-import { HubResolver } from "../layers/llm/hub";
+import { resolveManifestPath } from "../cli/commands/run";
+import path from "path";
+import fs from "fs";
 
 export interface LinkOptions {
   provider?: "neon" | "vercel" | "supabase" | "both" | "all";
@@ -10,9 +13,22 @@ export interface LinkOptions {
   relink?: boolean;
 }
 
-export function printHowToRunAgent(runEndpoint: string, provider: "neon" | "vercel" | "supabase"): void {
+export interface DeployOptions {
+  provider?: "neon" | "vercel" | "supabase" | "all";
+  agent?: string;
+  key?: string;
+  isDaemon?: boolean;
+  branch?: string;
+  port?: number;
+}
+
+export function printHowToRunAgent(runEndpoint: string, provider: "neon" | "vercel" | "supabase" = "neon"): void {
   const sarvamKey = process.env.SARVAM_API_KEY || "<YOUR_SARVAM_API_KEY>";
-  const defaultModel = HubResolver.loadLLM("sarvam").default_model;
+  let defaultModel = "sarvam-105b";
+  try {
+    defaultModel = HubResolver.loadLLM("sarvam").default_model || defaultModel;
+  } catch {}
+
   console.log("How to run an agent (5-Pillar L·I·A·T·E Architecture):\n");
   console.log("  1. Via cURL (Direct HTTP API with on-the-fly BYOAI key):");
   console.log(`     curl -X POST ${runEndpoint} \\`);
@@ -26,9 +42,13 @@ export function printHowToRunAgent(runEndpoint: string, provider: "neon" | "verc
   console.log("Refer to https://docs.openliate.tech for documentation, agents, and guides.\n");
 }
 
-export async function linkNeon(key?: string, relink: boolean = false): Promise<void> {
+/**
+ * Link Neon Cloud (MCP OAuth 2.1 & regional credentials)
+ * Pure authentication & token persistence. Does NOT trigger deployment.
+ */
+export async function linkNeon(key?: string, relink: boolean = false): Promise<string> {
   console.log(`\n===========================================================`);
-  console.log(`OpenLiate Link — Neon Cloud (Regional Postgres Memory)`);
+  console.log(`OpenLiate Link — Neon Cloud (Serverless Postgres & pgvector)`);
   console.log(`===========================================================`);
 
   if (relink) {
@@ -72,51 +92,19 @@ export async function linkNeon(key?: string, relink: boolean = false): Promise<v
 
   console.log("✔ Linked to Neon Cloud via MCP OAuth!");
   console.log("✔ 1,000,000 Free AI Agent Runs Unlocked (2 vCPU, 8GB RAM + pgvector).");
-  console.log("\n[OpenLiate] Deploying OpenLiate to Neon...");
+  console.log("✔ Saved credentials to .openliate/link/neon.json");
+  console.log("\nNext Steps:");
+  console.log("  Deploy Runtime Engine:   liate deploy neon");
+  console.log("  Deploy Dedicated Agent:  liate deploy <agent.json|agent-name> --to neon\n");
 
-  let deployment;
-  try {
-    const client = new NeonMcpClient(token);
-    deployment = await client.deployRuntime();
-  } catch (err: any) {
-    const isAuthError = err.message && (
-      err.message.includes("expired") ||
-      err.message.includes("invalid") ||
-      err.message.includes("401") ||
-      err.message.includes("Unauthorized")
-    );
-
-    if (isAuthError) {
-      console.log(`\n⚠️  Saved Neon token is expired or invalid. Auto-clearing and relinking via browser OAuth...`);
-      NeonMcpOAuth.clearSavedToken();
-      token = await performNeonOAuth();
-      console.log("✔ Relinked to Neon Cloud via MCP OAuth!");
-      console.log("\n[OpenLiate] Deploying OpenLiate to Neon...");
-      const client = new NeonMcpClient(token);
-      deployment = await client.deployRuntime();
-    } else {
-      throw err;
-    }
-  }
-
-  const baseUrl = deployment.invocationUrl.replace(/\/+$/, "").replace(/\/run$/, "");
-  const runEndpoint = `${baseUrl}/run`;
-
-  console.log("\n===========================================================");
-  console.log("✔ OpenLiate deployed live to Neon!");
-  console.log(`Project:    ${deployment.projectName} (${deployment.projectId})`);
-  console.log(`Branch:     ${deployment.branchName} (${deployment.branchId})`);
-  console.log(`Endpoint:   ${baseUrl}`);
-  console.log(`Compute:    Neon Functions (Scale-to-Zero Node.js)`);
-  console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
-  console.log("Memory [I]: Serverless Postgres + pgvector");
-  console.log("Triggers:   Neon Function Triggers (Scale-to-Zero Scheduled Cron)");
-  console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
-  console.log("===========================================================\n");
-  printHowToRunAgent(runEndpoint, "neon");
+  return token;
 }
 
-export async function linkVercel(key?: string, isDaemon: boolean = false, relink: boolean = false): Promise<void> {
+/**
+ * Link Vercel Cloud (OAuth 2.0 & compute credentials)
+ * Pure authentication & token persistence. Does NOT trigger deployment.
+ */
+export async function linkVercel(key?: string, isDaemon: boolean = false, relink: boolean = false): Promise<string> {
   console.log(`\n===========================================================`);
   if (isDaemon) {
     console.log(`OpenLiate Link — Vercel Cloud (Containerized Daemon Worker)`);
@@ -145,71 +133,22 @@ export async function linkVercel(key?: string, isDaemon: boolean = false, relink
   console.log("✔ Linked to Vercel Cloud via MCP OAuth!");
   if (isDaemon) {
     console.log("✔ Vercel Fluid Daemon Worker Unlocked (24/7 Container Execution).");
-    console.log("\n[OpenLiate] Deploying OpenLiate to Vercel...");
   } else {
     console.log("✔ 1,000,000 Free AI Agent Runs + Fluid Compute Functions Unlocked.");
-    console.log("\n[OpenLiate] Deploying OpenLiate to Vercel...");
   }
+  console.log("✔ Saved credentials to .openliate/link/vercel.json");
+  console.log("\nNext Steps:");
+  console.log("  Deploy Runtime Engine:   liate deploy vercel");
+  console.log("  Deploy Dedicated Agent:  liate deploy <agent.json|agent-name> --to vercel\n");
 
-  let deployment;
-  try {
-    const client = new VercelMcpClient(token);
-    deployment = await client.deployRuntime({
-      mode: isDaemon ? "daemon" : "function"
-    });
-  } catch (err: any) {
-    const isAuthError = err.message && (
-      err.message.includes("expired") ||
-      err.message.includes("invalid") ||
-      err.message.includes("401") ||
-      err.message.includes("Unauthorized")
-    );
-
-    if (isAuthError) {
-      console.log(`\n⚠️  Saved Vercel token is expired or invalid. Auto-clearing and relinking via browser OAuth...`);
-      VercelMcpOAuth.clearToken();
-      token = await performVercelOAuth();
-      console.log("✔ Relinked to Vercel Cloud via MCP OAuth!");
-      const client = new VercelMcpClient(token);
-      deployment = await client.deployRuntime({
-        mode: isDaemon ? "daemon" : "function"
-      });
-    } else {
-      throw err;
-    }
-  }
-
-  console.log("\n===========================================================");
-  if (isDaemon) {
-    console.log("✔ OpenLiate daemon worker deployed live to Vercel!");
-    console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
-    console.log(`Deployment: ${deployment.url}`);
-    console.log(`Mode:       Background Daemon Worker (Pull-based / Queue / Long-running)`);
-    console.log(`Runtime:    Linux Node.js (Dedicated Worker)`);
-    console.log(`Instances:  1 Dedicated Worker Instance (iad1)`);
-    console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
-    console.log("===========================================================\n");
-    console.log("Daemon Operation & Monitoring:\n");
-    console.log(`  1. View live streaming daemon logs in Vercel Dashboard:`);
-    console.log(`     https://vercel.com/dashboard -> Projects -> ${deployment.name} -> Logs\n`);
-    console.log(`  2. Daemons run continuously without inbound HTTP traffic, pulling`);
-    console.log(`     and executing long-running agent tasks autonomously.\n`);
-  } else {
-    const baseUrl = (deployment.url || deployment.runtimeUrl).replace(/\/+$/, "").replace(/\/run$/, "");
-    const runEndpoint = `${baseUrl}/run`;
-
-    console.log("✔ OpenLiate deployed live to Vercel!");
-    console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
-    console.log(`Endpoint:   ${baseUrl}`);
-    console.log(`Mode:       Serverless Fluid Compute Function (Auto-scales to 0)`);
-    console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
-    console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
-    console.log("===========================================================\n");
-    printHowToRunAgent(runEndpoint, "vercel");
-  }
+  return token;
 }
 
-export async function linkSupabase(key?: string, relink: boolean = false): Promise<void> {
+/**
+ * Link Supabase Cloud (OAuth 2.0 & Edge Functions credentials)
+ * Pure authentication & token persistence. Does NOT trigger deployment.
+ */
+export async function linkSupabase(key?: string, relink: boolean = false): Promise<string> {
   console.log(`\n===========================================================`);
   console.log(`OpenLiate Link — Supabase Cloud (Edge Functions & pgvector)`);
   console.log(`===========================================================`);
@@ -233,65 +172,35 @@ export async function linkSupabase(key?: string, relink: boolean = false): Promi
 
   console.log("✔ Linked to Supabase Cloud via MCP OAuth!");
   console.log("✔ 500,000 Free AI Agent Runs + Edge Functions & pgvector Unlocked.");
-  console.log("\n[OpenLiate] Deploying OpenLiate to Supabase...");
+  console.log("✔ Saved credentials to .openliate/link/supabase.json");
+  console.log("\nNext Steps:");
+  console.log("  Deploy Runtime Engine:   liate deploy supabase");
+  console.log("  Deploy Dedicated Agent:  liate deploy <agent.json|agent-name> --to supabase\n");
 
-  let deployment;
-  try {
-    const client = new SupabaseMcpClient(token);
-    deployment = await client.deployRuntime();
-  } catch (err: any) {
-    const isAuthError = err.message && (
-      err.message.includes("expired") ||
-      err.message.includes("invalid") ||
-      err.message.includes("401") ||
-      err.message.includes("Unauthorized")
-    );
-
-    if (isAuthError) {
-      console.log(`\n⚠️  Saved Supabase token is expired or invalid. Auto-clearing and relinking via browser OAuth...`);
-      SupabaseMcpOAuth.clearToken();
-      token = await performSupabaseOAuth();
-      console.log("✔ Relinked to Supabase Cloud via MCP OAuth!");
-      const client = new SupabaseMcpClient(token);
-      deployment = await client.deployRuntime();
-    } else {
-      throw err;
-    }
-  }
-
-  const baseUrl = (deployment.functionUrl || deployment.runtimeUrl).replace(/\/+$/, "").replace(/\/run$/, "");
-  const runEndpoint = `${baseUrl}/run`;
-
-  console.log("\n===========================================================");
-  console.log("✔ OpenLiate deployed live to Supabase!");
-  console.log(`Function:   ${deployment.name}`);
-  console.log(`Project:    ${deployment.projectRef}`);
-  console.log(`Endpoint:   ${baseUrl}`);
-  console.log(`Capacity:   500,000 Free AI Agent Runs / Month`);
-  console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
-  console.log("Memory [I]: pgvector Embeddings & Realtime Postgres");
-  console.log("===========================================================\n");
-  printHowToRunAgent(runEndpoint, "supabase");
+  return token;
 }
 
+/**
+ * Unlink cloud credentials
+ */
 export async function unlink(provider: "neon" | "vercel" | "supabase" | "all" = "all"): Promise<void> {
   console.log(`\n===========================================================`);
-  console.log(`OpenLiate Unlink — Cloud Provider Tokens`);
+  console.log(`OpenLiate Unlink — Cloud Provider Credentials`);
   console.log(`===========================================================`);
 
   if (provider === "neon" || provider === "all") {
     NeonMcpOAuth.clearSavedToken();
-    console.log("✔ Unlinked from Neon Cloud (tokens cleared from disk and .env.local).");
+    console.log("✔ Unlinked from Neon Cloud (credentials cleared from disk).");
   }
 
   if (provider === "vercel" || provider === "all") {
     VercelMcpOAuth.clearToken();
-    console.log("✔ Unlinked from Vercel Cloud (tokens cleared from disk and .env.local).");
+    console.log("✔ Unlinked from Vercel Cloud (credentials cleared from disk).");
   }
 
   if (provider === "supabase" || provider === "all") {
     SupabaseMcpOAuth.clearToken();
-    console.log("✔ Unlinked from Supabase Cloud (tokens cleared from disk and .env.local).");
+    console.log("✔ Unlinked from Supabase Cloud (credentials cleared from disk).");
   }
 
   console.log("===========================================================\n");
@@ -302,7 +211,7 @@ export async function relink(options: LinkOptions = {}): Promise<void> {
 }
 
 export async function link(options: LinkOptions = {}): Promise<void> {
-  const provider = options.provider || "all";
+  const provider = options.provider || "neon";
   const shouldRelink = Boolean(options.relink);
 
   if (provider === "neon" || provider === "both" || provider === "all") {
@@ -316,4 +225,174 @@ export async function link(options: LinkOptions = {}): Promise<void> {
   if (provider === "supabase" || provider === "all") {
     await linkSupabase(options.key, shouldRelink);
   }
+}
+
+/**
+ * Deploy OpenLiate Runtime Engine or Agent to Neon Cloud
+ */
+export async function deployNeon(options: { agent?: string; branch?: string } = {}): Promise<any> {
+  console.log(`\n===========================================================`);
+  if (options.agent) {
+    console.log(`OpenLiate Deploy — Deploying Agent '${options.agent}' to Neon Cloud`);
+  } else {
+    console.log(`OpenLiate Deploy — Deploying Runtime Engine to Neon Cloud`);
+  }
+  console.log(`===========================================================`);
+
+  let token = NeonMcpOAuth.loadSavedToken()?.access_token || process.env.NEON_API_KEY || process.env.NEON_MCP_TOKEN;
+  if (!token) {
+    console.log("[OpenLiate] Neon is not linked. Authenticating first...");
+    token = await linkNeon();
+  }
+
+  const client = new NeonMcpClient(token);
+
+  if (options.agent) {
+    const manifestPath = resolveManifestPath(options.agent);
+    if (!manifestPath) {
+      throw new Error(`Agent manifest not found for '${options.agent}'. Checked .openliate/agents/ and hub/agents/.`);
+    }
+
+    console.log(`[OpenLiate] Bundling dedicated agent from: ${manifestPath}`);
+    const deployment = await client.deployAgent(manifestPath, {
+      agentName: options.agent,
+      branchName: options.branch
+    });
+
+    const runEndpoint = deployment.invocationUrl.endsWith("/run") ? deployment.invocationUrl : `${deployment.invocationUrl.replace(/\/+$/, "")}/run`;
+
+    console.log("\n===========================================================");
+    console.log(`✔ Agent '${options.agent}' deployed live to Neon!`);
+    console.log(`Project:    ${deployment.projectName} (${deployment.projectId})`);
+    console.log(`Branch:     ${deployment.branchName} (${deployment.branchId})`);
+    console.log(`Endpoint:   ${deployment.invocationUrl}`);
+    console.log(`Agent Run:  ${runEndpoint}`);
+    console.log(`Compute:    Neon Functions (Scale-to-Zero Node.js)`);
+    console.log("Memory [I]: Dedicated Serverless Postgres + pgvector");
+    console.log("===========================================================\n");
+    printHowToRunAgent(runEndpoint);
+    return deployment;
+  } else {
+    console.log("[OpenLiate] Deploying universal OpenLiate Runtime Engine to Neon...");
+    const deployment = await client.deployRuntime({
+      branchName: options.branch
+    });
+
+    const baseUrl = deployment.invocationUrl.replace(/\/+$/, "").replace(/\/run$/, "");
+    const runEndpoint = `${baseUrl}/run`;
+
+    console.log("\n===========================================================");
+    console.log("✔ OpenLiate Runtime deployed live to Neon!");
+    console.log(`Project:    ${deployment.projectName} (${deployment.projectId})`);
+    console.log(`Branch:     ${deployment.branchName} (${deployment.branchId})`);
+    console.log(`Endpoint:   ${baseUrl}`);
+    console.log(`Compute:    Neon Functions (Scale-to-Zero Node.js)`);
+    console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
+    console.log("Memory [I]: Serverless Postgres + pgvector");
+    console.log("Triggers:   Neon Function Triggers (Scale-to-Zero Scheduled Cron)");
+    console.log("Tooling:    Remote MCP (HTTP/SSE) + Native Tools Enabled");
+    console.log("===========================================================\n");
+    printHowToRunAgent(runEndpoint);
+    return deployment;
+  }
+}
+
+/**
+ * Deploy OpenLiate Runtime Engine or Agent to Vercel Cloud
+ */
+export async function deployVercel(options: { agent?: string; isDaemon?: boolean } = {}): Promise<any> {
+  console.log(`\n===========================================================`);
+  if (options.agent) {
+    console.log(`OpenLiate Deploy — Deploying Agent '${options.agent}' to Vercel Cloud`);
+  } else {
+    console.log(`OpenLiate Deploy — Deploying Runtime Engine to Vercel Cloud`);
+  }
+  console.log(`===========================================================`);
+
+  let token = VercelMcpOAuth.loadToken()?.access_token || process.env.VERCEL_TOKEN || process.env.VERCEL_MCP_TOKEN;
+  if (!token) {
+    console.log("[OpenLiate] Vercel is not linked. Authenticating first...");
+    token = await linkVercel(undefined, options.isDaemon);
+  }
+
+  const client = new VercelMcpClient(token);
+  const deployment = await client.deployRuntime({
+    mode: options.isDaemon ? "daemon" : "function"
+  });
+
+  const baseUrl = (deployment.url || deployment.runtimeUrl).replace(/\/+$/, "").replace(/\/run$/, "");
+  const runEndpoint = `${baseUrl}/run`;
+
+  console.log("\n===========================================================");
+  console.log("✔ OpenLiate deployed live to Vercel!");
+  console.log(`Project:    ${deployment.name} (${deployment.projectId})`);
+  console.log(`Endpoint:   ${baseUrl}`);
+  console.log(`Capacity:   1,000,000 Free AI Agent Runs / Month`);
+  console.log("===========================================================\n");
+  printHowToRunAgent(runEndpoint, "vercel");
+  return deployment;
+}
+
+/**
+ * Deploy OpenLiate Runtime Engine or Agent to Supabase Cloud
+ */
+export async function deploySupabase(options: { agent?: string } = {}): Promise<any> {
+  console.log(`\n===========================================================`);
+  if (options.agent) {
+    console.log(`OpenLiate Deploy — Deploying Agent '${options.agent}' to Supabase Cloud`);
+  } else {
+    console.log(`OpenLiate Deploy — Deploying Runtime Engine to Supabase Cloud`);
+  }
+  console.log(`===========================================================`);
+
+  let token = SupabaseMcpOAuth.loadToken()?.access_token || process.env.SUPABASE_MCP_TOKEN || process.env.SUPABASE_ACCESS_TOKEN;
+  if (!token) {
+    console.log("[OpenLiate] Supabase is not linked. Authenticating first...");
+    token = await linkSupabase();
+  }
+
+  const client = new SupabaseMcpClient(token);
+  const deployment = await client.deployRuntime();
+
+  const baseUrl = (deployment.functionUrl || deployment.runtimeUrl).replace(/\/+$/, "").replace(/\/run$/, "");
+  const runEndpoint = `${baseUrl}/run`;
+
+  console.log("\n===========================================================");
+  console.log("✔ OpenLiate deployed live to Supabase!");
+  console.log(`Function:   ${deployment.name}`);
+  console.log(`Project:    ${deployment.projectRef}`);
+  console.log(`Endpoint:   ${baseUrl}`);
+  console.log(`Capacity:   500,000 Free AI Agent Runs / Month`);
+  console.log("===========================================================\n");
+  printHowToRunAgent(runEndpoint, "supabase");
+  return deployment;
+}
+
+/**
+ * Unified Deploy Handler
+ */
+export async function deploy(options: DeployOptions = {}): Promise<any> {
+  const provider = options.provider || "neon";
+
+  if (provider === "neon") {
+    return deployNeon({ agent: options.agent, branch: options.branch });
+  }
+
+  if (provider === "vercel") {
+    return deployVercel({ agent: options.agent, isDaemon: options.isDaemon });
+  }
+
+  if (provider === "supabase") {
+    return deploySupabase({ agent: options.agent });
+  }
+
+  if (provider === "all") {
+    const results: Record<string, any> = {};
+    results.neon = await deployNeon({ agent: options.agent, branch: options.branch });
+    results.vercel = await deployVercel({ agent: options.agent, isDaemon: options.isDaemon });
+    results.supabase = await deploySupabase({ agent: options.agent });
+    return results;
+  }
+
+  throw new Error(`Unknown cloud provider '${provider}'. Supported: neon, vercel, supabase, all.`);
 }

@@ -1,7 +1,7 @@
 <div align="center">
 
 # OpenLiate — Open Source Backend Layer for AI Agents
-### Don't build AI agents. Integrate by parts.
+### Built for Sovereign AI Agents From India to the World
 
 `L[LM] · I[ntegration] · A[gent] · T[ools] · E[nvironment]`
 
@@ -11,8 +11,9 @@
   <a href="https://docs.openliate.tech"><img src="https://img.shields.io/badge/docs-docs.openliate.tech-white?labelColor=black&style=flat-square&v=2" alt="Docs"></a>
   <a href="https://github.com/openliate/openliate/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square" alt="License: MIT"></a>
   <a href="https://sarvam.ai"><img src="./assets/sarvam-badge.svg" alt="Startup Program: Sarvam AI"></a>
+  <a href="https://neon.tech"><img src="https://img.shields.io/badge/Neon-Cloud_%26_AI_Gateway_Credits-white?logo=neon&logoColor=00E59B&labelColor=black&style=flat-square" alt="Neon Cloud & AI Gateway Credits"></a>
   <a href="https://codespaces.new/openliate/openliate"><img src="https://img.shields.io/badge/Codespaces-1--Click_Run-white?logo=github&logoColor=white&labelColor=black&style=flat-square" alt="Open in GitHub Codespaces"></a>
-  <img src="https://img.shields.io/badge/version-beta-white?labelColor=black&style=flat-square" alt="beta">
+  <img src="https://img.shields.io/badge/version-v0.0.20-white?labelColor=black&style=flat-square" alt="v0.0.20">
   <img src="https://img.shields.io/badge/Bun-Supported-white?logo=bun&logoColor=white&labelColor=black&style=flat-square" alt="Bun">
   <img src="https://img.shields.io/badge/Node.js-Supported-white?logo=node.js&logoColor=5FA04E&labelColor=black&style=flat-square" alt="Node.js">
   <img src="https://img.shields.io/badge/Deno-Soon-white?logo=deno&logoColor=white&labelColor=black&style=flat-square" alt="Deno (Soon)">
@@ -54,6 +55,9 @@
 
 > **#1 Milestone: Liate — Selected for India's Sarvam AI Startup Program 2026** <sup>IN</sup>  
 > Open Source Backend Layer for AI Agents by [OpenLiate](https://github.com/openliate) · Creator [@iamazent](https://github.com/iamazent)
+> 
+> **#2 Milestone: Neon Cloud Developer Runway — $350 Compute & AI Gateway Credits** <sup>CLOUD</sup>  
+> Powering serverless Postgres compute, 63-model AI Gateway routing, and sovereign agent execution · [Neon Cloud](https://neon.tech)
 
 <br>
 

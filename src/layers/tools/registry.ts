@@ -224,14 +224,22 @@ export class ToolRegistry {
     customEnv: Record<string, string | undefined> = process.env
   ): Promise<AgentTool[]> {
     const resolved: AgentTool[] = [];
-    const rawList: Array<string | AgentTool | Record<string, any>> = Array.isArray(specs)
-      ? specs
-      : Object.entries(specs || {}).map(([key, val]) => {
+    let rawList: Array<string | AgentTool | Record<string, any>> = [];
+
+    if (Array.isArray(specs)) {
+      rawList = specs;
+    } else if (typeof specs === "object" && specs !== null) {
+      if ("command" in specs || "url" in specs) {
+        rawList = [{ id: "inline_tool", name: "inline_tool", ...specs }];
+      } else {
+        rawList = Object.entries(specs).map(([key, val]) => {
           if (typeof val === "object" && val !== null) {
             return { id: key, name: key, ...val };
           }
           return key;
         });
+      }
+    }
 
     for (const item of rawList) {
       if (typeof item === "object" && item !== null) {
@@ -241,23 +249,61 @@ export class ToolRegistry {
           continue;
         }
 
-        // Inline MCP Config Object (e.g. { command: "uvx", args: ["mcp-server-fetch"] })
+        // Inline MCP Config Object (e.g. { command: "uvx", args: ["mcp-server-time"], tools: ["*"] })
         if ("command" in item || "url" in item) {
+          const rawArgs = (item as any).args;
+          const resolvedArgs = Array.isArray(rawArgs)
+            ? rawArgs.map(arg => typeof arg === "string" ? arg.replace(/\$([A-Z0-9_]+)/g, (_, name) => customEnv[name] || process.env[name] || "") : arg)
+            : undefined;
+
+          const rawEnv = (item as any).env;
+          const resolvedEnv: Record<string, string> = {};
+          if (rawEnv && typeof rawEnv === "object") {
+            for (const [k, v] of Object.entries(rawEnv)) {
+              resolvedEnv[k] = typeof v === "string"
+                ? v.replace(/\$([A-Z0-9_]+)/g, (_, name) => customEnv[name] || process.env[name] || "")
+                : String(v);
+            }
+          }
+
+          let resolvedUrl = (item as any).url;
+          if (resolvedUrl && typeof resolvedUrl === "string" && resolvedUrl.includes("$")) {
+            resolvedUrl = resolvedUrl.replace(/\$([A-Z0-9_]+)/g, (_, name) => customEnv[name] || process.env[name] || "");
+          }
+
+          const rawHeaders = (item as any).headers;
+          const resolvedHeaders: Record<string, string> = {};
+          if (rawHeaders && typeof rawHeaders === "object") {
+            for (const [k, v] of Object.entries(rawHeaders)) {
+              resolvedHeaders[k] = typeof v === "string"
+                ? v.replace(/\$([A-Z0-9_]+)/g, (_, name) => customEnv[name] || process.env[name] || "")
+                : String(v);
+            }
+          }
+
           const inlineConfig: McpServerConfig = {
             id: (item as any).id || (item as any).name || "inline_mcp",
             name: (item as any).name || (item as any).id || "inline_mcp",
             transport: (item as any).transport || ((item as any).url ? "http" : "stdio"),
             command: (item as any).command,
-            args: (item as any).args,
-            url: (item as any).url,
-            env: (item as any).env,
-            headers: (item as any).headers
+            args: resolvedArgs,
+            url: resolvedUrl,
+            env: Object.keys(resolvedEnv).length > 0 ? resolvedEnv : undefined,
+            headers: Object.keys(resolvedHeaders).length > 0 ? resolvedHeaders : undefined
           };
+
+          const rawFilter = (item as any).tools || (item as any).selectedTools;
+          const toolFilter: string[] | undefined = Array.isArray(rawFilter)
+            ? (rawFilter.includes("*") ? undefined : rawFilter)
+            : typeof rawFilter === "string" && rawFilter !== "*"
+            ? rawFilter.split(",").map((s: string) => s.trim()).filter(Boolean)
+            : undefined;
+
           try {
-            const tools = await MCP.discoverTools(inlineConfig);
+            const tools = await MCP.discoverTools(inlineConfig, toolFilter);
             resolved.push(...tools);
           } catch (err: any) {
-            console.warn(`[ToolRegistry] Failed to resolve inline MCP config: ${err.message}`);
+            console.warn(`[ToolRegistry] Failed to resolve inline MCP config '${inlineConfig.name}': ${err.message}`);
           }
           continue;
         }

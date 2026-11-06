@@ -1,0 +1,23 @@
+{
+  "name": "indiaai",
+  "provider": "indiaai",
+  "version": "1.0.0",
+  "base_url": "https://api.soket.ai/v1",
+  "endpoint": "https://api.soket.ai/v1/chat/completions",
+  "default_model": "eka-1",
+  "available_models": [
+    "eka-1",
+    "dhir-5b",
+    "dhir-2b"
+  ],
+  "headers": {
+    "Authorization": "Bearer $SOKET_API_KEY",
+    "Content-Type": "application/json"
+  },
+  "features": {
+    "tool_calling": true,
+    "streaming": true,
+    "reasoning": true
+  }
+}
+

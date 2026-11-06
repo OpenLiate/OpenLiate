@@ -13,3 +13,11 @@ export interface ResolvedEnvironment {
   guardrails: SandboxGuardrails;
 }
 
+export interface SandboxConfig {
+  allowedDomains: string[];
+  denyNetwork: boolean;
+  timeoutMs?: number;
+  maxExecutionTimeMs?: number;
+  env: Record<string, string>;
+}
+

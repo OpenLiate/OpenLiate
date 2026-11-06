@@ -39,8 +39,8 @@ export async function handleRunCommand(args: string[]): Promise<void> {
   const promptArg = args[2];
 
   if (!manifestArg || !promptArg) {
-    console.error("Error: 'openliate run' requires an agent manifest or name and a prompt string.");
-    console.error("Usage: openliate run <agent.json|agent-name> \"<prompt>\"");
+    console.error("Error: 'liate run' requires an agent manifest or name and a prompt string.");
+    console.error("Usage: liate run <agent.json|agent-name> \"<prompt>\"");
     process.exit(1);
   }
 

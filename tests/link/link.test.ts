@@ -6,7 +6,11 @@ import {
   linkVercel,
   linkSupabase,
   relink,
-  unlink
+  unlink,
+  deploy,
+  deployNeon,
+  deployVercel,
+  deploySupabase
 } from "../../src/link/index";
 import { NeonMcpOAuth } from "../../src/link/neon";
 import { VercelMcpOAuth } from "../../src/link/vercel";
@@ -20,6 +24,10 @@ describe("Cloud Link: Multi-Cloud (openliate link / relink / unlink)", () => {
     expect(typeof linkSupabase).toBe("function");
     expect(typeof relink).toBe("function");
     expect(typeof unlink).toBe("function");
+    expect(typeof deploy).toBe("function");
+    expect(typeof deployNeon).toBe("function");
+    expect(typeof deployVercel).toBe("function");
+    expect(typeof deploySupabase).toBe("function");
   });
 
   it("stores provider cloud credentials inside .openliate/link/ folder", () => {

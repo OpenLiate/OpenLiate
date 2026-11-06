@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { generateUUIDv7 } from "../core/uuid";
+import { base64url, generatePKCE, type ClientRegistration } from "../core/pkce";
+export { base64url, generatePKCE, type ClientRegistration };
 
 export const SUPABASE_MCP_ENDPOINT = "https://mcp.supabase.com/mcp";
 export const SUPABASE_REGISTER_ENDPOINT = "https://api.supabase.com/platform/oauth/apps/register";
@@ -13,20 +15,6 @@ export const SUPABASE_API_ENDPOINT = "https://api.supabase.com/v1";
 export const DEFAULT_SUPABASE_CALLBACK_PORT = 54323;
 export const DEFAULT_SUPABASE_CALLBACK_URL = `http://localhost:${DEFAULT_SUPABASE_CALLBACK_PORT}/callback`;
 
-export function base64url(buffer: Buffer): string {
-  return buffer
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-export function generatePKCE() {
-  const codeVerifier = base64url(randomBytes(32));
-  const codeChallenge = base64url(createHash("sha256").update(codeVerifier).digest());
-  return { codeVerifier, codeChallenge };
-}
-
 export interface SupabaseTokenData {
   access_token: string;
   refresh_token?: string;
@@ -35,11 +23,6 @@ export interface SupabaseTokenData {
   email?: string;
   mcp_url?: string;
   saved_at: string;
-}
-
-export interface ClientRegistration {
-  client_id: string;
-  client_secret?: string;
 }
 
 export class SupabaseMcpOAuth {
@@ -390,7 +373,8 @@ export class SupabaseMcpClient {
     mcpUrl: string;
   }> {
     const uuid7 = generateUUIDv7();
-    const fnSlug = options.slug || "openliate";
+    const cleanId = uuid7.replace(/-/g, "").slice(0, 8);
+    const fnSlug = options.slug || `openliate-${cleanId}`;
 
     let projectRef = options.projectRef || process.env.SUPABASE_PROJECT_REF;
     if (!projectRef) {
@@ -409,9 +393,11 @@ export class SupabaseMcpClient {
     let bundleCode = options.body || "";
     if (!bundleCode) {
       const candidatePaths = [
+        path.resolve(process.cwd(), "dist", "runtime", "deno.js"),
+        path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "deno.js"),
+        path.resolve(__dirname, "..", "..", "dist", "runtime", "deno.js"),
         path.resolve(process.cwd(), "dist", "runtime", "index.js"),
-        path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
-        path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js")
+        path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js")
       ];
       for (const p of candidatePaths) {
         if (fs.existsSync(p)) {
@@ -425,11 +411,11 @@ export class SupabaseMcpClient {
       throw new Error("Could not locate dist/runtime/index.js. Please run 'bun run build:runtime' first.");
     }
 
-    // Ensure Node builtins use node: prefix for Deno runtime compatibility in Supabase Edge Functions
+    // Ensure Node builtins (including submodules like fs/promises) use node: prefix for Deno runtime compatibility in Supabase Edge Functions
     bundleCode = bundleCode
-      .replace(/from\s+["'](os|fs|path|http|https|crypto|stream|events|util|buffer|url|net|tls|zlib)["']/g, 'from "node:$1"')
-      .replace(/import\s+["'](os|fs|path|http|https|crypto|stream|events|util|buffer|url|net|tls|zlib)["']/g, 'import "node:$1"')
-      .replace(/require\(["'](os|fs|path|http|https|crypto|stream|events|util|buffer|url|net|tls|zlib)["']\)/g, 'require("node:$1")');
+      .replace(/from\s+["'](os|fs|fs\/promises|path|http|http2|https|crypto|stream|events|util|buffer|url|net|tls|zlib|module|readline|process)["']/g, 'from "node:$1"')
+      .replace(/import\s+["'](os|fs|fs\/promises|path|http|http2|https|crypto|stream|events|util|buffer|url|net|tls|zlib|module|readline|process)["']/g, 'import "node:$1"')
+      .replace(/require\(["'](os|fs|fs\/promises|path|http|http2|https|crypto|stream|events|util|buffer|url|net|tls|zlib|module|readline|process)["']\)/g, 'require("node:$1")');
 
     const deployRes = await fetch(`${SUPABASE_API_ENDPOINT}/projects/${projectRef}/functions`, {
       method: "POST",
@@ -448,7 +434,12 @@ export class SupabaseMcpClient {
     const deployData = (await deployRes.json()) as any;
     if (!deployRes.ok || !deployData?.id) {
       // If function already exists, try update (PATCH)
-      if (deployRes.status === 409 || deployData?.message?.includes("already exists")) {
+      if (
+        deployRes.status === 409 ||
+        deployRes.status === 400 ||
+        deployData?.message?.toLowerCase().includes("already exists") ||
+        deployData?.message?.toLowerCase().includes("duplicated")
+      ) {
         const patchRes = await fetch(`${SUPABASE_API_ENDPOINT}/projects/${projectRef}/functions/${fnSlug}`, {
           method: "PATCH",
           headers: {
@@ -498,7 +489,7 @@ export class SupabaseMcpClient {
     return {
       slug: fnSlug,
       name: fnSlug,
-      projectRef,
+      projectRef: projectRef || "",
       functionUrl,
       runtimeUrl,
       mcpUrl: SUPABASE_MCP_ENDPOINT
@@ -538,7 +529,9 @@ export async function runSupabaseLinkFlow(options: {
           if (error) {
             res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
             res.end(`<h3>Supabase MCP Link Failed</h3><p>${error}</p>`);
-            server.close();
+            try { (server as any).closeAllConnections?.(); } catch {}
+          try { (server as any).unref?.(); } catch {}
+          server.close();
             return reject(new Error(`Supabase OAuth Error: ${error}`));
           }
 
@@ -549,7 +542,7 @@ export async function runSupabaseLinkFlow(options: {
             return reject(new Error("State mismatch or missing authorization code"));
           }
 
-          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Connection": "close" });
           res.end(`<!DOCTYPE html>
 <html>
   <head>

@@ -57,7 +57,7 @@ export function normalizeModelConfig(input?: string | ModelConfig): NormalizedMo
     model: modelStr || HubResolver.loadLLM("sarvam").default_model,
     temperature: input.temperature,
     maxTokens: input.maxTokens,
-    endpoint: input.endpoint
+    endpoint: (input as any).endpoint || input.baseUrl
   };
 }
 

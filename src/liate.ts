@@ -29,13 +29,15 @@ export * from "./layers/environment/sandbox";
 export * from "./layers/environment/types";
 
 // 2. Core, Infrastructure, Cloud Link & Runtime Server
+export type { AgentRunResult } from "./layers/agent/types";
+export type { SarvamChatOptions } from "./layers/llm/sarvam";
+export { base64url, generatePKCE, type ClientRegistration } from "./core/pkce";
 export * from "./core/index";
-export * from "./link/neon";
-export * from "./link/vercel";
-export * from "./link/supabase";
 export * from "./link/index";
 export * from "./server/runtime";
 export * from "./catalog/index";
+export * from "./skills/resolver";
+export * from "./routes/skills";
 
 // 3. Direct CLI Runner
 import { main } from "./cli/index";

@@ -1,12 +1,19 @@
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 
+// Embedded default hub definitions for serverless runtimes (Neon Functions, Vercel Edge, AWS Lambda)
+// Ensures zero filesystem dependency when bundled into a single file
+import sarvamHubJson from "../../../hub/llm/sarvam.json";
+import indiaaiHubJson from "../../../hub/llm/indiaai.json";
+import neonHubJson from "../../../hub/llm/neon.json";
+
 export interface HubLLMDefinition {
   name: string;
   provider: string;
   version: string;
   base_url: string;
   endpoint: string;
+  systemone_endpoint?: string;
   default_model: string;
   available_models: string[];
   headers: Record<string, string>;
@@ -14,15 +21,19 @@ export interface HubLLMDefinition {
     tool_calling: boolean;
     streaming: boolean;
     reasoning: boolean;
+    system_one_decisions?: boolean;
   };
 }
 
 export class HubResolver {
-  private static cache: Map<string, HubLLMDefinition> = new Map();
+  private static cache: Map<string, HubLLMDefinition> = new Map([
+    ["sarvam", sarvamHubJson as HubLLMDefinition],
+    ["indiaai", indiaaiHubJson as HubLLMDefinition],
+    ["neon", neonHubJson as HubLLMDefinition]
+  ]);
 
   /**
-   * Resolves a provider definition dynamically from the hub/llm/ directory.
-   * Throws an error if the hub file does not exist, guaranteeing zero hardcoding.
+   * Resolves a provider definition dynamically from cache, embedded hub, or disk.
    */
   public static loadLLM(providerName: string): HubLLMDefinition {
     if (this.cache.has(providerName)) {

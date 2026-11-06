@@ -3,6 +3,8 @@ import path from "path";
 import { AUM } from "../../core/aum";
 import type { AgentManifest } from "../../core/types";
 import { SarvamClient } from "../llm/sarvam";
+import { IndiaAiClient } from "../llm/indiaai";
+import { NeonAiGateway } from "../../catalog/neon/gateway";
 import { normalizeModelConfig } from "../llm/config";
 import { IntegrationResolver } from "../integration/knowledge";
 import type { MemoryProvider } from "../integration/types";
@@ -12,6 +14,7 @@ import { ToolRegistry } from "../tools/registry";
 import { EnvironmentResolver } from "../environment/sandbox";
 import { ConfigManager } from "../../core/config";
 import { OPENLIATE_VERSION } from "../../core/version";
+import { SkillsResolver } from "./skills";
 
 export interface AgentConfigOptions {
   manifest?: string | AgentManifest;
@@ -21,7 +24,7 @@ export interface AgentConfigOptions {
   model?: string;
   memory?: string | MemoryProvider;
   sessionId?: string;
-  tools?: Array<string | AgentTool>;
+  tools?: any[];
   apiKey?: string;
 }
 
@@ -31,15 +34,22 @@ export class Agent {
   public readonly intent: string;
   public readonly model: string;
   public readonly manifest?: AgentManifest;
+  public compiledSkills: string = "";
+  private rawSkillsConfig?: string | string[];
+  private manifestBaseDir: string = process.cwd();
   private memory: MemoryProvider;
   private llm: LLMFunctionCaller;
   private tools: Map<string, AgentTool> = new Map();
   private maxSteps: number = 10;
   private toolsInitialized: boolean = false;
-  private rawToolSpecs: Array<string | AgentTool> = [];
+  private rawToolSpecs: any[] = [];
 
   constructor(options: AgentConfigOptions = {}) {
     let resolvedManifest: AgentManifest | undefined;
+
+    const manifestBaseDir = typeof options.manifest === "string"
+      ? path.dirname(path.resolve(process.cwd(), options.manifest))
+      : process.cwd();
 
     if (typeof options.manifest === "string") {
       const manifestPath = path.resolve(process.cwd(), options.manifest);
@@ -54,10 +64,17 @@ export class Agent {
     this.manifest = resolvedManifest;
 
     // Resolve Name, Version, and Intent from manifest or programmatic options
-    this.name = options.name || resolvedManifest?.A?.name || "unnamed_agent";
-    this.version = options.version || resolvedManifest?.A?.version || "0.0.1";
-    this.intent = options.intent || resolvedManifest?.A?.intent || "Autonomous AI Agent";
-    this.maxSteps = resolvedManifest?.A?.maxSteps ?? 10;
+    const aObj = typeof resolvedManifest?.A === "object" ? resolvedManifest.A : undefined;
+    const aName = typeof resolvedManifest?.A === "string" ? resolvedManifest.A : aObj?.name;
+    this.name = options.name || aName || "unnamed_agent";
+    this.version = options.version || aObj?.version || "0.0.1";
+    this.intent = options.intent || aObj?.intent || "Autonomous AI Agent";
+    this.maxSteps = typeof (aObj as any)?.maxSteps === "number" ? (aObj as any).maxSteps : 10;
+
+    // Resolve Layer [A] Skills (skills.md, SKILL.md, .openliate/skills, or hub/skills)
+    this.manifestBaseDir = manifestBaseDir;
+    this.rawSkillsConfig = (options as any).skills || (aObj as any)?.skills || (resolvedManifest?.I as any)?.skills;
+    this.compiledSkills = SkillsResolver.compileSkills(this.rawSkillsConfig, manifestBaseDir);
 
     // Resolve Model ([L] Layer) - strictly dynamic, no hardcoding
     const normalizedL = resolvedManifest?.L ? normalizeModelConfig(resolvedManifest.L) : undefined;
@@ -79,9 +96,18 @@ export class Agent {
       }, sId);
     }
 
-    // Resolve LLM Provider ([L] Layer) — Sarvam AI Sovereign Stack
-    const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY");
-    this.llm = new SarvamClient(apiKey);
+    // Resolve LLM Provider ([L] Layer) — Multi-Provider Dynamic Routing
+    const provider = resolvedModel.includes("/") ? resolvedModel.split("/")[0].toLowerCase() : "sarvam";
+
+    if (provider === "neon") {
+      this.llm = new NeonAiGateway();
+    } else if (provider === "indiaai") {
+      const soketKey = options.apiKey || resolvedManifest?.E?.SOKET_API_KEY || process.env.SOKET_API_KEY || ConfigManager.getKey("SOKET_API_KEY");
+      this.llm = new IndiaAiClient(soketKey);
+    } else {
+      const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY");
+      this.llm = new SarvamClient(apiKey);
+    }
 
     // Collect tool specs from options or manifest ([T] Layer)
     if (options.tools) {
@@ -91,11 +117,15 @@ export class Agent {
       if (Array.isArray(resolvedManifest.T)) {
         this.rawToolSpecs.push(...resolvedManifest.T);
       } else if (typeof resolvedManifest.T === "object") {
-        for (const [key, val] of Object.entries(resolvedManifest.T)) {
-          if (typeof val === "object" && val !== null) {
-            this.rawToolSpecs.push({ id: key, name: key, ...val });
-          } else {
-            this.rawToolSpecs.push(key);
+        if ("command" in resolvedManifest.T || "url" in resolvedManifest.T) {
+          this.rawToolSpecs.push({ id: "inline_tool", name: "inline_tool", ...(resolvedManifest.T as Record<string, any>) });
+        } else {
+          for (const [key, val] of Object.entries(resolvedManifest.T as Record<string, any>)) {
+            if (typeof val === "object" && val !== null) {
+              this.rawToolSpecs.push({ id: key, name: key, ...val });
+            } else {
+              this.rawToolSpecs.push(key);
+            }
           }
         }
       }
@@ -116,7 +146,8 @@ export class Agent {
       agentVersion: this.version,
       sessionId: this.memory.sessionId,
       state: {
-        intent: this.intent
+        intent: this.intent,
+        skills: this.compiledSkills
       }
     };
   }
@@ -137,11 +168,27 @@ export class Agent {
       }
     }
 
+    // Resolve Layer [I] Context Integration (e.g. Neon Functions Context.dev)
+    if (this.manifest?.I) {
+      const contextTools = IntegrationResolver.resolveContextTools(this.manifest.I as any);
+      for (const ct of contextTools) {
+        if (!this.tools.has(ct.name)) {
+          this.tools.set(ct.name, ct);
+        }
+      }
+    }
+
     this.toolsInitialized = true;
   }
 
   public async run(input: string, options: AgentExecutionOptions = {}): Promise<AgentRunResult> {
     await this.initializeTools();
+
+    if (!this.compiledSkills && this.rawSkillsConfig) {
+      try {
+        this.compiledSkills = await SkillsResolver.compileSkillsAsync(this.rawSkillsConfig, this.manifestBaseDir);
+      } catch {}
+    }
 
     const allTools = [
       ...Array.from(this.tools.values()),
@@ -149,6 +196,16 @@ export class Agent {
     ];
 
     const context = this.getContext();
+
+    let activeSystemPrompt = options.systemPrompt;
+    if (this.compiledSkills) {
+      if (activeSystemPrompt) {
+        activeSystemPrompt = `${activeSystemPrompt}\n\n${this.compiledSkills}`;
+      } else {
+        const base = `You are ${this.name} (v${this.version}).\nYour mission and intent: ${this.intent || "Autonomous AI Agent"}.\nFollow the ReAct methodology: Reason about the user's request, select tools if needed, observe outputs, and provide a clear final answer.`;
+        activeSystemPrompt = `${base}\n\n${this.compiledSkills}`;
+      }
+    }
 
     return ReActLoop.execute(
       input,
@@ -159,7 +216,7 @@ export class Agent {
       {
         model: options.model ?? this.model,
         maxSteps: options.maxSteps ?? this.maxSteps,
-        systemPrompt: options.systemPrompt,
+        systemPrompt: activeSystemPrompt,
         temperature: options.temperature
       }
     );
