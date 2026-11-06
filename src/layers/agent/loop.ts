@@ -1,6 +1,6 @@
 import type { AgentTool, AgentContext, AgentStep, AgentRunResult, AgentExecutionOptions, ToolCall, ToolResult } from "./types";
 import type { MemoryProvider, AgentMessage } from "../integration/types";
-import type { SarvamMessage, SarvamChatResponse } from "../llm/sarvam";
+import type { SarvamMessage, SarvamChatResponse } from "../llm/model";
 
 export interface LLMFunctionCaller {
   chat(messages: SarvamMessage[], options?: any): Promise<SarvamChatResponse & { toolCalls?: ToolCall[] }>;

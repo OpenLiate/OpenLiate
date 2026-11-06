@@ -1,0 +1,12 @@
+{
+  "id": "azion-storage",
+  "name": "Azion Storage MCP",
+  "description": "Manage Object Storage buckets, objects, and credentials; SQL databases and queries",
+  "transport": "http",
+  "url": "https://storage-mcp.azion.com/mcp",
+  "headers": {
+    "Authorization": "Token $AZION_PERSONAL_TOKEN",
+    "Accept": "application/json, text/event-stream"
+  }
+}
+

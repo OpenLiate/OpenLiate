@@ -4,4 +4,3 @@ if (Test-Path $exe) {
 } else {
     & node "$PSScriptRoot\dist\bin.js" $args
 }
-

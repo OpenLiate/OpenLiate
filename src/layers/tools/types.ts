@@ -30,7 +30,7 @@ export interface ToolExecutorResult {
 export interface ParsedToolSpec {
   raw: string;
   isMcp: boolean;
-  isBuiltin: boolean;
+  isBuiltin?: boolean;
   serverName?: string;
   selectedTools?: string[];
 }

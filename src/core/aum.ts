@@ -37,6 +37,31 @@ export const AUMSchema = z.object({
 });
 
 export class AUM {
+  /**
+   * Normalizes manifest properties supporting pure LIATE authoring:
+   * 1. Shorthand: L, I, A, T, E
+   * 2. Full Name: LLM, Integration, Agent, Tools, Environment
+   * 3. Lowercase: llm, integration, agent, tools, environment
+   */
+  public static normalize(rawObj: any): any {
+    if (!rawObj || typeof rawObj !== "object") return rawObj;
+
+    const L = rawObj.L ?? rawObj.LLM ?? rawObj.llm;
+    const I = rawObj.I ?? rawObj.Integration ?? rawObj.integration;
+    const A = rawObj.A ?? rawObj.Agent ?? rawObj.agent;
+    const T = rawObj.T ?? rawObj.Tools ?? rawObj.tools;
+    const E = rawObj.E ?? rawObj.Environment ?? rawObj.environment;
+
+    return {
+      ...rawObj,
+      L,
+      I: I ?? {},
+      A: typeof A === "string" ? { name: A } : (A ?? {}),
+      T: T ?? [],
+      E: E ?? {}
+    };
+  }
+
   public static parse(manifestOrJson: string | object): AgentManifest {
     let rawObj: any;
 
@@ -50,7 +75,8 @@ export class AUM {
       rawObj = manifestOrJson;
     }
 
-    const result = AUMSchema.safeParse(rawObj);
+    const normalized = AUM.normalize(rawObj);
+    const result = AUMSchema.safeParse(normalized);
 
     if (!result.success) {
       const issues = result.error.issues.map((i) => `[${i.path.join(".")}] ${i.message}`).join(", ");

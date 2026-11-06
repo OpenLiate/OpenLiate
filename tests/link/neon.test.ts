@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { NeonMcpOAuth, generatePKCE, NeonMcpClient } from "../../src/link/neon";
+import { NeonMcpOAuth, generatePKCE, NeonMcpClient } from "../../src/cloud/regional/neon";
 
 describe("Cloud Link: Neon MCP OAuth 2.1 (https://mcp.neon.tech)", () => {
   it("generates compliant RFC 7636 PKCE code_verifier and code_challenge", () => {

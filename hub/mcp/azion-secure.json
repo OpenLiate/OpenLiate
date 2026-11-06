@@ -1,0 +1,12 @@
+{
+  "id": "azion-secure",
+  "name": "Azion Secure MCP",
+  "description": "Manage firewalls, WAF, DNS, certificates, network lists, and authentication policies",
+  "transport": "http",
+  "url": "https://secure-mcp.azion.com/mcp",
+  "headers": {
+    "Authorization": "Token $AZION_PERSONAL_TOKEN",
+    "Accept": "application/json, text/event-stream"
+  }
+}
+

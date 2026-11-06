@@ -11,10 +11,10 @@ import {
   deployNeon,
   deployVercel,
   deploySupabase
-} from "../../src/link/index";
-import { NeonMcpOAuth } from "../../src/link/neon";
-import { VercelMcpOAuth } from "../../src/link/vercel";
-import { SupabaseMcpOAuth } from "../../src/link/supabase";
+} from "../../src/cloud/link";
+import { NeonMcpOAuth } from "../../src/cloud/regional/neon";
+import { VercelMcpOAuth } from "../../src/cloud/regional/vercel";
+import { SupabaseMcpOAuth } from "../../src/cloud/regional/supabase";
 
 describe("Cloud Link: Multi-Cloud (openliate link / relink / unlink)", () => {
   it("exports link, linkNeon, linkVercel, linkSupabase, relink, and unlink functions", () => {

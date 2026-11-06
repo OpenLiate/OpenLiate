@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import * as p from "@clack/prompts";
 import { ConfigManager } from "../../core/config";
-import { Sarvam } from "../../catalog/sarvam/index";
-import { NeonMcpOAuth } from "../../catalog/neon/index";
+import { SarvamClient } from "../../layers/llm/model";
+import { NeonMcpOAuth } from "../../cloud/regional/neon";
 
 export const DEFAULT_JOIN_CALLBACK_PORT = 54324;
 export const JOIN_PORTAL_URL = "https://openliate.tech/join";
@@ -119,7 +119,7 @@ export async function runJoinFlow(): Promise<void> {
       ConfigManager.setGlobalKey("NEON_AI_GATEWAY_TOKEN", inputToken.trim());
       finalKey = inputToken.trim();
     } else {
-      console.log("✔ Neon AI Gateway token detected.");
+      console.log("[Detected] Neon AI Gateway token detected.");
       finalKey = neonToken;
     }
 
@@ -158,16 +158,16 @@ export async function runJoinFlow(): Promise<void> {
     verifySpinner.start(`Testing live connection to ${gatewayChoice.toUpperCase()}...`);
 
     try {
-      const client = Sarvam.client(finalKey || undefined);
+      const client = new SarvamClient(finalKey || undefined);
       const res = await client.chat([
         { role: "user", content: "Say hello and confirm connection in one short sentence." }
       ], { model: "glm5.3-flash", maxTokens: 60 });
-      verifySpinner.stop(`✔ Sarvam Sovereign AI Live Verified`);
+      verifySpinner.stop(`[Verified] Sarvam Sovereign AI Live Verified`);
       if (res.text) {
         console.log(`\n\x1b[32m[Sarvam AI Response]:\x1b[0m\n"${res.text.trim()}"\n`);
       }
     } catch (err: any) {
-      verifySpinner.stop(`✔ Configuration saved (Verification note: ${err.message})`);
+      verifySpinner.stop(`[Saved] Configuration saved (Verification note: ${err.message})`);
     }
   }
 

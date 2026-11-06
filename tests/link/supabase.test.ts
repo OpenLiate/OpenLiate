@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { SupabaseMcpOAuth, generatePKCE, SupabaseMcpClient } from "../../src/link/supabase";
+import { SupabaseMcpOAuth, generatePKCE, SupabaseMcpClient } from "../../src/cloud/regional/supabase";
 
 describe("Cloud Link: Supabase MCP OAuth (https://mcp.supabase.com)", () => {
   it("generates compliant RFC 7636 PKCE code_verifier and code_challenge", () => {

@@ -1,5 +1,5 @@
 import { EnvironmentResolver } from "../../layers/environment/sandbox";
-import { startRuntimeServer } from "../../server/runtime";
+import { startRuntimeServer } from "../../cloud/runtime/hono";
 
 export async function handleServeCommand(args: string[]): Promise<void> {
   let port = 7071;

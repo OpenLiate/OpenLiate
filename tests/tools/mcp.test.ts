@@ -1,18 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { ToolRegistry } from "../../src/layers/tools/registry";
-import { fetchTool } from "../../src/layers/tools/builtin/fetch";
 import { Agent } from "../../src/layers/agent/harness";
 import { createAgentMcpServer } from "../../src/layers/tools/server";
 import { MCP } from "../../src/layers/tools/mcp";
 
 describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
-  test("ToolRegistry.parseSpec: parses builtin fetch tool", () => {
+  test("ToolRegistry.parseSpec: parses shorthand mcp fetch tool", () => {
     const res1 = ToolRegistry.parseSpec("fetch");
-    expect(res1.isBuiltin).toBe(true);
-    expect(res1.isMcp).toBe(false);
-
-    const res2 = ToolRegistry.parseSpec("builtin:fetch");
-    expect(res2.isBuiltin).toBe(true);
+    expect(res1.isMcp).toBe(true);
+    expect(res1.serverName).toBe("fetch");
   });
 
   test("ToolRegistry.parseSpec: parses entire MCP server name", () => {
@@ -75,12 +71,7 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
     expect(config.transport).toBe("http");
   });
 
-  test("Builtin fetch tool: has compliant schema and required parameters", () => {
-    expect(fetchTool.name).toBe("fetch");
-    expect(fetchTool.description).toBeDefined();
-    expect(fetchTool.parameters?.required).toContain("url");
-    expect(fetchTool.execute).toBeDefined();
-  });
+
 
   test("Agent integration: loads Layer [T] tools from manifest", async () => {
     const manifest = {
@@ -91,7 +82,13 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
         version: "0.0.1",
         intent: "Tool Tester"
       },
-      T: ["fetch"],
+      T: [
+        {
+          name: "custom_tool",
+          description: "Dynamic custom tool",
+          execute: async () => "ok"
+        }
+      ],
       E: { SARVAM_API_KEY: "dummy-key" }
     };
 
@@ -100,7 +97,7 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
 
     const tools = await agent.getTools();
     expect(tools.length).toBe(1);
-    expect(tools[0].name).toBe("fetch");
+    expect(tools[0].name).toBe("custom_tool");
     expect(tools[0].description).toBeDefined();
   });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { VercelMcpOAuth, generatePKCE, VercelMcpClient } from "../../src/link/vercel";
+import { VercelMcpOAuth, generatePKCE, VercelMcpClient } from "../../src/cloud/regional/vercel";
 
 describe("Cloud Link: Vercel MCP OAuth (https://mcp.vercel.com)", () => {
   it("generates compliant RFC 7636 PKCE code_verifier and code_challenge", () => {

@@ -1,0 +1,854 @@
+import { createHash, randomBytes } from "crypto";
+import http from "http";
+import fs from "fs";
+import path from "path";
+import os from "os";
+import JSZip from "jszip";
+import { generateUUIDv7 } from "../../core/uuid";
+import { ConfigManager } from "../../core/config";
+import { base64url, generatePKCE, type ClientRegistration } from "../../core/pkce";
+export { base64url, generatePKCE, type ClientRegistration };
+
+export const NEON_MCP_ENDPOINT = "https://mcp.neon.tech/mcp";
+export const NEON_REGISTER_ENDPOINT = "https://mcp.neon.tech/api/register";
+export const NEON_AUTH_ENDPOINT = "https://mcp.neon.tech/api/authorize";
+export const NEON_TOKEN_ENDPOINT = "https://mcp.neon.tech/api/token";
+export const DEFAULT_CALLBACK_PORT = 54321;
+export const DEFAULT_CALLBACK_URL = `http://localhost:${DEFAULT_CALLBACK_PORT}/callback`;
+
+export interface NeonTokenData {
+  access_token: string;
+  refresh_token?: string;
+  saved_at: string;
+  projectId?: string;
+  email?: string;
+}
+
+export class NeonMcpOAuth {
+  /**
+   * Path to persistent OpenLiate config (~/.openliate/neon_token.json or .openliate/neon_token.json).
+   */
+  public static getTokenPath(): string {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    if (configDir) {
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+      }
+      return path.join(configDir, "neon.json");
+    }
+
+    // Prefer workspace .openliate/link directory
+    const candidateDirs = [
+      path.resolve(process.cwd(), ".openliate", "link"),
+      path.resolve(process.cwd(), "..", ".openliate", "link"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link")
+    ];
+
+    for (const d of candidateDirs) {
+      try {
+        if (!fs.existsSync(d)) {
+          fs.mkdirSync(d, { recursive: true });
+        }
+        return path.join(d, "neon.json");
+      } catch {}
+    }
+
+    try {
+      const homeLinkDir = path.join(os.homedir(), ".openliate", "link");
+      if (!fs.existsSync(homeLinkDir)) {
+        fs.mkdirSync(homeLinkDir, { recursive: true });
+      }
+      return path.join(homeLinkDir, "neon.json");
+    } catch {
+      return path.resolve(process.cwd(), ".openliate", "link", "neon.json");
+    }
+  }
+
+  public static loadSavedToken(): NeonTokenData | null {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const candidatePaths = [
+      configDir ? path.join(configDir, "neon.json") : "",
+      configDir ? path.join(configDir, "neon_token.json") : "",
+      path.resolve(process.cwd(), ".openliate", "link", "neon.json"),
+      path.resolve(process.cwd(), ".openliate", "link", "neon_token.json"),
+      path.resolve(process.cwd(), ".openliate", "neon.json"),
+      path.resolve(process.cwd(), ".openliate", "neon_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "link", "neon.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "neon_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link", "neon.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "neon_token.json"),
+      path.resolve(os.homedir(), ".openliate", "link", "neon.json"),
+      path.resolve(os.homedir(), ".openliate", "neon_token.json")
+    ].filter(Boolean);
+
+    for (const p of candidatePaths) {
+      try {
+        if (fs.existsSync(p)) {
+          const raw = fs.readFileSync(p, "utf-8");
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.access_token) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  }
+
+  public static saveToken(data: NeonTokenData): void {
+    const p = NeonMcpOAuth.getTokenPath();
+    const pDir = path.dirname(p);
+    if (!fs.existsSync(pDir)) {
+      fs.mkdirSync(pDir, { recursive: true });
+    }
+    fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
+
+    // Do not modify workspace configuration if running inside an isolated test environment
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    if (configDir) {
+      return;
+    }
+
+    // Also mirror to workspace .openliate/link/neon.json if running from subfolder
+    const mirrorPath = path.resolve(process.cwd(), ".openliate", "link", "neon.json");
+    if (mirrorPath !== p) {
+      try {
+        if (!fs.existsSync(path.dirname(mirrorPath))) {
+          fs.mkdirSync(path.dirname(mirrorPath), { recursive: true });
+        }
+        fs.writeFileSync(mirrorPath, JSON.stringify(data, null, 2), "utf-8");
+      } catch {}
+    }
+
+    // Always update .env.local with fresh token
+    try {
+      const envPath = path.join(process.cwd(), ".env.local");
+      let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf-8") : "";
+      if (content.includes("NEON_MCP_TOKEN=")) {
+        content = content.replace(/NEON_MCP_TOKEN="?[^"\r\n]+"?/g, `NEON_MCP_TOKEN="${data.access_token}"`);
+      } else {
+        content += `\nNEON_MCP_TOKEN="${data.access_token}"\n`;
+      }
+      fs.writeFileSync(envPath, content.trim() + "\n", "utf-8");
+    } catch {}
+  }
+
+  public static clearSavedToken(): void {
+    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const candidatePaths = [
+      configDir ? path.join(configDir, "neon.json") : "",
+      configDir ? path.join(configDir, "neon_token.json") : "",
+      NeonMcpOAuth.getTokenPath(),
+      path.resolve(process.cwd(), ".openliate", "link", "neon.json"),
+      path.resolve(process.cwd(), ".openliate", "link", "neon_token.json"),
+      path.resolve(process.cwd(), ".openliate", "neon.json"),
+      path.resolve(process.cwd(), ".openliate", "neon_token.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "link", "neon.json"),
+      path.resolve(process.cwd(), "..", ".openliate", "neon_token.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "link", "neon.json"),
+      path.resolve(__dirname, "..", "..", ".openliate", "neon_token.json"),
+      path.resolve(os.homedir(), ".openliate", "link", "neon.json"),
+      path.resolve(os.homedir(), ".openliate", "neon_token.json")
+    ].filter(Boolean);
+
+    for (const p of candidatePaths) {
+      try {
+        if (fs.existsSync(p)) {
+          fs.unlinkSync(p);
+        }
+      } catch {}
+    }
+
+    try {
+      const envPath = path.join(process.cwd(), ".env.local");
+      if (fs.existsSync(envPath)) {
+        let content = fs.readFileSync(envPath, "utf-8");
+        content = content.replace(/NEON_MCP_TOKEN="?[^"\r\n]+"?(\r?\n|$)/g, "");
+        fs.writeFileSync(envPath, content.trim() + "\n", "utf-8");
+      }
+    } catch {}
+
+    delete process.env.NEON_MCP_TOKEN;
+    delete process.env.NEON_API_KEY;
+  }
+
+  /**
+   * Modern 2026 Dynamic Client Registration (RFC 7591)
+   * Registers OpenLiate dynamically with Neon's MCP server.
+   */
+  public static async registerClient(callbackUrl: string = DEFAULT_CALLBACK_URL): Promise<ClientRegistration> {
+    try {
+      const res = await fetch(NEON_REGISTER_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_name: "OpenLiate CLI",
+          client_uri: "https://openliate.tech",
+          redirect_uris: [callbackUrl],
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"],
+          token_endpoint_auth_method: "none"
+        })
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Neon Dynamic Client Registration failed (${res.status}): ${text}`);
+      }
+
+      const json = await res.json() as any;
+      return {
+        client_id: json.client_id,
+        client_secret: json.client_secret
+      };
+    } catch (err: any) {
+      throw err;
+    }
+  }
+
+  /**
+   * Constructs 1-Click Authorization URL for Neon MCP OAuth 2.1
+   */
+  public static buildAuthorizeUrl(options: {
+    clientId: string;
+    codeChallenge: string;
+    state: string;
+    callbackUrl?: string;
+  }): string {
+    const callbackUrl = options.callbackUrl || DEFAULT_CALLBACK_URL;
+    const authUrl = new URL(NEON_AUTH_ENDPOINT);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("client_id", options.clientId);
+    authUrl.searchParams.set("redirect_uri", callbackUrl);
+    authUrl.searchParams.set("scope", "read write");
+    authUrl.searchParams.set("code_challenge", options.codeChallenge);
+    authUrl.searchParams.set("code_challenge_method", "S256");
+    authUrl.searchParams.set("state", options.state);
+    return authUrl.toString();
+  }
+
+  /**
+   * Exchanges authorization code for Neon MCP access token.
+   */
+  public static async exchangeToken(options: {
+    code: string;
+    codeVerifier: string;
+    clientId: string;
+    clientSecret?: string;
+    callbackUrl?: string;
+  }): Promise<NeonTokenData> {
+    const callbackUrl = options.callbackUrl || DEFAULT_CALLBACK_URL;
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      code: options.code,
+      redirect_uri: callbackUrl,
+      client_id: options.clientId,
+      code_verifier: options.codeVerifier
+    });
+
+    if (options.clientSecret) {
+      params.append("client_secret", options.clientSecret);
+    }
+
+    try {
+      const res = await fetch(NEON_TOKEN_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Neon Token Exchange failed (${res.status}): ${text}`);
+      }
+
+      const json = await res.json() as any;
+      const tokenData: NeonTokenData = {
+        access_token: json.access_token,
+        refresh_token: json.refresh_token,
+        saved_at: new Date().toISOString()
+      };
+      NeonMcpOAuth.saveToken(tokenData);
+      return tokenData;
+    } catch (err: any) {
+      throw err;
+    }
+  }
+
+  /**
+   * Ephemeral HTTP server on port 54321 to receive OAuth callback
+   */
+  public static waitForCallback(port: number = DEFAULT_CALLBACK_PORT): Promise<{ code: string; state?: string }> {
+    return new Promise((resolve, reject) => {
+      let resolved = false;
+
+      const server = http.createServer((req, res) => {
+        try {
+          const reqUrl = new URL(req.url || "/", `http://localhost:${port}`);
+          if (reqUrl.pathname !== "/callback") {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("Not Found");
+            return;
+          }
+
+          const code = reqUrl.searchParams.get("code");
+          const state = reqUrl.searchParams.get("state") || undefined;
+          const error = reqUrl.searchParams.get("error");
+
+          if (error) {
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end(`<h3>Neon MCP OAuth Error: ${error}</h3>`);
+            server.close();
+            if (!resolved) {
+              resolved = true;
+              reject(new Error(`OAuth Error: ${error}`));
+            }
+            return;
+          }
+
+          if (!code) {
+            res.writeHead(400, { "Content-Type": "text/plain" });
+            res.end("Missing authorization code.");
+            return;
+          }
+
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Connection": "close" });
+          res.end(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>OpenLiate — Authentication Successful</title>
+  </head>
+  <body style="font-family: -apple-system, system-ui, sans-serif; padding: 40px; text-align: center; color: #111;">
+    <h2>Authentication successful</h2>
+    <p>You can close this window and return to your terminal.</p>
+    <script>try { window.close(); } catch(e) {}</script>
+  </body>
+</html>`);
+
+          server.close();
+          if (!resolved) {
+            resolved = true;
+            resolve({ code, state });
+          }
+        } catch (err: any) {
+          server.close();
+          if (!resolved) {
+            resolved = true;
+            reject(err);
+          }
+        }
+      });
+
+      server.on("error", (err) => {
+        if (!resolved) {
+          resolved = true;
+          reject(err);
+        }
+      });
+
+      server.listen(port);
+
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          server.close();
+          reject(new Error("Neon MCP OAuth timed out after 60 seconds."));
+        }
+      }, 60000);
+    });
+  }
+}
+
+/**
+ * Neon MCP Client: Calls tools directly on https://mcp.neon.tech/mcp
+ */
+export class NeonMcpClient {
+  private token: string;
+
+  constructor(token?: string) {
+    const saved = NeonMcpOAuth.loadSavedToken();
+    this.token = token || saved?.access_token || process.env.NEON_MCP_TOKEN || "";
+    if (!this.token) {
+      throw new Error("No Neon MCP token found. Run 'openliate link --neon' first.");
+    }
+  }
+
+  public async callTool(name: string, args: Record<string, any> = {}): Promise<any> {
+    const payload = {
+      jsonrpc: "2.0",
+      id: Date.now(),
+      method: "tools/call",
+      params: {
+        name,
+        arguments: args
+      }
+    };
+
+    const res = await fetch(NEON_MCP_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${this.token}`,
+        "Accept": "application/json, text/event-stream"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.status === 401) {
+      NeonMcpOAuth.clearSavedToken();
+      throw new Error("Neon MCP Token has expired or is invalid. Please run 'openliate relink --neon' to re-authenticate.");
+    }
+
+    const text = await res.text();
+    let data: any;
+    const match = text.match(/data: ({.*})/);
+    if (match) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (parsed.result?.content?.[0]?.text) {
+          try {
+            data = JSON.parse(parsed.result.content[0].text);
+          } catch {
+            data = parsed.result.content[0].text;
+          }
+        } else {
+          data = parsed;
+        }
+      } catch {
+        data = text;
+      }
+    } else {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+    }
+
+    if (data && typeof data === "object" && data.error) {
+      if (data.error === "invalid_token" || data.error_description?.includes("expired")) {
+        throw new Error("Neon MCP Token has expired. Please run 'openliate relink --neon' to re-authenticate.");
+      }
+      throw new Error(`Neon MCP Error (${data.error}): ${data.error_description || JSON.stringify(data)}`);
+    }
+
+    return data;
+  }
+
+  public async listProjects(): Promise<any[]> {
+    const res = await this.callTool("list_projects");
+    return Array.isArray(res) ? res : res.projects || [];
+  }
+
+  public async listBranches(projectId: string): Promise<any[]> {
+    const res = await this.callTool("list_branches", { project_id: projectId });
+    return Array.isArray(res) ? res : res.branches || [];
+  }
+
+  public async listFunctions(projectId: string, branchId: string): Promise<any[]> {
+    const res = await this.callTool("list_functions", { project_id: projectId, branch_id: branchId });
+    return Array.isArray(res) ? res : res.functions || [];
+  }
+
+  public async deployRuntime(options?: {
+    slug?: string;
+    projectId?: string;
+    branchId?: string;
+    branchName?: string;
+    usePrimaryBranch?: boolean;
+    createNewBranch?: boolean;
+  }): Promise<{
+    deploymentId: number;
+    uuid7: string;
+    slug: string;
+    projectId: string;
+    projectName: string;
+    branchId: string;
+    branchName: string;
+    invocationUrl: string;
+    status: string;
+  }> {
+    // 1. Build universal serverless runtime bundle into dist/runtime/
+    const runtimeDistDir = path.resolve(process.cwd(), "dist", "runtime");
+    if (!fs.existsSync(runtimeDistDir)) {
+      fs.mkdirSync(runtimeDistDir, { recursive: true });
+    }
+
+    const candidatePaths = [
+      path.resolve(process.cwd(), "dist", "runtime", "index.js"),
+      path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "runtime", "index.js"),
+      path.resolve(__dirname, "runtime", "index.js"),
+      path.resolve(process.cwd(), "runtime", "index.js")
+    ];
+
+    let bundleText = "";
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          const c = fs.readFileSync(p, "utf-8");
+          if (c && c.length > 0) {
+            bundleText = c;
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    if (!bundleText && (globalThis as any).Bun?.build) {
+      try {
+        const entrypoint = path.resolve(__dirname, "..", "server", "index.ts");
+        const buildResult = await (globalThis as any).Bun.build({
+          entrypoints: [entrypoint],
+          target: "node",
+          format: "esm",
+          minify: false,
+          naming: "[name].[ext]",
+          outdir: runtimeDistDir
+        });
+        if (buildResult.success && buildResult.outputs.length > 0) {
+          bundleText = await buildResult.outputs[0].text();
+        }
+      } catch {}
+    }
+
+    if (!bundleText) {
+      throw new Error("Failed to resolve OpenLiate Runtime bundle (dist/runtime/index.js). Run 'bun run build' first.");
+    }
+
+    // 2. Create physical package dist/runtime/runtime.zip for transparency and portability
+    const zip = new JSZip();
+    zip.file("index.js", bundleText);
+    const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+    fs.writeFileSync(path.join(runtimeDistDir, "runtime.zip"), zipBuffer);
+    const zipBase64 = zipBuffer.toString("base64");
+
+    // 3. Resolve or Automatically Create Project "openliate"
+    let projects = await this.listProjects();
+    let project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" );
+
+    if (!project) {
+      try {
+        const createProjRes = await this.callTool("create_project", {
+          name: "OpenLiate",
+          branch: { name: "main" }
+        });
+        project = createProjRes?.project || createProjRes;
+      } catch {
+        project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" ) || projects[0];
+      }
+    }
+
+    if (!project) {
+      throw new Error("Unable to resolve or create a Neon project for OpenLiate.");
+    }
+
+    // 4. Generate RFC 9562 UUIDv7 for deployment traceability
+    const uuid7 = generateUUIDv7();
+    const cleanId = uuid7.replace(/-/g, "").slice(0, 8);
+    const targetBranchName = options?.branchName || `openliate-branch-${cleanId}`;
+
+    // 5. Resolve Branch (Dedicated isolated branch or Project's primary branch)
+    let branch: any;
+    if (options?.branchId) {
+      const branches = await this.listBranches(project.id);
+      branch = branches.find((b: any) => b.id === options.branchId) || branches[0];
+    } else if (options?.usePrimaryBranch) {
+      const branches = await this.listBranches(project.id);
+      branch = branches.find((b: any) => b.primary || b.default) || branches[0];
+    } else {
+      try {
+        const branchRes = await this.callTool("create_branch", {
+          project_id: project.id,
+          name: targetBranchName
+        });
+        branch = branchRes?.branch || branchRes;
+      } catch {
+        const branches = await this.listBranches(project.id);
+        branch = branches.find((b: any) => b.primary || b.default) || branches[0];
+      }
+    }
+
+    if (!branch || !branch.id) {
+      const branches = await this.listBranches(project.id);
+      branch = branches.find((b: any) => b.primary || b.default) || branches[0];
+    }
+
+    const slug = options?.slug || "runtime";
+
+    // 6. Call deploy_function on Neon MCP
+    const deployRes = await this.callTool("deploy_function", {
+      project_id: project.id,
+      branch_id: branch.id,
+      slug,
+      zip: zipBase64,
+      runtime: "nodejs24"
+    });
+
+    // 7. Poll function status until ready (max 30s)
+    let fnRes: any = null;
+    let invocationUrl = "";
+    let finalStatus = deployRes?.status || "building";
+
+    for (let attempt = 1; attempt <= 12; attempt++) {
+      try {
+        fnRes = await this.callTool("get_function", {
+          project_id: project.id,
+          branch_id: branch.id,
+          slug
+        });
+
+        invocationUrl = fnRes?.invocation_url || fnRes?.current_deployment?.invocation_url || "";
+        finalStatus = fnRes?.current_deployment?.status || fnRes?.status || finalStatus;
+
+        if (invocationUrl && finalStatus !== "building") {
+          break;
+        }
+      } catch {}
+
+      if (attempt < 12) {
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+    }
+
+    // Deterministic fallback if invocation_url was empty during build
+    if (!invocationUrl && branch?.id) {
+      invocationUrl = `https://${branch.id}-${slug}.compute.c-15.us-east-1.aws.neon.tech/`;
+    }
+
+    const result = {
+      deploymentId: deployRes?.id || fnRes?.current_deployment?.id || 0,
+      uuid7,
+      slug,
+      projectId: project.id,
+      projectName: project.name,
+      branchId: branch.id,
+      branchName: branch.name || targetBranchName,
+      invocationUrl: invocationUrl || fnRes?.invocation_url || "",
+      status: finalStatus
+    };
+
+    // Persist deployment metadata
+    try {
+      const deployPath = path.resolve(process.cwd(), ".openliate", "neon_deployment.json");
+      if (!fs.existsSync(path.dirname(deployPath))) {
+        fs.mkdirSync(path.dirname(deployPath), { recursive: true });
+      }
+      fs.writeFileSync(deployPath, JSON.stringify(result, null, 2), "utf-8");
+    } catch {}
+
+    return result;
+  }
+
+
+  public async deployAgent(manifestPath: string, options?: {
+    agentName?: string;
+    branchName?: string;
+  }): Promise<{
+    deploymentId: number;
+    uuid7: string;
+    agentName: string;
+    slug: string;
+    projectId: string;
+    projectName: string;
+    branchId: string;
+    branchName: string;
+    invocationUrl: string;
+    status: string;
+  }> {
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`Agent manifest not found at: ${manifestPath}`);
+    }
+    const manifestRaw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    const rawName = options?.agentName || manifestRaw.A?.name || path.basename(path.dirname(manifestPath));
+    const cleanAgentName = rawName.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+    const slug = `agent-${cleanAgentName}`.slice(0, 32);
+
+    // 1. Resolve runtime bundle
+    const candidatePaths = [
+      path.resolve(process.cwd(), "dist", "runtime", "index.js"),
+      path.resolve(process.cwd(), "OpenLiate", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "dist", "runtime", "index.js"),
+      path.resolve(__dirname, "..", "..", "runtime", "index.js"),
+      path.resolve(__dirname, "runtime", "index.js"),
+      path.resolve(process.cwd(), "runtime", "index.js")
+    ];
+
+    let bundleText = "";
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          const c = fs.readFileSync(p, "utf-8");
+          if (c && c.length > 0) {
+            bundleText = c;
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    if (!bundleText) {
+      throw new Error("Failed to resolve OpenLiate Runtime bundle (dist/runtime/index.js). Run 'bun run build' first.");
+    }
+
+    // 2. Create physical package bundling index.js + agent.json
+    const zip = new JSZip();
+    zip.file("index.js", bundleText);
+    zip.file("agent.json", JSON.stringify(manifestRaw, null, 2));
+    const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+    const zipBase64 = zipBuffer.toString("base64");
+
+    // 3. Resolve Project
+    let projects = await this.listProjects();
+    let project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" );
+    if (!project) {
+      try {
+        const createProjRes = await this.callTool("create_project", {
+          name: "OpenLiate",
+          branch: { name: "main" }
+        });
+        project = createProjRes?.project || createProjRes;
+      } catch {
+        project = projects[0];
+      }
+    }
+
+    if (!project) {
+      throw new Error("Unable to resolve or create a Neon project for OpenLiate.");
+    }
+
+    // 4. Resolve branch (main/primary)
+    const branches = await this.listBranches(project.id);
+    const branch = branches.find((b: any) => b.primary || b.default) || branches[0];
+
+    // 5. Call deploy_function
+    const uuid7 = generateUUIDv7();
+    const deployRes = await this.callTool("deploy_function", {
+      project_id: project.id,
+      branch_id: branch.id,
+      slug,
+      zip: zipBase64,
+      runtime: "nodejs24"
+    });
+
+    // 6. Poll function status until ready (max 30s)
+    let fnRes: any = null;
+    let invocationUrl = "";
+    let finalStatus = deployRes?.status || "building";
+
+    for (let attempt = 1; attempt <= 12; attempt++) {
+      try {
+        fnRes = await this.callTool("get_function", {
+          project_id: project.id,
+          branch_id: branch.id,
+          slug
+        });
+
+        invocationUrl = fnRes?.invocation_url || fnRes?.current_deployment?.invocation_url || "";
+        finalStatus = fnRes?.current_deployment?.status || fnRes?.status || finalStatus;
+
+        if (invocationUrl && finalStatus !== "building") {
+          break;
+        }
+      } catch {}
+
+      if (attempt < 12) {
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+    }
+
+    if (!invocationUrl && branch?.id) {
+      invocationUrl = `https://${branch.id}-${slug}.compute.c-15.us-east-1.aws.neon.tech/`;
+    }
+
+    const result = {
+      deploymentId: deployRes?.id || fnRes?.current_deployment?.id || 0,
+      uuid7,
+      agentName: rawName,
+      slug,
+      projectId: project.id,
+      projectName: project.name,
+      branchId: branch.id,
+      branchName: branch.name,
+      invocationUrl: invocationUrl || fnRes?.invocation_url || "",
+      status: finalStatus
+    };
+
+    // Persist agent deployment metadata
+    try {
+      const deployPath = path.resolve(process.cwd(), ".openliate", `neon_deployment_${cleanAgentName}.json`);
+      if (!fs.existsSync(path.dirname(deployPath))) {
+        fs.mkdirSync(path.dirname(deployPath), { recursive: true });
+      }
+      fs.writeFileSync(deployPath, JSON.stringify(result, null, 2), "utf-8");
+    } catch {}
+
+    return result;
+  }
+
+  public async getRuntimeDeployment(): Promise<{
+    deploymentId?: number;
+    uuid7?: string;
+    slug?: string;
+    projectId: string;
+    projectName: string;
+    branchId: string;
+    branchName: string;
+    invocationUrl: string;
+    runtime: string;
+    status: string;
+  }> {
+    // Check saved deployment first
+    try {
+      const deployPath = path.resolve(process.cwd(), ".openliate", "neon_deployment.json");
+      if (fs.existsSync(deployPath)) {
+        const saved = JSON.parse(fs.readFileSync(deployPath, "utf-8"));
+        if (saved && saved.invocationUrl) {
+          return {
+            deploymentId: saved.deploymentId,
+            uuid7: saved.uuid7,
+            slug: saved.slug,
+            projectId: saved.projectId,
+            projectName: saved.projectName,
+            branchId: saved.branchId,
+            branchName: saved.branchName,
+            invocationUrl: saved.invocationUrl,
+            runtime: "nodejs24",
+            status: saved.status || "completed"
+          };
+        }
+      }
+    } catch {}
+
+    const projects = await this.listProjects();
+    if (!projects || projects.length === 0) {
+      throw new Error("No Neon projects found in your account.");
+    }
+
+    const project = projects.find((p: any) => p.name === "OpenLiate" || p.name === "openliate" || p.name === "openliate-runtime") || projects[0];
+    const branches = await this.listBranches(project.id);
+    const branch = branches.find((b: any) => b.primary || b.default) || branches[0];
+
+    const functions = await this.listFunctions(project.id, branch.id);
+    let fn = functions.find((f: any) => f.slug?.startsWith("runtime") || f.slug?.startsWith("openliate")  || f.id?.startsWith("openliate")) || functions[0];
+
+    if (!fn || !fn.invocation_url) {
+      throw new Error(`No deployed OpenLiate runtime function found on branch ${branch.name}.`);
+    }
+
+    return {
+      slug: fn.slug,
+      projectId: project.id,
+      projectName: project.name,
+      branchId: branch.id,
+      branchName: branch.name,
+      invocationUrl: fn.invocation_url,
+      runtime: fn.current_deployment?.runtime || "nodejs24",
+      status: fn.current_deployment?.status || "completed"
+    };
+  }
+}
+

@@ -2,11 +2,10 @@ import fs from "fs";
 import path from "path";
 import { AUM } from "../../core/aum";
 import type { AgentManifest } from "../../core/types";
-import { SarvamClient } from "../llm/sarvam";
-import { IndiaAiClient } from "../llm/indiaai";
-import { NeonAiGateway } from "../../catalog/neon/gateway";
-import { normalizeModelConfig } from "../llm/config";
-import { IntegrationResolver } from "../integration/knowledge";
+import { UniversalLlmClient, normalizeModelConfig } from "../llm/model";
+import { IntegrationResolver, LiateKnowledge, type KnowledgeContext } from "../integration/knowledge";
+import { LiateRepo, type RepoContext } from "../integration/repo";
+import { LiateLib } from "../integration/lib";
 import type { MemoryProvider } from "../integration/types";
 import { ReActLoop, type LLMFunctionCaller } from "./loop";
 import type { AgentTool, AgentContext, AgentRunResult, AgentExecutionOptions } from "./types";
@@ -35,6 +34,8 @@ export class Agent {
   public readonly model: string;
   public readonly manifest?: AgentManifest;
   public compiledSkills: string = "";
+  public repoContext?: RepoContext;
+  public knowledgeContext?: KnowledgeContext;
   private rawSkillsConfig?: string | string[];
   private manifestBaseDir: string = process.cwd();
   private memory: MemoryProvider;
@@ -99,15 +100,10 @@ export class Agent {
     // Resolve LLM Provider ([L] Layer) — Multi-Provider Dynamic Routing
     const provider = resolvedModel.includes("/") ? resolvedModel.split("/")[0].toLowerCase() : "sarvam";
 
-    if (provider === "neon") {
-      this.llm = new NeonAiGateway();
-    } else if (provider === "indiaai") {
-      const soketKey = options.apiKey || resolvedManifest?.E?.SOKET_API_KEY || process.env.SOKET_API_KEY || ConfigManager.getKey("SOKET_API_KEY");
-      this.llm = new IndiaAiClient(soketKey);
-    } else {
-      const apiKey = options.apiKey || resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY");
-      this.llm = new SarvamClient(apiKey);
-    }
+    const resolvedApiKey = options.apiKey
+      || (provider === "neon" ? (resolvedManifest?.E?.NEON_AI_GATEWAY_TOKEN || process.env.NEON_AI_GATEWAY_TOKEN || ConfigManager.getKey("NEON_AI_GATEWAY_TOKEN"))
+                              : (resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY")));
+    this.llm = new UniversalLlmClient(resolvedApiKey, { provider });
 
     // Collect tool specs from options or manifest ([T] Layer)
     if (options.tools) {
@@ -147,7 +143,9 @@ export class Agent {
       sessionId: this.memory.sessionId,
       state: {
         intent: this.intent,
-        skills: this.compiledSkills
+        skills: this.compiledSkills,
+        repo: this.repoContext,
+        knowledge: this.knowledgeContext
       }
     };
   }
@@ -170,10 +168,99 @@ export class Agent {
 
     // Resolve Layer [I] Context Integration (e.g. Neon Functions Context.dev)
     if (this.manifest?.I) {
-      const contextTools = IntegrationResolver.resolveContextTools(this.manifest.I as any);
+      const iBlock = this.manifest.I as any;
+      const contextTools = IntegrationResolver.resolveContextTools(iBlock);
       for (const ct of contextTools) {
         if (!this.tools.has(ct.name)) {
           this.tools.set(ct.name, ct);
+        }
+      }
+
+      // 1. Repo Integration
+      if (iBlock.repo) {
+        try {
+          const repoTarget = typeof iBlock.repo === "string" ? iBlock.repo : iBlock.repo.target || ".";
+          const repoOpts = typeof iBlock.repo === "object" ? iBlock.repo : undefined;
+          this.repoContext = await LiateRepo.resolveContext(repoTarget, repoOpts);
+        } catch (err: any) {
+          console.warn(`[OpenLiate Layer I] Repo resolution notice: ${err.message}`);
+        }
+      }
+
+      // 2. Lib Integration
+      if (iBlock.lib) {
+        try {
+          const loadedLibs = await LiateLib.resolveLibs(iBlock.lib);
+          const libTools = LiateLib.asTools(loadedLibs);
+          for (const lt of libTools) {
+            if (!this.tools.has(lt.name)) {
+              this.tools.set(lt.name, lt);
+            }
+          }
+        } catch (err: any) {
+          console.warn(`[OpenLiate Layer I] Lib resolution notice: ${err.message}`);
+        }
+      }
+
+      // 3. Knowledge Integration
+      if (iBlock.knowledge) {
+        try {
+          this.knowledgeContext = await LiateKnowledge.resolve(iBlock.knowledge, this.manifestBaseDir);
+          const kTool = LiateKnowledge.asTool(this.knowledgeContext);
+          if (!this.tools.has(kTool.name)) {
+            this.tools.set(kTool.name, kTool);
+          }
+        } catch (err: any) {
+          console.warn(`[OpenLiate Layer I] Knowledge resolution notice: ${err.message}`);
+        }
+      }
+    }
+
+    // Resolve Layer [A] Subagents & Agent Swarm delegation
+    const aObj = typeof this.manifest?.A === "object" ? this.manifest.A : undefined;
+    const subagents: (string | any)[] = (aObj as any)?.subagents || (aObj as any)?.agents || [];
+    if (Array.isArray(subagents)) {
+      for (const sub of subagents) {
+        const subName = typeof sub === "string" ? sub : sub?.name;
+        if (!subName) continue;
+        const toolName = `delegate_to_${subName.replace(/[^a-zA-Z0-9_]/g, "_")}`;
+        if (!this.tools.has(toolName)) {
+          this.tools.set(toolName, {
+            name: toolName,
+            description: `Delegate a sub-task or question to the subagent '${subName}'.`,
+            parameters: {
+              type: "object",
+              properties: {
+                task: { type: "string", description: "The task or prompt to pass to the subagent." }
+              },
+              required: ["task"]
+            },
+            execute: async (args: any) => {
+              const taskPrompt = args.task || args.prompt || "";
+              const subPaths = [
+                path.resolve(process.cwd(), ".openliate", "agents", subName, "agent.json"),
+                path.resolve(process.cwd(), "hub", "agents", subName, "agent.json"),
+                path.resolve(process.cwd(), "hub", "agents", `${subName}-agent`, "agent.json")
+              ];
+              let subAgentInstance: Agent | null = null;
+              for (const p of subPaths) {
+                if (fs.existsSync(p)) {
+                  subAgentInstance = new Agent({ manifest: p });
+                  break;
+                }
+              }
+              if (!subAgentInstance) {
+                subAgentInstance = new Agent({
+                  manifest: {
+                    L: this.model,
+                    A: { name: subName, intent: `Subagent ${subName}` }
+                  }
+                });
+              }
+              const res = await subAgentInstance.run(taskPrompt);
+              return { answer: res.text, steps: res.totalSteps, subagent: subName };
+            }
+          });
         }
       }
     }
@@ -198,6 +285,17 @@ export class Agent {
     const context = this.getContext();
 
     let activeSystemPrompt = options.systemPrompt;
+    if (this.repoContext) {
+      const repoSummary = `\n\nRepository Context (${this.repoContext.repo}):\nBranch: ${this.repoContext.branch || "main"}\nFiles (${this.repoContext.files?.length || 0}): ${this.repoContext.files?.slice(0, 30).join(", ") || "none"}${this.repoContext.readme ? `\nREADME excerpt:\n${this.repoContext.readme.slice(0, 500)}` : ""}`;
+      activeSystemPrompt = activeSystemPrompt ? `${activeSystemPrompt}${repoSummary}` : `You are ${this.name} (v${this.version}).\nYour mission: ${this.intent}.${repoSummary}`;
+    }
+
+    if (this.knowledgeContext && this.knowledgeContext.documents.length > 0) {
+      const kSummary = `\n\nKnowledge Base (${this.knowledgeContext.documents.length} docs loaded):\n` +
+        this.knowledgeContext.documents.slice(0, 3).map(d => `[${d.title || d.source}]: ${d.content.slice(0, 300)}...`).join("\n");
+      activeSystemPrompt = activeSystemPrompt ? `${activeSystemPrompt}${kSummary}` : kSummary;
+    }
+
     if (this.compiledSkills) {
       if (activeSystemPrompt) {
         activeSystemPrompt = `${activeSystemPrompt}\n\n${this.compiledSkills}`;

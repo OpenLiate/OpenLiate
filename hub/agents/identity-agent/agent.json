@@ -10,7 +10,18 @@
     "maxSteps": 5
   },
   "T": [
-    "verify_identity"
+    {
+      "name": "verify_identity",
+      "description": "Verify Aadhaar or PAN card format",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "value": { "type": "string" }
+        },
+        "required": ["type", "value"]
+      }
+    }
   ],
   "E": {
     "SARVAM_API_KEY": "$SARVAM_API_KEY"

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { AUM } from "../../src/core/aum";
-import { normalizeModelConfig } from "../../src/layers/llm/config";
-import { HubResolver } from "../../src/layers/llm/hub";
+import { normalizeModelConfig, HubResolver } from "../../src/layers/llm/model";
 
 describe("Layer 1: [L] Large Models Layer", () => {
   it("should normalize model string into Sarvam /v2 provider", () => {

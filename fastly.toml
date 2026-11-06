@@ -1,0 +1,30 @@
+# This file describes a Fastly Compute package. To learn more visit:
+# https://www.fastly.com/documentation/reference/compute/fastly-toml
+
+authors = ["OpenLiate <hello@tryliate.com>"]
+description = "Open Source Backend Layer for AI Agents on Fastly Compute WASM"
+language = "javascript"
+manifest_version = 3
+name = "openliate"
+service_id = "zgVVe4eR1vyv0pZn73g9M9"
+
+[local_server]
+  [local_server.backends]
+    [local_server.backends.sarvam]
+      url = "https://api.sarvam.ai"
+    [local_server.backends.neon]
+      url = "https://mcp.neon.tech"
+
+[setup]
+  [setup.backends]
+    [setup.backends.sarvam]
+      address = "api.sarvam.ai"
+      description = "Sarvam AI Sovereign Indian LLM API"
+      port = 443
+    [setup.backends.neon]
+      address = "mcp.neon.tech"
+      description = "Neon Serverless Postgres & AI Gateway"
+      port = 443
+
+[scripts]
+  build = "bun run build:fastly:wasm"

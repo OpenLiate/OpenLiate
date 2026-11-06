@@ -3,30 +3,16 @@ import path from "path";
 import type { AgentTool } from "../agent/types";
 import type { McpServerConfig, ParsedToolSpec } from "./types";
 import { MCP } from "./mcp";
-import { fetchTool } from "./builtin/fetch";
-import { identityVerifierTool } from "./builtin/identity";
 
 export class ToolRegistry {
   public static parseSpec(spec: string): ParsedToolSpec {
     const trimmed = spec.trim();
 
-    if (trimmed.toLowerCase() === "fetch" || trimmed.toLowerCase() === "builtin:fetch") {
+    if (trimmed.toLowerCase() === "fetch" || trimmed.toLowerCase() === "mcp:fetch" || trimmed.toLowerCase() === "mcp/fetch") {
       return {
         raw: trimmed,
-        isMcp: false,
-        isBuiltin: true
-      };
-    }
-
-    if (
-      trimmed.toLowerCase() === "identity" ||
-      trimmed.toLowerCase() === "verify_identity" ||
-      trimmed.toLowerCase() === "builtin:identity"
-    ) {
-      return {
-        raw: trimmed,
-        isMcp: false,
-        isBuiltin: true
+        isMcp: true,
+        serverName: "fetch"
       };
     }
 
@@ -311,15 +297,6 @@ export class ToolRegistry {
 
       if (typeof item === "string") {
         const parsed = this.parseSpec(item);
-
-        if (parsed.isBuiltin) {
-          if (parsed.raw.toLowerCase().includes("identity")) {
-            resolved.push(identityVerifierTool);
-          } else {
-            resolved.push(fetchTool);
-          }
-          continue;
-        }
 
         if (parsed.isMcp && parsed.serverName) {
           try {

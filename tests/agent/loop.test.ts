@@ -3,7 +3,7 @@ import { ReActLoop, type LLMFunctionCaller } from "../../src/layers/agent/loop";
 import { Agent } from "../../src/layers/agent/harness";
 import { InMemorySession } from "../../src/layers/integration/memory";
 import type { AgentTool, ToolCall } from "../../src/layers/agent/types";
-import type { SarvamMessage, SarvamChatResponse } from "../../src/layers/llm/sarvam";
+import type { SarvamMessage, SarvamChatResponse } from "../../src/layers/llm/model";
 
 describe("Layer 3: [A] Agent Harness & ReAct Loop", () => {
   test("ReActLoop: executes single-step conversation and records to memory", async () => {

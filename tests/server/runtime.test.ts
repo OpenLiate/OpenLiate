@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import fs from "fs";
 import path from "path";
-import { createRuntimeApp } from "../../src/server/runtime";
+import { createRuntimeApp } from "../../src/cloud/runtime/hono";
 
 describe("Agent Runtime Server: LAPI HTTP & On-the-fly Execution", () => {
   const app = createRuntimeApp();

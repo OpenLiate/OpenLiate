@@ -13,9 +13,12 @@ node_modules/
 
 # Build outputs
 dist/
+bin/
+pkg/
 build/
 out/
 *.exe
+*.wasm
 *.tsbuildinfo
 
 # Runtime Agent Sessions & State

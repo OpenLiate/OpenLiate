@@ -1,0 +1,11 @@
+{
+  "id": "azion",
+  "name": "Azion Edge Functions",
+  "description": "Azion Edge Functions, edge storage, and caching management via Azion MCP",
+  "transport": "http",
+  "url": "https://build-mcp.azion.com/mcp",
+  "headers": {
+    "Authorization": "Token $AZION_PERSONAL_TOKEN",
+    "Accept": "application/json, text/event-stream"
+  }
+}

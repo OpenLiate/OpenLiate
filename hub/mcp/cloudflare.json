@@ -1,0 +1,12 @@
+{
+  "id": "cloudflare",
+  "name": "Cloudflare Workers & Edge Grid",
+  "description": "Cloudflare Workers edge compute, KV, and D1 database management via Cloudflare MCP",
+  "transport": "http",
+  "url": "https://mcp.cloudflare.com/mcp",
+  "headers": {
+    "Authorization": "Bearer $CLOUDFLARE_API_TOKEN",
+    "Accept": "application/json, text/event-stream"
+  }
+}
+

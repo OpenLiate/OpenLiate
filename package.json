@@ -1,29 +1,40 @@
 {
   "name": "openliate",
-  "version": "0.0.20",
+  "version": "0.1.0",
   "description": "Open Source Backend Layer for AI Agents — Built for Sovereign AI Agents From India to the World",
   "type": "module",
-  "main": "./src/liate.ts",
-  "types": "./src/core/types.ts",
+  "main": "./dist/liate.js",
+  "types": "./src/liate.ts",
+  "exports": {
+    ".": {
+      "types": "./src/liate.ts",
+      "import": "./dist/liate.js"
+    }
+  },
   "bin": {
     "openliate": "dist/bin.js",
     "liate": "dist/bin.js"
   },
   "files": [
     "dist/bin.js",
+    "dist/liate.js",
     "dist/runtime",
     "src",
     "hub"
   ],
   "scripts": {
     "test": "bun test",
-    "build": "bun run build:bin && bun run build:cli && bun run build:runtime && bun run build:deno",
+    "build": "bun run build:bin && bun run build:cli && bun run build:runtime && bun run build:hono && bun run build:wasm && bun run build:sdk",
     "build:bin": "bun build ./src/cli/index.ts --target node --format esm --outfile dist/bin.js",
-    "build:cli": "bun build ./src/cli/index.ts --compile --outfile dist/cli/openliate",
-    "build:runtime": "bun build ./src/server/index.ts --target node --format esm --outfile dist/runtime/index.js",
+    "build:cli": "bun build ./src/cli/index.ts --compile --outfile dist/cli/openliate && bun build ./src/cli/index.ts --compile --outfile dist/cli/liate",
+    "build:runtime": "bun build ./src/cloud/runtime/hono.ts --target node --format esm --outfile dist/runtime/index.js",
+    "build:sdk": "bun build ./src/liate.ts --target node --format esm --outfile dist/liate.js",
     "serve": "bun run dist/runtime/index.js",
     "typecheck": "tsc --noEmit",
-    "build:deno": "bun build ./src/server/deno.ts --target browser --format esm --outfile dist/runtime/deno.js"
+    "benchmark": "bun run scripts/benchmark.ts",
+    "build:hono": "bun build ./src/cloud/runtime/hono.ts --target bun --format esm --outfile dist/runtime/hono.js",
+    "build:wasm": "bun build ./src/cloud/runtime/wasm.ts --target bun --format esm --outfile dist/runtime/wasm.js",
+    "build:fastly:wasm": "bun build ./src/cloud/runtime/wasm.ts --target bun --format esm --outfile bin/index.js && js-compute-runtime bin/index.js bin/main.wasm"
   },
   "dependencies": {
     "@clack/prompts": "1.8.1",
@@ -45,6 +56,8 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@fastly/js-compute": "4.1.0",
+    "@fastly/mcp": "2.4.1",
     "@types/node": "^22.10.0",
     "typescript": "^5.7.0"
   },
@@ -58,7 +71,7 @@
     "mcp",
     "sarvamai"
   ],
-  "author": "I Am Azent (@iamazent)",
+  "author": "Vinod Hatti (@gitdevinod)",
   "license": "MIT",
   "repository": {
     "type": "git",

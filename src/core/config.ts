@@ -197,7 +197,7 @@ export class ConfigManager {
       console.log("");
       p.intro(`\x1b[36mOpenLiate Runtime Setup\x1b[0m`);
       p.note(
-        `Agent${options.agentName ? ` '${options.agentName}'` : ""} requires ${providerName} to execute.\n🔗 Get your API key at: ${docUrl}`,
+        `Agent${options.agentName ? ` '${options.agentName}'` : ""} requires ${providerName} to execute.\nGet your API key at: ${docUrl}`,
         `Missing Key: ${keyName}`
       );
 
@@ -215,7 +215,7 @@ export class ConfigManager {
 
       const keyVal = entered.trim();
       this.setGlobalKey(keyName, keyVal);
-      p.outro(`\x1b[32m✔ Saved securely to ~/.openliate/config.json! Resuming execution...\x1b[0m\n`);
+      p.outro(`\x1b[32m[Saved] Saved securely to ~/.openliate/config.json! Resuming execution...\x1b[0m\n`);
       return keyVal;
     }
 
