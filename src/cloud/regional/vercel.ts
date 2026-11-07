@@ -345,7 +345,7 @@ export class VercelMcpClient {
     const isDaemon = options.mode === "daemon";
     const uuid7 = generateUUIDv7();
     const cleanId = uuid7.replace(/-/g, "").slice(0, 8);
-    const projectName = options.name || (isDaemon ? "openliate-daemon" : "openliate");
+    const projectName = options.name || (isDaemon ? `openliate-daemon-${cleanId}` : `openliate-${cleanId}`);
 
     let bundleCode = "";
     if (options.files && options.files.length > 0) {
