@@ -31,5 +31,5 @@ COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 7071
 
-# Start OpenLiate LAPI Runtime
+# Start OpenLiate Runtime (Agent Protocol Interface)
 CMD ["node", "dist/runtime/index.js"]

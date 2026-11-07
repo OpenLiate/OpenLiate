@@ -25,9 +25,9 @@ export interface SupabaseTokenData {
   saved_at: string;
 }
 
-export class SupabaseMcpOAuth {
+export class SupabaseLink {
   public static getTokenPath(): string {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true });
@@ -62,11 +62,11 @@ export class SupabaseMcpOAuth {
   }
 
   public static loadToken(): SupabaseTokenData | null {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     const candidatePaths = [
       configDir ? path.join(configDir, "supabase.json") : "",
       configDir ? path.join(configDir, "supabase_token.json") : "",
-      SupabaseMcpOAuth.getTokenPath(),
+      SupabaseLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "supabase.json"),
       path.resolve(process.cwd(), ".openliate", "link", "supabase_token.json"),
       path.resolve(process.cwd(), ".openliate", "supabase.json"),
@@ -103,14 +103,14 @@ export class SupabaseMcpOAuth {
   }
 
   public static saveToken(data: SupabaseTokenData): void {
-    const tokenPath = SupabaseMcpOAuth.getTokenPath();
+    const tokenPath = SupabaseLink.getTokenPath();
     const dir = path.dirname(tokenPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2), "utf-8");
 
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       return;
     }
@@ -144,11 +144,11 @@ export class SupabaseMcpOAuth {
   }
 
   public static clearToken(): void {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     const candidatePaths = [
       configDir ? path.join(configDir, "supabase.json") : "",
       configDir ? path.join(configDir, "supabase_token.json") : "",
-      SupabaseMcpOAuth.getTokenPath(),
+      SupabaseLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "supabase.json"),
       path.resolve(process.cwd(), ".openliate", "link", "supabase_token.json"),
       path.resolve(process.cwd(), ".openliate", "supabase.json"),
@@ -369,7 +369,9 @@ export class SupabaseMcpClient {
     name: string;
     projectRef: string;
     functionUrl: string;
+    healthUrl?: string;
     runtimeUrl: string;
+    runEndpoint?: string;
     mcpUrl: string;
   }> {
     const uuid7 = generateUUIDv7();
@@ -378,7 +380,7 @@ export class SupabaseMcpClient {
 
     let projectRef = options.projectRef || process.env.SUPABASE_PROJECT_REF;
     if (!projectRef) {
-      const saved = SupabaseMcpOAuth.loadToken();
+      const saved = SupabaseLink.loadToken();
       projectRef = saved?.project_ref;
     }
 
@@ -460,7 +462,9 @@ export class SupabaseMcpClient {
     }
 
     const functionUrl = `https://${projectRef}.supabase.co/functions/v1/${fnSlug}`;
-    const runtimeUrl = `${functionUrl}/run`;
+    const healthUrl = `${functionUrl}/health`;
+    const runEndpoint = `${functionUrl}/run`;
+    const runtimeUrl = functionUrl;
 
     try {
       const deployPath = path.resolve(process.cwd(), ".openliate", "supabase_deployment.json");
@@ -475,7 +479,9 @@ export class SupabaseMcpClient {
             slug: fnSlug,
             projectRef,
             functionUrl,
+            healthUrl,
             runtimeUrl,
+            runEndpoint,
             uuid7,
             deployedAt: new Date().toISOString()
           },
@@ -491,7 +497,9 @@ export class SupabaseMcpClient {
       name: fnSlug,
       projectRef: projectRef || "",
       functionUrl,
+      healthUrl,
       runtimeUrl,
+      runEndpoint,
       mcpUrl: SUPABASE_MCP_ENDPOINT
     };
   }
@@ -505,12 +513,12 @@ export async function runSupabaseLinkFlow(options: {
   const redirectUri = `http://localhost:${port}/callback`;
 
   console.log(`\n[OpenLiate] Registering Dynamic Client with Supabase MCP...`);
-  const reg = await SupabaseMcpOAuth.registerClient(redirectUri);
+  const reg = await SupabaseLink.registerClient(redirectUri);
 
   const { codeVerifier, codeChallenge } = generatePKCE();
   const state = randomBytes(16).toString("hex");
 
-  const authUrl = SupabaseMcpOAuth.buildAuthUrl(
+  const authUrl = SupabaseLink.buildAuthUrl(
     reg.client_id,
     redirectUri,
     codeChallenge,
@@ -558,7 +566,7 @@ export async function runSupabaseLinkFlow(options: {
           server.close();
 
           console.log(`[OpenLiate] Exchanging Authorization Code with Supabase...`);
-          const tokenData = await SupabaseMcpOAuth.exchangeCodeForToken(
+          const tokenData = await SupabaseLink.exchangeCodeForToken(
             reg.client_id,
             reg.client_secret,
             code,
@@ -566,7 +574,7 @@ export async function runSupabaseLinkFlow(options: {
             redirectUri
           );
 
-          SupabaseMcpOAuth.saveToken(tokenData);
+          SupabaseLink.saveToken(tokenData);
           console.log(`[OpenLiate] Supabase MCP Access Token saved successfully!`);
           resolve(tokenData);
         }

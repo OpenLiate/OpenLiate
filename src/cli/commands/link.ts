@@ -2,8 +2,7 @@ import { link, relink, unlink } from "../../cloud/link";
 
 export async function handleLinkCommand(args: string[]): Promise<void> {
   const isNeon = args.includes("--neon") || args.includes("neon");
-  const isVercelDaemon = args.includes("--vercel-daemons") || args.includes("--vercel-daemon") || (args.includes("--vercel") && (args.includes("--daemons") || args.includes("--daemon")));
-  const isVercel = args.includes("--vercel") || args.includes("vercel") || isVercelDaemon;
+  const isVercel = args.includes("--vercel") || args.includes("vercel");
   const isSupabase = args.includes("--supabase") || args.includes("supabase");
   const isCloudflare = args.includes("--cloudflare") || args.includes("cloudflare");
   const isAzion = args.includes("--azion") || args.includes("azion");
@@ -16,24 +15,20 @@ export async function handleLinkCommand(args: string[]): Promise<void> {
   if (!isNeon && !isVercel && !isSupabase && !isCloudflare && !isAzion && !isFastly && !isAll) {
     console.log(`
 ===========================================================
-  OpenLiate Link — Multi-Cloud Sovereign Grid (BYOC)
+  OpenLiate Link — Multi-Cloud Compute (18.5M Runs)
 ===========================================================
 
-Regional Cloud (Co-Located Postgres & Compute):
-  liate link --neon            Link Neon Serverless Postgres & pgvector (1M runs)
-  liate link --vercel          Link Vercel Functions & Daemons (1M runs)
-  liate link --supabase        Link Supabase Database & Edge Functions (500k runs)
-
-Worldwide Edge Cloud (Phase 2 Expansion · Anycast BGP Edge Grid):
-  liate link --cloudflare      Link Cloudflare Workers V8 Isolates (3M runs)
-  liate link --azion           Link Azion Edge Functions 500+ PoPs (3M runs)
-  liate link --fastly          Link Fastly WASM Compute via API Key (10M runs)
-
-Universal:
-  liate link --all             Link all configured cloud providers
+Available Compute Providers:
+  openliate link --fastly          Fastly WASM Compute        (10M runs)
+  openliate link --cloudflare      Cloudflare Workers          (3M runs)
+  openliate link --azion           Azion Edge Functions        (3M runs)
+  openliate link --neon            Neon Cloud Compute          (1M runs)
+  openliate link --vercel          Vercel Fluid Compute        (1M runs)
+  openliate link --supabase        Supabase Edge Functions   (500k runs)
+  openliate link --all             Link All 6 Clouds         (18.5M runs)
 
 Usage:
-  liate link <provider> [--key <token>]
+  openliate link <provider> [--key <token>]
 `);
     return;
   }
@@ -56,7 +51,7 @@ Usage:
   }
 
   try {
-    await link({ provider, key, isDaemon: isVercelDaemon, relink: isRelink });
+    await link({ provider, key, relink: isRelink });
   } catch (err: any) {
     console.error(`\n[Link Error]: ${err.message}`);
     process.exit(1);
@@ -65,8 +60,7 @@ Usage:
 
 export async function handleRelinkCommand(args: string[]): Promise<void> {
   const isNeon = args.includes("--neon") || args.includes("neon");
-  const isVercelDaemon = args.includes("--vercel-daemons") || args.includes("--vercel-daemon") || (args.includes("--vercel") && (args.includes("--daemons") || args.includes("--daemon")));
-  const isVercel = args.includes("--vercel") || args.includes("vercel") || isVercelDaemon;
+  const isVercel = args.includes("--vercel") || args.includes("vercel");
   const isSupabase = args.includes("--supabase") || args.includes("supabase");
   const isCloudflare = args.includes("--cloudflare") || args.includes("cloudflare");
   const isAzion = args.includes("--azion") || args.includes("azion");
@@ -82,16 +76,16 @@ export async function handleRelinkCommand(args: string[]): Promise<void> {
 ===========================================================
 
 Please specify a cloud provider to relink:
-  liate relink --neon          Relink Neon via fresh OAuth
-  liate relink --vercel        Relink Vercel via fresh OAuth
-  liate relink --supabase      Relink Supabase via fresh OAuth
-  liate relink --cloudflare    Relink Cloudflare Workers
-  liate relink --azion         Relink Azion Edge Functions
-  liate relink --fastly        Relink Fastly Compute
-  liate relink --all           Relink all connected clouds
+  openliate relink --neon          Relink Neon via fresh OAuth
+  openliate relink --vercel        Relink Vercel via fresh OAuth
+  openliate relink --supabase      Relink Supabase via fresh OAuth
+  openliate relink --cloudflare    Relink Cloudflare Workers
+  openliate relink --azion         Relink Azion Edge Functions
+  openliate relink --fastly        Relink Fastly Compute
+  openliate relink --all           Relink all connected clouds
 
 Usage:
-  liate relink <provider>
+  openliate relink <provider>
 `);
     return;
   }
@@ -114,7 +108,7 @@ Usage:
   }
 
   try {
-    await relink({ provider, key, isDaemon: isVercelDaemon });
+    await relink({ provider, key });
   } catch (err: any) {
     console.error(`\n[Relink Error]: ${err.message}`);
     process.exit(1);
@@ -137,16 +131,16 @@ export async function handleUnlinkCommand(args: string[]): Promise<void> {
 ===========================================================
 
 Please specify a cloud provider to unlink:
-  liate unlink --neon          Unlink Neon & clear saved credentials
-  liate unlink --vercel        Unlink Vercel & clear saved credentials
-  liate unlink --supabase      Unlink Supabase & clear saved credentials
-  liate unlink --cloudflare    Unlink Cloudflare Workers credentials
-  liate unlink --azion         Unlink Azion credentials
-  liate unlink --fastly        Unlink Fastly credentials
-  liate unlink --all           Unlink all connected clouds
+  openliate unlink --neon          Unlink Neon & clear saved credentials
+  openliate unlink --vercel        Unlink Vercel & clear saved credentials
+  openliate unlink --supabase      Unlink Supabase & clear saved credentials
+  openliate unlink --cloudflare    Unlink Cloudflare Workers credentials
+  openliate unlink --azion         Unlink Azion credentials
+  openliate unlink --fastly        Unlink Fastly credentials
+  openliate unlink --all           Unlink all connected clouds
 
 Usage:
-  liate unlink <provider>
+  openliate unlink <provider>
 `);
     return;
   }

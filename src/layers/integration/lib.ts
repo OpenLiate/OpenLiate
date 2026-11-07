@@ -38,7 +38,7 @@ export class LiateLib {
       try {
         mod = await import(nameOrPath);
       } catch (err: any) {
-        // Try fallback to resolving from node_modules in cwd
+        // Resolve from node_modules in cwd
         try {
           const localNodeModules = path.resolve(process.cwd(), "node_modules", nameOrPath);
           mod = await import(localNodeModules);
@@ -61,7 +61,7 @@ export class LiateLib {
   }
 
   /**
-   * Resolves multiple libraries declared in Layer [I] manifest
+   * Resolves multiple libraries declared in Layer [I] module
    */
   public static async resolveLibs(libs: string[] | Record<string, string>): Promise<Map<string, LoadedLib>> {
     const results = new Map<string, LoadedLib>();

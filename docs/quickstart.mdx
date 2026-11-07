@@ -1,6 +1,6 @@
 ---
 title: "Quickstart"
-description: "Run autonomous agents locally and launch the LAPI server in under 10 seconds"
+description: "Run autonomous agents locally and launch the Liate API server in under 10 seconds"
 icon: "bolt"
 ---
 
@@ -51,9 +51,9 @@ liate env set SARVAM_API_KEY="your-sarvam-api-key"
 
 ---
 
-## 3. The `agent.json` Manifest
+## 3. The `agent.json` Module
 
-OpenLiate defines agents in a minimal `agent.json` manifest following the **L · I · A · T · E** layers:
+OpenLiate defines agents in a minimal `agent.json` module following the **L · I · A · T · E** layers:
 
 ```json agent.json
 {
@@ -96,9 +96,9 @@ liate run research-agent "Fetch https://openliate.tech and summarize"
 
 ---
 
-## 5. Launch the LAPI HTTP Server
+## 5. Launch the Liate API HTTP Server
 
-Start the headless **Liate Agent Protocol Interface (LAPI)** server:
+Start the headless **Liate API (Agent Protocol Interface)** server:
 
 ```bash
 liate serve --port 8080

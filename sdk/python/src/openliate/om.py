@@ -1,11 +1,11 @@
 """
 Core Engine: OM (Orchestration Module)
-Matches AUM (Agent Unified Manifest) specification across 5 orthogonal layers:
+Matches AUM (Agent Unified Module) specification across 5 sovereign layers:
 L[LM] · I[ntegration] · A[gent] · T[ools] · E[nvironment]
 """
 from typing import Any, Dict, List, Optional, Union
 import os
-from .client import LapiClient, AgentRunResult
+from .client import LiateApiClient, AgentRunResult
 
 class liate:
     """
@@ -23,7 +23,9 @@ class liate:
         LLM = "sarvam/sarvam-105b"
         Integration = {"memory": "sessions/hello-agent"}
         Agent = {"name": "hello_agent"}
-        Tools = ["fetch"]
+        Tools = {
+            "fetch": {"command": "uvx", "args": ["mcp-server-fetch"], "tools": ["*"]}
+        }
         Environment = {"SARVAM_API_KEY": "$SARVAM_API_KEY"}
 
     agent = HelloAgent()
@@ -35,30 +37,30 @@ class liate:
     L: Optional[Union[str, Dict[str, Any]]] = None
     I: Optional[Dict[str, Any]] = None
     A: Optional[Union[str, Dict[str, Any]]] = None
-    T: Optional[List[Any]] = None
+    T: Optional[Union[List[Any], Dict[str, Any]]] = None
     E: Optional[Dict[str, str]] = None
 
     # 2. Full Name
     LLM: Optional[Union[str, Dict[str, Any]]] = None
     Integration: Optional[Dict[str, Any]] = None
     Agent: Optional[Union[str, Dict[str, Any]]] = None
-    Tools: Optional[List[Any]] = None
+    Tools: Optional[Union[List[Any], Dict[str, Any]]] = None
     Environment: Optional[Dict[str, str]] = None
 
     # 3. Lowercase
     llm: Optional[Union[str, Dict[str, Any]]] = None
     integration: Optional[Dict[str, Any]] = None
     agent: Optional[Union[str, Dict[str, Any]]] = None
-    tools: Optional[List[Any]] = None
+    tools: Optional[Union[List[Any], Dict[str, Any]]] = None
     environment: Optional[Dict[str, str]] = None
 
     def __init__(self, endpoint: Optional[str] = None):
         self._endpoint = endpoint or os.environ.get("OPENLIATE_ENDPOINT", "http://localhost:7071")
-        self._client = LapiClient(endpoint=self._endpoint)
+        self._client = LiateApiClient(endpoint=self._endpoint)
 
-    def to_manifest(self) -> Dict[str, Any]:
+    def to_module(self) -> Dict[str, Any]:
         """
-        Exports the declarative AUM (Agent Unified Manifest) dictionary.
+        Exports the declarative AUM (Agent Unified Module) dictionary.
         """
         l_val = self.L if self.L is not None else (self.LLM if self.LLM is not None else self.llm)
         i_val = self.I if self.I is not None else (self.Integration if self.Integration is not None else self.integration)
@@ -70,7 +72,7 @@ class liate:
             raise ValueError(
                 f"[OpenLiate Error]: Missing required Layer [L] (LLM) in class '{self.__class__.__name__}'. "
                 f"Declare 'L', 'LLM', or 'llm' on your class. "
-                f"OpenLiate never hardcodes or falls back to silent model defaults."
+                f"OpenLiate never hardcodes silent model defaults."
             )
 
         name = self.__class__.__name__
@@ -82,21 +84,22 @@ class liate:
             "L": l_val,
             "I": i_val or {},
             "A": agent_a,
-            "T": t_val or [],
+            "T": t_val if t_val is not None else [],
             "E": e_val or {}
         }
 
     def run(self, prompt: str, session_id: Optional[str] = None) -> AgentRunResult:
         """
-        Executes the agent via OpenLiate LAPI.
+        Executes the agent via OpenLiate Liate API.
         """
-        manifest = self.to_manifest()
-        return self._client.run(manifest=manifest, prompt=prompt, session_id=session_id)
+        module = self.to_module()
+        return self._client.run(module=module, prompt=prompt, session_id=session_id)
 
     async def arun(self, prompt: str, session_id: Optional[str] = None) -> AgentRunResult:
         """
-        Asynchronously executes the agent via OpenLiate LAPI.
+        Asynchronously executes the agent via OpenLiate Liate API.
         """
-        manifest = self.to_manifest()
-        return await self._client.arun(manifest=manifest, prompt=prompt, session_id=session_id)
+        module = self.to_module()
+        return await self._client.arun(module=module, prompt=prompt, session_id=session_id)
+
 

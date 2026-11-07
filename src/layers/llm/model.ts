@@ -3,21 +3,16 @@
  * Single OpenAI-Compatible Model Gateway
  * 
  * Supports all OpenAI-compatible endpoints:
- * - Sarvam AI (Sovereign LLMs: sarvam-2b, sarvam-105b, Bulbul, Prism)
+ * - Sarvam AI (sarvam-2b, sarvam-105b, GLM)
  * - Neon AI Gateway (Serverless Branch-Scoped Models)
  * - OpenAI / Groq / Cerebras / OpenRouter / Ollama / DeepSeek
  * 
  * Zero hardcoded models: the model passed in Layer [L] is passed directly to the provider.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
 import type { ToolCall } from "../agent/types";
-import type { ModelConfig } from "../../core/types";
-
-// Embedded default hub definitions for serverless runtimes
-import sarvamHubJson from "../../../hub/llm/sarvam.json";
-import neonHubJson from "../../../hub/llm/neon.json";
+import type { ModelConfig } from "../../core/spec";
+import { resilientFetch } from "../../core/fetch.js";
 
 export type LlmRole = "system" | "user" | "assistant" | "tool";
 
@@ -34,6 +29,7 @@ export type LLMMessage = LlmMessage;
 
 export interface LlmChatOptions {
   model?: string;
+  provider?: string;
   temperature?: number;
   maxTokens?: number;
   reasoningEffort?: "none" | "low" | "high" | "max";
@@ -81,9 +77,8 @@ export interface HubLLMDefinition {
   version: string;
   base_url: string;
   endpoint: string;
+  models_endpoint?: string;
   systemone_endpoint?: string;
-  default_model: string;
-  available_models: string[];
   headers: Record<string, string>;
   features: {
     tool_calling: boolean;
@@ -94,36 +89,78 @@ export interface HubLLMDefinition {
 }
 
 export class HubResolver {
-  private static cache: Map<string, HubLLMDefinition> = new Map([
-    ["sarvam", sarvamHubJson as HubLLMDefinition],
-    ["neon", neonHubJson as HubLLMDefinition]
-  ]);
+  public static getBuiltinGateways(): Record<string, HubLLMDefinition> {
+    const rawNeon = (typeof process !== "undefined" && process.env?.NEON_AI_GATEWAY_BASE_URL)
+      ? process.env.NEON_AI_GATEWAY_BASE_URL.replace(/\/+$/, "")
+      : "https://api.ai.neon.tech/v1";
+    const neonBaseUrl = rawNeon.endsWith("/v1") ? rawNeon : `${rawNeon}/v1`;
 
-  public static loadLLM(providerName: string): HubLLMDefinition {
-    if (this.cache.has(providerName)) {
-      return this.cache.get(providerName)!;
-    }
-
-    const possiblePaths = [
-      resolve(process.cwd(), "hub", "llm", `${providerName}.json`),
-      resolve(process.cwd(), "OpenLiate", "hub", "llm", `${providerName}.json`),
-      resolve(process.cwd(), "..", "hub", "llm", `${providerName}.json`)
-    ];
-
-    for (const filePath of possiblePaths) {
-      if (existsSync(filePath)) {
-        try {
-          const content = readFileSync(filePath, "utf-8");
-          const def = JSON.parse(content) as HubLLMDefinition;
-          this.cache.set(providerName, def);
-          return def;
-        } catch (err: any) {
-          throw new Error(`Failed to parse hub definition at ${filePath}: ${err.message}`);
+    return {
+      sarvam: {
+        name: "sarvam",
+        provider: "sarvam",
+        version: "v2",
+        base_url: "https://api.sarvam.ai/v2",
+        endpoint: "https://api.sarvam.ai/v2/chat/completions",
+        models_endpoint: "https://api.sarvam.ai/v2/models",
+        systemone_endpoint: "https://api.sarvam.ai/v2/systemone",
+        headers: {
+          "api-subscription-key": "$SARVAM_API_KEY",
+          "Authorization": "Bearer $SARVAM_API_KEY",
+          "Content-Type": "application/json"
+        },
+        features: {
+          tool_calling: true,
+          streaming: true,
+          reasoning: true,
+          system_one_decisions: true
+        }
+      },
+      neon: {
+        name: "neon",
+        provider: "neon",
+        version: "v1",
+        base_url: neonBaseUrl,
+        endpoint: `${neonBaseUrl}/chat/completions`,
+        models_endpoint: `${neonBaseUrl}/models`,
+        headers: {
+          "Authorization": "Bearer $NEON_AI_GATEWAY_TOKEN",
+          "Content-Type": "application/json"
+        },
+        features: {
+          tool_calling: true,
+          streaming: true,
+          reasoning: true
         }
       }
+    };
+  }
+
+  public static loadLLM(providerName: string): HubLLMDefinition {
+    const builtins = this.getBuiltinGateways();
+    const key = providerName.toLowerCase();
+    if (builtins[key]) {
+      return builtins[key];
     }
 
-    throw new Error(`Model provider definition for "${providerName}" not found in hub/llm/${providerName}.json`);
+    // Default dynamic OpenAI-compatible gateway
+    return {
+      name: providerName,
+      provider: providerName,
+      version: "v1",
+      base_url: "https://api.openai.com/v1",
+      endpoint: "https://api.openai.com/v1/chat/completions",
+      models_endpoint: "https://api.openai.com/v1/models",
+      headers: {
+        "Authorization": `Bearer $${providerName.toUpperCase()}_API_KEY`,
+        "Content-Type": "application/json"
+      },
+      features: {
+        tool_calling: true,
+        streaming: true,
+        reasoning: true
+      }
+    };
   }
 }
 
@@ -137,21 +174,13 @@ export interface NormalizedModel {
 
 export function normalizeModelConfig(input?: string | ModelConfig): NormalizedModel {
   if (!input) {
-    const hubDef = HubResolver.loadLLM("sarvam");
-    return {
-      provider: "sarvam",
-      model: hubDef.default_model
-    };
+    throw new Error("Missing required Layer [L] model definition. Specify model string (e.g. 'sarvam/sarvam-105b' or 'neon/claude-sonnet-4-6').");
   }
 
   if (typeof input === "string") {
     const trimmed = input.trim();
     if (!trimmed) {
-      const hubDef = HubResolver.loadLLM("sarvam");
-      return {
-        provider: "sarvam",
-        model: hubDef.default_model
-      };
+      throw new Error("Missing required Layer [L] model definition. Specify model string (e.g. 'sarvam/sarvam-105b' or 'neon/claude-sonnet-4-6').");
     }
 
     if (trimmed.includes("/")) {
@@ -170,8 +199,9 @@ export function normalizeModelConfig(input?: string | ModelConfig): NormalizedMo
       };
     }
 
+    const isNeonModel = trimmed.startsWith("claude") || trimmed.startsWith("gpt") || trimmed.startsWith("gemini");
     return {
-      provider: "sarvam",
+      provider: isNeonModel ? "neon" : "sarvam",
       model: trimmed
     };
   }
@@ -186,9 +216,14 @@ export function normalizeModelConfig(input?: string | ModelConfig): NormalizedMo
     modelStr = parts.slice(1).join(sep);
   }
 
+  if (!modelStr) {
+    throw new Error("Missing required Layer [L] model. Specify a model property (e.g. 'sarvam-105b').");
+  }
+
+  const isNeonModel = modelStr.startsWith("claude") || modelStr.startsWith("gpt") || modelStr.startsWith("gemini");
   return {
-    provider: (providerStr || "sarvam").toLowerCase(),
-    model: modelStr || HubResolver.loadLLM("sarvam").default_model,
+    provider: (providerStr || (isNeonModel ? "neon" : "sarvam")).toLowerCase(),
+    model: modelStr,
     temperature: input.temperature,
     maxTokens: input.maxTokens,
     endpoint: (input as any).endpoint || input.baseUrl
@@ -205,7 +240,10 @@ export class UniversalLlmClient {
   public async chat(messages: LlmMessage[], options?: LlmChatOptions): Promise<LlmChatResponse> {
     const provider = (options?.endpoint || this.options?.endpoint)
       ? "custom"
-      : (options?.model?.includes("/") ? options.model.split("/")[0].toLowerCase() : (this.options?.provider || "sarvam"));
+      : (options?.provider?.toLowerCase()
+          || this.options?.provider?.toLowerCase()
+          || (options?.model?.includes("/") ? options.model.split("/")[0].toLowerCase() : undefined)
+          || (options?.model?.includes("claude") || options?.model?.includes("gpt") || options?.model?.includes("gemini") ? "neon" : "sarvam"));
 
     let model = options?.model;
     if (model && (model.includes("/") || model.includes(":"))) {
@@ -213,7 +251,7 @@ export class UniversalLlmClient {
       model = model.split(sep).slice(1).join(sep);
     }
     if (!model) {
-      model = HubResolver.loadLLM("sarvam").default_model;
+      throw new Error("Missing required Layer [L] model: specify a model (e.g. 'sarvam-105b' or 'claude-sonnet-4-6').");
     }
 
     // Resolve API Key
@@ -230,8 +268,10 @@ export class UniversalLlmClient {
     let url = options?.endpoint || options?.baseUrl || this.options?.endpoint;
     if (!url) {
       if (provider === "neon") {
-        const baseUrl = process.env.NEON_AI_GATEWAY_BASE_URL || "https://api.ai.neon.tech/v1";
-        url = baseUrl.endsWith("/chat/completions") ? baseUrl : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
+        const raw = process.env.NEON_AI_GATEWAY_BASE_URL || "https://api.ai.neon.tech/v1";
+        const base = raw.replace(/\/+$/, "");
+        const v1Base = base.endsWith("/v1") ? base : `${base}/v1`;
+        url = `${v1Base}/chat/completions`;
       } else {
         const hub = HubResolver.loadLLM("sarvam");
         url = hub.endpoint || "https://api.sarvam.ai/v2/chat/completions";
@@ -255,9 +295,12 @@ export class UniversalLlmClient {
         if (m.tool_calls) item.tool_calls = m.tool_calls;
         return item;
       }),
-      temperature: options?.temperature ?? 0.2,
       max_tokens: options?.maxTokens ?? 4096
     };
+
+    if (options?.temperature !== undefined) {
+      payload.temperature = options.temperature;
+    }
 
     if (options?.tools && options.tools.length > 0) {
       payload.tools = options.tools;
@@ -278,7 +321,7 @@ export class UniversalLlmClient {
       headers["api-subscription-key"] = key; // Sarvam AI dual-header compatibility
     }
 
-    const response = await fetch(url, {
+    const response = await resilientFetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(payload)
@@ -293,7 +336,7 @@ export class UniversalLlmClient {
     const choice = data.choices?.[0];
 
     return {
-      text: choice?.message?.content || "",
+      text: choice?.message?.content || choice?.message?.reasoning_content || "",
       reasoningContent: choice?.message?.reasoning_content,
       toolCalls: choice?.message?.tool_calls?.map((tc: any) => {
         let args = {};
@@ -323,7 +366,7 @@ export class UniversalLlmClient {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content || "";
     const systemMsg = messages.find((m) => m.role === "system")?.content;
 
-    const res = await fetch(sysOneUrl, {
+    const res = await resilientFetch(sysOneUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -366,7 +409,7 @@ export class UniversalLlmClient {
     const sysOneUrl = hub.systemone_endpoint || "https://api.sarvam.ai/v2/systemone";
     const key = chatOpts?.apiKey || this.apiKey || process.env.SARVAM_API_KEY;
 
-    const res = await fetch(sysOneUrl, {
+    const res = await resilientFetch(sysOneUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -405,7 +448,9 @@ export class LLMRouter {
   ): Promise<LLMExecutionResult> {
     const start = performance.now();
     const normalized = normalizeModelConfig(modelInput);
-    const apiKey = environment?.SARVAM_API_KEY || environment?.NEON_AI_GATEWAY_TOKEN || environment?.OPENAI_API_KEY;
+    const apiKey = normalized.provider === "neon"
+      ? (environment?.NEON_AI_GATEWAY_TOKEN || process.env.NEON_AI_GATEWAY_TOKEN)
+      : (environment?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || environment?.OPENAI_API_KEY || process.env.OPENAI_API_KEY);
 
     const response = await this.client.chat(messages as LlmMessage[], {
       model: `${normalized.provider}/${normalized.model}`,

@@ -20,20 +20,26 @@ class HelloAgent(liate):
     L = "sarvam/sarvam-105b"
     I = {"memory": "sessions/hello-agent"}
     A = {"name": "hello_agent", "intent": "Autonomous Sovereign Agent"}
-    T = ["fetch"]
+    T = {
+        "fetch": {
+            "command": "uvx",
+            "args": ["mcp-server-fetch"],
+            "tools": ["*"]
+        }
+    }
     E = {"SARVAM_API_KEY": os.environ.get("SARVAM_API_KEY", "$SARVAM_API_KEY")}
 
 def main():
     agent = HelloAgent()
-    print("=== [agent.py] AUM Manifest ===")
-    print(json.dumps(agent.to_manifest(), indent=2))
+    print("=== [agent.py] Agent Unified Module (AUM) ===")
+    print(json.dumps(agent.to_module(), indent=2))
 
-    print("\n=== [agent.py] Executing via OM Engine (Port 7071) ===")
+    print("\n=== [agent.py] Executing via Orchestration Module (OM) ===")
     try:
         result = agent.run("Introduce yourself in one sentence and say Namaste.")
         print("\nAgent Output:\n" + result.response)
     except ConnectionError as e:
-        print("\nNote: LAPI daemon connection notice:")
+        print("\nNote: Liate API daemon connection notice:")
         print(str(e))
     except Exception as e:
         print("\nExecution result / note:", str(e))

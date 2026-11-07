@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-import { runJoinFlow } from "./commands/join";
+import { runStartFlow } from "./commands/start";
 import { handleRunCommand } from "./commands/run";
 import { handleServeCommand } from "./commands/serve";
 import { handleLinkCommand, handleRelinkCommand, handleUnlinkCommand } from "./commands/link";
 import { handleDeployCommand } from "./commands/deploy";
 import { handleEnvCommand } from "./commands/env";
-import { handleHubCommand, handleCreateCommand } from "./commands/hub";
+import { handleHubCommand } from "./commands/hub";
+import { handleCreateCommand } from "./commands/create";
 import { OPENLIATE_VERSION } from "../core/version";
 
 export const VERSION = OPENLIATE_VERSION;
@@ -21,47 +22,48 @@ export const BANNER = `
 export function printHelp(): void {
   console.log(BANNER);
   console.log(`Usage:
-  liate join                                           Initialize workspace and configure BYOAI API keys
-  liate hub                                            Get sovereign agents from hub
-  liate create                                         Define agent.json in 5 lines
-  liate run <agent.json|agent-name> "<prompt>"         Run an agent locally
-  liate serve [--port <port>]                          Serve agent as HTTP API (default: 7071)
-  liate link [neon|vercel|supabase]                    Link cloud database & compute (BYOC)
-  liate relink [neon|vercel|supabase|all]              Relink cloud via fresh OAuth
-  liate unlink [neon|vercel|supabase|all]              Unlink cloud & remove credentials
-  liate deploy [neon|vercel|supabase]                  Deploy OpenLiate Runtime Engine to connected cloud
-  liate deploy <agent> [--to neon|vercel|supabase]     Deploy a dedicated agent as a standalone cloud endpoint
-  liate key set <KEY>=<VALUE>                          Save or update an API key
-  liate key list                                       List configured keys (masked)
-  liate key rm <KEY>                                   Remove an API key
-  liate version                                        Show version and runtime info
-  liate help                                           Show this help menu
+  openliate start                                          Quickstart workspace and configure BYOAI API keys
+  openliate hub                                            OpenLiate Hub interactive menu
+  openliate hub add <owner/repo|path>                      Add an agent to OpenLiate Hub from GitHub or local path
+  openliate hub list                                       List all agents in OpenLiate Hub
+  openliate add <owner/repo|path>                          Add an agent directly to OpenLiate Hub
+  openliate create <name>                                  Scaffold a new agent project
+  openliate run <agent.json|agent-name> "<prompt>"         Run an agent locally
+  openliate serve [--port <port>]                          Serve agent as HTTP API (default: 7071)
+  openliate link [fastly|cloudflare|azion|neon|vercel|supabase|all] Link multi-cloud compute (18.5M runs)
+  openliate relink [provider|all]                          Relink cloud via fresh OAuth
+  openliate unlink [provider|all]                          Unlink cloud & remove credentials
+  openliate deploy [fastly|cloudflare|azion|neon|vercel|supabase|all] Deploy OpenLiate Runtime Engine to connected cloud
+  openliate deploy <agent> [--to <cloud>]                  Deploy a dedicated agent as a standalone cloud endpoint
+  openliate key set <KEY>=<VALUE>                          Save or update an API key
+  openliate key list                                       List configured keys (masked)
+  openliate key rm <KEY>                                   Remove an API key
+  openliate version                                        Show version and runtime info
+  openliate help                                           Show this help menu
 
 Note:
-  Both 'liate' and 'openliate' commands can be used interchangeably.
+  Commands can be run as either 'openliate' or 'liate' (e.g. 'openliate start' or 'liate start').
 
 Examples:
-  liate hub
-  liate create
-  liate run sarvam-agent "Namaste, who are you?"
-  liate run indiaai-agent "EKA-1 Indian Sovereign reasoning"
-  liate run neon-agent "Hello from Neon AI Gateway"
-  liate serve --port 7071
-  liate link neon
-  liate link vercel
-  liate link supabase
-  liate deploy neon
-  liate deploy sarvam-agent --to neon
-  liate key set SARVAM_API_KEY="sk_live_..."
-  liate key list
-  liate key rm SARVAM_API_KEY
+  openliate start
+  openliate hub
+  openliate create
+  openliate run sarvam-agent "Namaste, who are you?"
+  openliate run neon-agent "Hello from Neon AI Gateway"
+  openliate serve --port 7071
+  openliate link neon
+  openliate deploy neon
+  openliate deploy sarvam-agent --to neon
+  openliate key set SARVAM_API_KEY="sk_live_..."
+  openliate key list
+  openliate key rm SARVAM_API_KEY
 
 Workspace Storage (.openliate/):
   .openliate/config.json                               Global runtime & API keys configuration
   .openliate/sessions/                                 Persistent agent conversation memory
   .openliate/agents/                                   Custom agent definitions created locally
   .openliate/mcp.json                                  Cached & custom MCP servers configuration
-  .openliate/link/                                     Multi-cloud credentials (Neon, Vercel, Supabase)
+  .openliate/link/                                     Multi-cloud credentials (Neon, Vercel, Supabase, etc.)
 `);
 }
 
@@ -79,12 +81,12 @@ export async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // 1. Join / Init Command
-  if (command === "join" || command === "init" || command === "setup") {
+  // 1. Start / Init Command
+  if (command === "start" || command === "init" || command === "setup") {
     try {
-      await runJoinFlow();
+      await runStartFlow();
     } catch (err: any) {
-      console.error(`\n[Join Error]: ${err.message}`);
+      console.error(`\n[Start Error]: ${err.message}`);
       process.exit(1);
     }
     return;
@@ -92,13 +94,19 @@ export async function main(): Promise<void> {
 
   // 2. Hub Command
   if (command === "hub") {
-    await handleHubCommand();
+    await handleHubCommand(args);
     return;
   }
 
-  // 3. Create Agent (Interactive 5-Pillar LIATE Builder)
-  if (command === "create") {
-    await handleCreateCommand();
+  // 2b. Shorthand: openliate add <repo> (or openliate i / install)
+  if (command === "add" || command === "i" || command === "install") {
+    await handleHubCommand(["hub", "add", ...args.slice(1)]);
+    return;
+  }
+
+  // 3. Create / New Agent Project Scaffolder
+  if (command === "create" || command === "new") {
+    await handleCreateCommand(args);
     return;
   }
 

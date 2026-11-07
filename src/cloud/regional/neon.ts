@@ -5,7 +5,7 @@ import path from "path";
 import os from "os";
 import JSZip from "jszip";
 import { generateUUIDv7 } from "../../core/uuid";
-import { ConfigManager } from "../../core/config";
+import { ConfigManager } from "../../core/spec";
 import { base64url, generatePKCE, type ClientRegistration } from "../../core/pkce";
 export { base64url, generatePKCE, type ClientRegistration };
 
@@ -24,12 +24,12 @@ export interface NeonTokenData {
   email?: string;
 }
 
-export class NeonMcpOAuth {
+export class NeonLink {
   /**
    * Path to persistent OpenLiate config (~/.openliate/neon_token.json or .openliate/neon_token.json).
    */
   public static getTokenPath(): string {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true });
@@ -65,7 +65,7 @@ export class NeonMcpOAuth {
   }
 
   public static loadSavedToken(): NeonTokenData | null {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     const candidatePaths = [
       configDir ? path.join(configDir, "neon.json") : "",
       configDir ? path.join(configDir, "neon_token.json") : "",
@@ -96,7 +96,7 @@ export class NeonMcpOAuth {
   }
 
   public static saveToken(data: NeonTokenData): void {
-    const p = NeonMcpOAuth.getTokenPath();
+    const p = NeonLink.getTokenPath();
     const pDir = path.dirname(p);
     if (!fs.existsSync(pDir)) {
       fs.mkdirSync(pDir, { recursive: true });
@@ -104,7 +104,7 @@ export class NeonMcpOAuth {
     fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
 
     // Do not modify workspace configuration if running inside an isolated test environment
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       return;
     }
@@ -134,11 +134,11 @@ export class NeonMcpOAuth {
   }
 
   public static clearSavedToken(): void {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     const candidatePaths = [
       configDir ? path.join(configDir, "neon.json") : "",
       configDir ? path.join(configDir, "neon_token.json") : "",
-      NeonMcpOAuth.getTokenPath(),
+      NeonLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "neon.json"),
       path.resolve(process.cwd(), ".openliate", "link", "neon_token.json"),
       path.resolve(process.cwd(), ".openliate", "neon.json"),
@@ -268,7 +268,7 @@ export class NeonMcpOAuth {
         refresh_token: json.refresh_token,
         saved_at: new Date().toISOString()
       };
-      NeonMcpOAuth.saveToken(tokenData);
+      NeonLink.saveToken(tokenData);
       return tokenData;
     } catch (err: any) {
       throw err;
@@ -366,7 +366,7 @@ export class NeonMcpClient {
   private token: string;
 
   constructor(token?: string) {
-    const saved = NeonMcpOAuth.loadSavedToken();
+    const saved = NeonLink.loadSavedToken();
     this.token = token || saved?.access_token || process.env.NEON_MCP_TOKEN || "";
     if (!this.token) {
       throw new Error("No Neon MCP token found. Run 'openliate link --neon' first.");
@@ -395,7 +395,7 @@ export class NeonMcpClient {
     });
 
     if (res.status === 401) {
-      NeonMcpOAuth.clearSavedToken();
+      NeonLink.clearSavedToken();
       throw new Error("Neon MCP Token has expired or is invalid. Please run 'openliate relink --neon' to re-authenticate.");
     }
 
@@ -613,11 +613,12 @@ export class NeonMcpClient {
       }
     }
 
-    // Deterministic fallback if invocation_url was empty during build
+    // Compute URL when invocation_url is generated asynchronously by Neon
     if (!invocationUrl && branch?.id) {
       invocationUrl = `https://${branch.id}-${slug}.compute.c-15.us-east-1.aws.neon.tech/`;
     }
 
+    const cleanBaseUrl = (invocationUrl || fnRes?.invocation_url || "").replace(/\/+$/, "").replace(/\/run$/, "");
     const result = {
       deploymentId: deployRes?.id || fnRes?.current_deployment?.id || 0,
       uuid7,
@@ -626,7 +627,10 @@ export class NeonMcpClient {
       projectName: project.name,
       branchId: branch.id,
       branchName: branch.name || targetBranchName,
-      invocationUrl: invocationUrl || fnRes?.invocation_url || "",
+      url: cleanBaseUrl,
+      healthUrl: `${cleanBaseUrl}/health`,
+      invocationUrl: cleanBaseUrl,
+      runEndpoint: `${cleanBaseUrl}/run`,
       status: finalStatus
     };
 
@@ -643,7 +647,7 @@ export class NeonMcpClient {
   }
 
 
-  public async deployAgent(manifestPath: string, options?: {
+  public async deployAgent(modulePath: string, options?: {
     agentName?: string;
     branchName?: string;
   }): Promise<{
@@ -658,11 +662,11 @@ export class NeonMcpClient {
     invocationUrl: string;
     status: string;
   }> {
-    if (!fs.existsSync(manifestPath)) {
-      throw new Error(`Agent manifest not found at: ${manifestPath}`);
+    if (!fs.existsSync(modulePath)) {
+      throw new Error(`Agent module not found at: ${modulePath}`);
     }
-    const manifestRaw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-    const rawName = options?.agentName || manifestRaw.A?.name || path.basename(path.dirname(manifestPath));
+    const moduleRaw = JSON.parse(fs.readFileSync(modulePath, "utf-8"));
+    const rawName = options?.agentName || moduleRaw.A?.name || path.basename(path.dirname(modulePath));
     const cleanAgentName = rawName.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
     const slug = `agent-${cleanAgentName}`.slice(0, 32);
 
@@ -697,7 +701,7 @@ export class NeonMcpClient {
     // 2. Create physical package bundling index.js + agent.json
     const zip = new JSZip();
     zip.file("index.js", bundleText);
-    zip.file("agent.json", JSON.stringify(manifestRaw, null, 2));
+    zip.file("agent.json", JSON.stringify(moduleRaw, null, 2));
     const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
     const zipBase64 = zipBuffer.toString("base64");
 
@@ -764,6 +768,7 @@ export class NeonMcpClient {
       invocationUrl = `https://${branch.id}-${slug}.compute.c-15.us-east-1.aws.neon.tech/`;
     }
 
+    const cleanBaseUrl = (invocationUrl || fnRes?.invocation_url || "").replace(/\/+$/, "").replace(/\/run$/, "");
     const result = {
       deploymentId: deployRes?.id || fnRes?.current_deployment?.id || 0,
       uuid7,
@@ -773,7 +778,10 @@ export class NeonMcpClient {
       projectName: project.name,
       branchId: branch.id,
       branchName: branch.name,
-      invocationUrl: invocationUrl || fnRes?.invocation_url || "",
+      url: cleanBaseUrl,
+      healthUrl: `${cleanBaseUrl}/health`,
+      invocationUrl: cleanBaseUrl,
+      runEndpoint: `${cleanBaseUrl}/run`,
       status: finalStatus
     };
 

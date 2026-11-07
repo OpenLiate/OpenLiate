@@ -6,12 +6,12 @@
   "A": {
     "name": "neon_agent",
     "version": "0.1.1",
-    "intent": "Autonomous Sovereign Agent powered by Neon AI Gateway & Serverless Postgres",
+    "intent": "Agent powered by Neon AI Gateway & Cloud Compute",
     "maxSteps": 5
   },
   "T": {
     "neon": {
-      "name": "Neon Postgres",
+      "name": "Neon",
       "transport": "http",
       "url": "https://mcp.neon.tech/mcp",
       "headers": {

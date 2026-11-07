@@ -11,22 +11,21 @@ export async function handleDeployCommand(args: string[]): Promise<void> {
 ===========================================================
 
 Deploy Universal Runtime Engine:
-  liate deploy neon                                    Deploy OpenLiate Runtime to Neon Cloud
-  liate deploy vercel                                  Deploy OpenLiate Runtime to Vercel Fluid Compute
-  liate deploy supabase                                Deploy OpenLiate Runtime to Supabase Edge Functions
-  liate deploy fastly                                  Deploy OpenLiate Runtime to Fastly Compute (WASM)
-  liate deploy cloudflare                              Deploy OpenLiate Runtime to Cloudflare Workers
-  liate deploy azion                                   Deploy OpenLiate Runtime to Azion Edge Functions
+  openliate deploy neon                                    Deploy OpenLiate Runtime to Neon Cloud
+  openliate deploy vercel                                  Deploy OpenLiate Runtime to Vercel Fluid Compute
+  openliate deploy supabase                                Deploy OpenLiate Runtime to Supabase Edge Functions
+  openliate deploy fastly                                  Deploy OpenLiate Runtime to Fastly Compute (WASM)
+  openliate deploy cloudflare                              Deploy OpenLiate Runtime to Cloudflare Workers
+  openliate deploy azion                                   Deploy OpenLiate Runtime to Azion Edge Functions
 
 Deploy Dedicated Micro-Agent:
-  liate deploy sarvam-agent --to neon                  Deploy dedicated Sarvam Agent to Neon
-  liate deploy indiaai-agent --to neon                 Deploy dedicated IndiaAI Agent to Neon
-  liate deploy fastly-agent --to fastly                Deploy dedicated Fastly Agent to Fastly
-  liate deploy <agent.json|agent-name> [--to <cloud>]  Deploy any custom agent
+  openliate deploy sarvam-agent --to neon                  Deploy dedicated Sarvam Agent to Neon
+  openliate deploy prism-agent --to neon                   Deploy dedicated Prism Agent to Neon
+  openliate deploy <agent.json|agent-name> [--to <cloud>]  Deploy any custom agent
 
 Usage:
-  liate deploy [neon|vercel|supabase|fastly|cloudflare|azion|all]
-  liate deploy <agent> [--to neon|vercel|supabase|fastly|cloudflare|azion]
+  openliate deploy [neon|vercel|supabase|fastly|cloudflare|azion|all]
+  openliate deploy <agent> [--to neon|vercel|supabase|fastly|cloudflare|azion]
 `);
     return;
   }
@@ -63,7 +62,7 @@ Usage:
     return;
   }
 
-  // Otherwise, rawTarget is an agent name or manifest file
+  // Otherwise, rawTarget is an agent name or module file
   const agentName = rawTarget;
   let provider: "neon" | "vercel" | "supabase" | "fastly" | "cloudflare" | "azion" = "neon";
 

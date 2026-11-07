@@ -1,12 +1,11 @@
-export * from "./types";
+export * from "./spec";
 export * from "./aum";
-export * from "./config";
 export * from "./uuid";
 export * from "./version";
 
 // -----------------------------------------------------------------
 // Core Engine: OM (Orchestration Module)
-// "Class is an Agent" — OOP base class matching AUM (Agent Unified Manifest)
+// "Class is an Agent" — OOP base class matching AUM (Agent Unified Module)
 //
 // 1 Class = 5 Properties (`L · I · A · T · E`) = Identical to agent.json
 //
@@ -16,7 +15,7 @@ export * from "./version";
 // -----------------------------------------------------------------
 import { Agent as AgentRunner } from "../layers/agent/harness";
 import type { AgentRunResult, AgentExecutionOptions } from "../layers/agent/types";
-import type { AgentManifest } from "./types";
+import type { AgentModule } from "./spec";
 
 /**
  * OM (Orchestration Module) — Core Autonomous Execution Engine
@@ -30,7 +29,9 @@ import type { AgentManifest } from "./types";
  *   L = "sarvam/sarvam-105b";
  *   I = { memory: "sessions/hello-agent" };
  *   A = { name: "hello_agent", intent: "Autonomous Agent" };
- *   T = ["fetch"];
+ *   T = {
+ *     fetch: { command: "uvx", args: ["mcp-server-fetch"], tools: ["*"] }
+ *   };
  *   E = { SARVAM_API_KEY: "$SARVAM_API_KEY" };
  * }
  *
@@ -43,21 +44,21 @@ export class liate {
   public L?: any;
   public I?: any;
   public A?: any;
-  public T?: any[];
+  public T?: any;
   public E?: Record<string, string>;
 
   // 2. Full Name: LLM · Integration · Agent · Tools · Environment
   public LLM?: any;
   public Integration?: any;
   public Agent?: any;
-  public Tools?: any[];
+  public Tools?: any;
   public Environment?: Record<string, string>;
 
   // 3. Lowercase: llm · integration · agent · tools · environment
   public llm?: any;
   public integration?: any;
   public agent?: any;
-  public tools?: any[];
+  public tools?: any;
   public environment?: Record<string, string>;
 
   private _runner?: AgentRunner;
@@ -67,8 +68,8 @@ export class liate {
    */
   public getRunner(): AgentRunner {
     if (!this._runner) {
-      const manifest = this.toManifest();
-      this._runner = new AgentRunner({ manifest });
+      const module = this.toModule();
+      this._runner = new AgentRunner({ module });
     }
     return this._runner;
   }
@@ -88,9 +89,9 @@ export class liate {
   }
 
   /**
-   * Exports the declarative L·I·A·T·E manifest — identical shape to agent.json (AUM).
+   * Exports the declarative L·I·A·T·E Agent Unified Module (AUM) — identical shape to agent.json.
    */
-  public toManifest(): AgentManifest {
+  public toModule(): AgentModule {
     const L = this.L ?? this.LLM ?? this.llm;
     const I = this.I ?? this.Integration ?? this.integration;
     const A = this.A ?? this.Agent ?? this.agent ?? { name: this.constructor.name };
@@ -101,7 +102,7 @@ export class liate {
       throw new Error(
         `[OpenLiate Error]: Missing required Layer [L] (LLM) in class '${this.constructor.name}'. ` +
         `Declare 'L', 'LLM', or 'llm' on your class. ` +
-        `OpenLiate never hardcodes or falls back to silent model defaults.`
+        `OpenLiate never hardcodes silent model defaults.`
       );
     }
     return {
@@ -113,4 +114,14 @@ export class liate {
     };
   }
 }
+
+/**
+ * OpenLiate — Canonical alias for the agent base class.
+ */
+export const OpenLiate = liate;
+export type OpenLiate = liate;
+
+export const LIATE = liate;
+export type LIATE = liate;
+
 

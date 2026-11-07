@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
 import * as p from "@clack/prompts";
-import { ConfigManager } from "../../core/config";
+import { ConfigManager } from "../../core/spec";
 import { SarvamClient } from "../../layers/llm/model";
-import { NeonMcpOAuth } from "../../cloud/regional/neon";
+import { NeonLink } from "../../cloud/regional/neon";
 
-export const DEFAULT_JOIN_CALLBACK_PORT = 54324;
+export const DEFAULT_START_CALLBACK_PORT = 54324;
 
 function initWorkspaceOpenLiate(): void {
   try {
@@ -38,7 +38,7 @@ function initWorkspaceOpenLiate(): void {
       const defaultMcp = {
         mcpServers: {
           neon: {
-            name: "Neon Postgres",
+            name: "Neon",
             transport: "http",
             url: "https://mcp.neon.tech/mcp"
           }
@@ -49,10 +49,10 @@ function initWorkspaceOpenLiate(): void {
   } catch {}
 }
 
-export async function runJoinFlow(): Promise<void> {
+export async function runStartFlow(): Promise<void> {
   console.log("");
-  p.intro("\x1b[36mOpenLiate Join - Sovereign AI Agents\x1b[0m");
-  p.note("Configure your Sovereign AI Model Layer [L]\n100% Local Setup — No Accounts or Logins Required", "Welcome");
+  p.intro("\x1b[36mOpenLiate Start — Agent Quickstart\x1b[0m");
+  p.note("Configure your Model Layer [L]\n100% Local Open Source Setup — No Accounts or Cloud Logins Required", "Welcome");
 
   // Step 1: Select Gateway
   const gatewayChoice = await p.select({
@@ -60,13 +60,13 @@ export async function runJoinFlow(): Promise<void> {
     options: [
       {
         value: "sarvam",
-        label: "Sarvam AI Sovereign Stack — [Recommended Sovereign Partner]",
-        hint: "India's Sovereign AI (105B, 2B, Bulbul, GLM) · dashboard.sarvam.ai"
+        label: "Sarvam AI — [Recommended]",
+        hint: "Sarvam AI (105B, 2B, GLM) · dashboard.sarvam.ai"
       },
       {
         value: "neon",
-        label: "Neon AI Gateway — [Enterprise Cloud Multi-Modal]",
-        hint: "Serverless Postgres & AI compute gateway · mcp.neon.tech"
+        label: "Neon AI Gateway — [Cloud Multi-Modal]",
+        hint: "Neon Cloud Compute & AI Gateway (63+ models) · mcp.neon.tech"
       }
     ]
   });
@@ -85,7 +85,7 @@ export async function runJoinFlow(): Promise<void> {
       docUrl: "https://dashboard.sarvam.ai"
     });
   } else if (gatewayChoice === "neon") {
-    const neonToken = process.env.NEON_AI_GATEWAY_TOKEN || ConfigManager.getKey("NEON_AI_GATEWAY_TOKEN") || NeonMcpOAuth.loadSavedToken()?.access_token;
+    const neonToken = process.env.NEON_AI_GATEWAY_TOKEN || ConfigManager.getKey("NEON_AI_GATEWAY_TOKEN") || NeonLink.loadSavedToken()?.access_token;
     if (!neonToken) {
       const inputToken = await p.password({
         message: "Enter your NEON_AI_GATEWAY_TOKEN (nt_live_...):",
@@ -127,7 +127,7 @@ export async function runJoinFlow(): Promise<void> {
   initWorkspaceOpenLiate();
 
   p.note(
-    `• Primary Gateway: ${gatewayChoice.toUpperCase()}\n• Configuration: ~/.openliate/config.json\n• MCP Servers Cache: .openliate/mcp.json\n• Custom Agents Workspace: .openliate/agents/\n• Session Memory: .openliate/sessions/\n• Cloud Link Tokens: .openliate/link/\n• Architecture: Pure Sovereign BYOAI (Zero central telemetry or rate limits)`,
+    `• Primary Gateway: ${gatewayChoice.toUpperCase()}\n• Configuration: ~/.openliate/config.json\n• MCP Servers Cache: .openliate/mcp.json\n• Custom Agents Workspace: .openliate/agents/\n• Session Memory: .openliate/sessions/\n• Cloud Link Tokens: .openliate/link/\n• Architecture: BYOAI (Zero central telemetry or rate limits)`,
     "Configuration Saved"
   );
 
@@ -141,7 +141,7 @@ export async function runJoinFlow(): Promise<void> {
       const res = await client.chat([
         { role: "user", content: "Say hello and confirm connection in one short sentence." }
       ], { model: "sarvam-105b", maxTokens: 60 });
-      verifySpinner.stop(`[Verified] Sarvam Sovereign AI Live Verified`);
+      verifySpinner.stop(`[Verified] Sarvam AI Live Verified`);
       if (res.text) {
         console.log(`\n\x1b[32m[Sarvam AI Response]:\x1b[0m\n"${res.text.trim()}"\n`);
       }
@@ -153,7 +153,7 @@ export async function runJoinFlow(): Promise<void> {
   p.outro("\x1b[32mSetup complete! You are ready to build.\x1b[0m\n");
   console.log(`Quick Start:
   $ openliate run hub/agents/sarvam-agent/agent.json "Namaste, who are you?"
-  $ openliate run hub/agents/identity-agent/agent.json "Validate PAN ABCPE1234F"
+  $ openliate run hub/agents/neon-agent/agent.json "Hello from Neon"
   $ openliate serve --port 7071
 `);
 }

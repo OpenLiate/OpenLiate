@@ -10,6 +10,6 @@ export async function handleServeCommand(args: string[]): Promise<void> {
 
   EnvironmentResolver.loadEnv();
   startRuntimeServer({ port });
-  console.log(`Ready to serve autonomous agents via HTTP cURL, Webhooks, Python SDK, and LAPI endpoints.`);
+  console.log(`Ready to serve autonomous agents via HTTP cURL, Webhooks, Python SDK, and Liate API endpoints.`);
 }
 

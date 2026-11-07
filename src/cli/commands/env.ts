@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { ConfigManager } from "../../core/config";
+import { ConfigManager } from "../../core/spec";
 
 export async function handleKeyCommand(args: string[]): Promise<void> {
   const sub = args[1]?.toLowerCase();
@@ -9,7 +9,7 @@ export async function handleKeyCommand(args: string[]): Promise<void> {
   if (sub === "set" || sub === "add" || sub === "update") {
     const pair = args.find(a => a !== sub && a.includes("="));
     if (!pair || !pair.includes("=")) {
-      console.error("Usage: liate key set KEY=VALUE (or: liate key add KEY=VALUE)");
+      console.error("Usage: openliate key set KEY=VALUE (or: openliate key add KEY=VALUE)");
       process.exit(1);
     }
     const [k, ...rest] = pair.split("=");
@@ -47,7 +47,7 @@ export async function handleKeyCommand(args: string[]): Promise<void> {
         console.log(`  - ${k}: ${masked}`);
       }
     } else {
-      console.log(`  (No keys configured yet. Add with: liate key set KEY=VALUE)`);
+      console.log(`  (No keys configured yet. Add with: openliate key set KEY=VALUE)`);
     }
     console.log("");
     return;
@@ -57,7 +57,7 @@ export async function handleKeyCommand(args: string[]): Promise<void> {
   if (sub === "rm" || sub === "remove" || sub === "delete" || sub === "unset") {
     const keyName = args[2]?.trim();
     if (!keyName) {
-      console.error("Usage: liate key rm <KEY_NAME>");
+      console.error("Usage: openliate key rm <KEY_NAME>");
       process.exit(1);
     }
 
@@ -83,11 +83,10 @@ export async function handleKeyCommand(args: string[]): Promise<void> {
   }
 
   console.log(`Usage:
-  liate key set <KEY>=<VALUE>    Save or update an API key
-  liate key list                 List configured keys (masked)
-  liate key rm <KEY>             Remove an API key
+  openliate key set <KEY>=<VALUE>    Save or update an API key
+  openliate key list                 List configured keys (masked)
+  openliate key rm <KEY>             Remove an API key
 `);
 }
 
-// Backward-compatible alias
 export const handleEnvCommand = handleKeyCommand;

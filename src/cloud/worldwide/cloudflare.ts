@@ -26,12 +26,12 @@ export interface CloudflareTokenData {
   saved_at: string;
 }
 
-export class CloudflareMcpOAuth {
+export class CloudflareLink {
   /**
    * Path to persistent Cloudflare credentials file (.openliate/link/cloudflare.json).
    */
   public static getTokenPath(): string {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true });
@@ -66,7 +66,7 @@ export class CloudflareMcpOAuth {
   }
 
   public static loadSavedToken(): CloudflareTokenData | null {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       const p = path.join(configDir, "cloudflare.json");
       if (fs.existsSync(p)) {
@@ -92,7 +92,7 @@ export class CloudflareMcpOAuth {
 
     const candidatePaths = [
       configDir ? path.join(configDir, "cloudflare.json") : "",
-      CloudflareMcpOAuth.getTokenPath(),
+      CloudflareLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "cloudflare.json"),
       path.resolve(process.cwd(), ".openliate", "cloudflare.json"),
       path.resolve(process.cwd(), "..", ".openliate", "link", "cloudflare.json"),
@@ -160,14 +160,14 @@ export class CloudflareMcpOAuth {
   }
 
   public static saveToken(data: CloudflareTokenData): void {
-    const p = CloudflareMcpOAuth.getTokenPath();
+    const p = CloudflareLink.getTokenPath();
     const pDir = path.dirname(p);
     if (!fs.existsSync(pDir)) {
       fs.mkdirSync(pDir, { recursive: true });
     }
     fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
 
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       return;
     }
@@ -201,7 +201,7 @@ export class CloudflareMcpOAuth {
     } catch {}
 
     try {
-      CloudflareMcpOAuth.configureMcpServer(data.access_token);
+      CloudflareLink.configureMcpServer(data.access_token);
     } catch {}
   }
 
@@ -238,7 +238,7 @@ export class CloudflareMcpOAuth {
   }
 
   public static clearSavedToken(): void {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       try {
         const p = path.join(configDir, "cloudflare.json");
@@ -250,7 +250,7 @@ export class CloudflareMcpOAuth {
     }
 
     const candidatePaths = [
-      CloudflareMcpOAuth.getTokenPath(),
+      CloudflareLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "cloudflare.json"),
       path.resolve(process.cwd(), ".openliate", "cloudflare.json"),
       path.resolve(process.cwd(), "..", ".openliate", "link", "cloudflare.json"),
@@ -446,7 +446,7 @@ export class CloudflareMcpOAuth {
       saved_at: new Date().toISOString()
     };
 
-    CloudflareMcpOAuth.saveToken(saved);
+    CloudflareLink.saveToken(saved);
     return saved;
   }
 
@@ -501,8 +501,7 @@ export class CloudflareMcpOAuth {
   }
 
   public static generateWorkerScript(): string {
-    return `// OpenLiate Sovereign Edge Worker (Cloudflare Workers V8 Isolates)
-// 3,000,000 monthly free runs on worldwide edge (330+ Cities)
+    return `// OpenLiate Edge Worker (Cloudflare Workers V8 Isolates)
 import { runtimeApp } from "../runtime/hono";
 
 export default {
@@ -587,13 +586,13 @@ export async function runCloudflareLinkFlow(
   }
 
   console.log(`\n===========================================================`);
-  console.log(`  Cloudflare Workers Edge Grid (3M Monthly Runs · V8 Isolates)`);
+  console.log(`  Cloudflare Workers (V8 Isolates)`);
   console.log(`===========================================================\n`);
 
   let token = explicitKey || process.env.CLOUDFLARE_API_TOKEN;
 
   if (!token && !relink) {
-    const existing = CloudflareMcpOAuth.loadSavedToken();
+    const existing = CloudflareLink.loadSavedToken();
     if (existing && existing.access_token) {
       console.log(`  Found existing Cloudflare credentials on disk.`);
       token = existing.access_token;
@@ -603,7 +602,7 @@ export async function runCloudflareLinkFlow(
   // If explicit token or env token exists, verify and save directly
   if (token) {
     console.log(`  Verifying Cloudflare token against Cloudflare Client API...`);
-    const verification = await CloudflareMcpOAuth.verifyToken(token);
+    const verification = await CloudflareLink.verifyToken(token);
 
     if (!verification.valid) {
       console.warn(`  [Warning]: Cloudflare token verification returned non-OK. Proceeding with credentials.`);
@@ -614,14 +613,14 @@ export async function runCloudflareLinkFlow(
       }
     }
 
-    CloudflareMcpOAuth.saveToken({
+    CloudflareLink.saveToken({
       access_token: token,
       account_id: verification.account_id || process.env.CLOUDFLARE_ACCOUNT_ID,
       subdomain: verification.subdomain,
       saved_at: new Date().toISOString()
     });
 
-    console.log(`  Saved Cloudflare token to: ${CloudflareMcpOAuth.getTokenPath()}`);
+    console.log(`  Saved Cloudflare token to: ${CloudflareLink.getTokenPath()}`);
     console.log(`  Updated .env.local with CLOUDFLARE_API_TOKEN`);
     console.log(`\n  Cloudflare Workers linked successfully! (3,000,000 monthly V8 edge runs)\n`);
 
@@ -633,12 +632,12 @@ export async function runCloudflareLinkFlow(
   const redirectUri = `http://localhost:${port}/callback`;
 
   console.log(`[OpenLiate] Registering Dynamic Client with Cloudflare MCP (${CLOUDFLARE_REGISTER_ENDPOINT})...`);
-  const reg = await CloudflareMcpOAuth.registerClient(redirectUri);
+  const reg = await CloudflareLink.registerClient(redirectUri);
 
   const { codeVerifier, codeChallenge } = generatePKCE();
   const state = randomBytes(16).toString("hex");
 
-  const authUrl = CloudflareMcpOAuth.buildAuthUrl({
+  const authUrl = CloudflareLink.buildAuthUrl({
     clientId: reg.client_id,
     redirectUri,
     codeChallenge,
@@ -686,7 +685,7 @@ export async function runCloudflareLinkFlow(
           server.close();
 
           console.log(`[OpenLiate] Exchanging Authorization Code with Cloudflare...`);
-          const tokenData = await CloudflareMcpOAuth.exchangeCodeForToken({
+          const tokenData = await CloudflareLink.exchangeCodeForToken({
             clientId: reg.client_id,
             clientSecret: reg.client_secret,
             code,
@@ -696,8 +695,7 @@ export async function runCloudflareLinkFlow(
 
           console.log(`[OpenLiate] Cloudflare MCP Access Token saved successfully!`);
           console.log(`[Success] Linked to Cloudflare Workers via MCP OAuth!`);
-          console.log(`[Capacity] 3,000,000 Free AI Agent Runs + V8 Edge Isolates Unlocked.`);
-          console.log(`[Saved] Credentials saved to ${CloudflareMcpOAuth.getTokenPath()}`);
+          console.log(`[Saved] Credentials saved to ${CloudflareLink.getTokenPath()}`);
           console.log(`[Configured] Cloudflare MCP server configured in .openliate/mcp.json`);
           resolve(tokenData.access_token);
         }
@@ -743,16 +741,16 @@ export async function deployCloudflare(options: { agent?: string; slug?: string 
   }
   console.log(`===========================================================`);
 
-  let token = CloudflareMcpOAuth.loadSavedToken()?.access_token || process.env.CLOUDFLARE_API_TOKEN;
-  let accountId = CloudflareMcpOAuth.loadSavedToken()?.account_id || process.env.CLOUDFLARE_ACCOUNT_ID;
+  let token = CloudflareLink.loadSavedToken()?.access_token || process.env.CLOUDFLARE_API_TOKEN;
+  let accountId = CloudflareLink.loadSavedToken()?.account_id || process.env.CLOUDFLARE_ACCOUNT_ID;
 
   if (!token) {
     console.log("[OpenLiate] Cloudflare is not linked. Linking first via MCP OAuth...");
     token = await runCloudflareLinkFlow();
-    accountId = CloudflareMcpOAuth.loadSavedToken()?.account_id || process.env.CLOUDFLARE_ACCOUNT_ID;
+    accountId = CloudflareLink.loadSavedToken()?.account_id || process.env.CLOUDFLARE_ACCOUNT_ID;
   }
 
-  let subdomain = CloudflareMcpOAuth.loadSavedToken()?.subdomain || "officialvinodhatti";
+  let subdomain = CloudflareLink.loadSavedToken()?.subdomain || "officialvinodhatti";
   if (accountId && (!subdomain || subdomain === "openliate")) {
     try {
       const subRes = await fetch(`${CLOUDFLARE_API_ENDPOINT}/accounts/${accountId}/workers/subdomain`, {
@@ -835,7 +833,7 @@ export async function deployCloudflare(options: { agent?: string; slug?: string 
       }
     } catch {}
 
-    // Fallback: Direct REST API
+    // Direct REST API upload
     if (!uploaded) {
       try {
         const boundary = "----OpenLiateDeployBoundary" + Date.now();
@@ -892,8 +890,10 @@ export async function deployCloudflare(options: { agent?: string; slug?: string 
     }
   }
 
-  const runtimeUrl = `https://${slug}.${subdomain}.workers.dev/run`;
-  const runEndpoint = `https://${slug}.${subdomain}.workers.dev/run`;
+  const baseUrl = `https://${slug}.${subdomain}.workers.dev`;
+  const healthUrl = `${baseUrl}/health`;
+  const runEndpoint = `${baseUrl}/run`;
+  const runtimeUrl = baseUrl;
 
   const deployRecord = {
     provider: "cloudflare",
@@ -902,6 +902,8 @@ export async function deployCloudflare(options: { agent?: string; slug?: string 
     uuid7,
     slug,
     subdomain,
+    url: baseUrl,
+    healthUrl,
     runtimeUrl,
     runEndpoint,
     deployedAt: new Date().toISOString()
@@ -919,13 +921,12 @@ export async function deployCloudflare(options: { agent?: string; slug?: string 
   console.log("OpenLiate deployed live to Cloudflare Workers!");
   console.log(`Worker:     ${slug} (UUIDv7: ${uuid7})`);
   console.log(`Account:    ${accountId || "Cloudflare Default"}`);
-  console.log(`Unique URL: ${runtimeUrl}`);
-  console.log(`Compute:    Cloudflare V8 Isolates (Global Edge Network)`);
-  console.log(`Capacity:   3,000,000 Free AI Agent Runs / Month`);
-  console.log(`Anycast:    330+ Cities Globally (<10ms edge latency)`);
+  console.log(`Endpoint:   ${baseUrl}`);
+  console.log(`Health:     ${healthUrl}`);
+  console.log(`Compute:    Cloudflare Workers (3M runs/mo · V8 Isolates)`);
   console.log("===========================================================\n");
 
-  console.log("How to run your agent on Cloudflare Workers Grid:\n");
+  console.log("How to run your agent on Cloudflare Workers:\n");
   console.log(`  curl -X POST ${runtimeUrl} \\`);
   console.log(`    -H "Content-Type: application/json" \\`);
   console.log(`    -d '{"prompt": "Hello Cloudflare Edge Agent!"}'\n`);

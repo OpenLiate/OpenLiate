@@ -54,7 +54,7 @@ export function createAgentMcpServer(agent: McpAgentLike): McpServer {
                 status: "ok",
                 agent: agentName,
                 version: agentVersion,
-                protocol: "LAPI/v1",
+                protocol: "Liate API v1",
                 doctrine: "Class is an Agent. Agent is a Function. Function is an API. OpenLiate is Your Backend."
               },
               null,

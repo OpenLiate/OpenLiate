@@ -4,7 +4,7 @@ import { EdgeSkillResolver } from '../skills/resolver';
 export const skillsRouter = new Hono();
 
 /**
- * GET /lapi/v1/skills
+ * GET /api/v1/skills
  * List all cached/resolved edge skills
  */
 skillsRouter.get('/', (c) => {
@@ -22,7 +22,7 @@ skillsRouter.get('/', (c) => {
 });
 
 /**
- * POST /lapi/v1/skills/resolve
+ * POST /api/v1/skills/resolve
  * Dynamically resolve and pre-warm a skills.sh or GitHub slug on the edge
  */
 skillsRouter.post('/resolve', async (c) => {

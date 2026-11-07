@@ -52,4 +52,5 @@ scripts/test-*
 scripts/probe-*
 scripts/inspect-*
 scripts/create-*
+test_*.ts
 *.local.*

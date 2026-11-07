@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AgentManifest } from "./types";
+import type { AgentModule } from "./spec";
 
 export const AUMSchema = z.object({
   L: z.union([
@@ -38,7 +38,7 @@ export const AUMSchema = z.object({
 
 export class AUM {
   /**
-   * Normalizes manifest properties supporting pure LIATE authoring:
+   * Normalizes module properties supporting pure LIATE authoring:
    * 1. Shorthand: L, I, A, T, E
    * 2. Full Name: LLM, Integration, Agent, Tools, Environment
    * 3. Lowercase: llm, integration, agent, tools, environment
@@ -62,17 +62,49 @@ export class AUM {
     };
   }
 
-  public static parse(manifestOrJson: string | object): AgentManifest {
+  public static parse(moduleOrJson: string | object): AgentModule {
     let rawObj: any;
 
-    if (typeof manifestOrJson === "string") {
-      try {
-        rawObj = JSON.parse(manifestOrJson);
-      } catch (err: any) {
-        throw new Error(`Failed to parse AUM manifest JSON: ${err.message}`);
+    if (typeof moduleOrJson === "string") {
+      const trimmed = moduleOrJson.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        try {
+          rawObj = JSON.parse(moduleOrJson);
+        } catch (err: any) {
+          throw new Error(`Failed to parse AUM module JSON: ${err.message}`);
+        }
+      } else if (trimmed.includes("class ") || trimmed.includes("extends liate") || trimmed.includes("export ")) {
+        try {
+          let code = trimmed
+            .replace(/import\s+[\s\S]*?;/g, "")
+            .replace(/export\s+default\s+/g, "")
+            .replace(/export\s+/g, "")
+            .replace(/extends\s+(liate|OpenLiate|LIATE)/g, "")
+            .replace(/if\s*\(import\.meta\.main\)[\s\S]*$/, "");
+
+          const match = code.match(/class\s+([A-Za-z0-9_]+)/);
+          const className = match ? match[1] : "Agent";
+          const fn = new Function(code + `\n return new ${className}();`);
+          const inst = fn();
+          rawObj = {
+            L: inst.L ?? inst.LLM ?? inst.llm,
+            I: inst.I ?? inst.Integration ?? inst.integration,
+            A: inst.A ?? inst.Agent ?? inst.agent,
+            T: inst.T ?? inst.Tools ?? inst.tools,
+            E: inst.E ?? inst.Environment ?? inst.environment
+          };
+        } catch (err: any) {
+          throw new Error(`Failed to parse agent TypeScript/JavaScript definition: ${err.message}`);
+        }
+      } else {
+        try {
+          rawObj = JSON.parse(moduleOrJson);
+        } catch (err: any) {
+          throw new Error(`Failed to parse AUM module: ${err.message}`);
+        }
       }
     } else {
-      rawObj = manifestOrJson;
+      rawObj = moduleOrJson;
     }
 
     const normalized = AUM.normalize(rawObj);
@@ -80,16 +112,16 @@ export class AUM {
 
     if (!result.success) {
       const issues = result.error.issues.map((i) => `[${i.path.join(".")}] ${i.message}`).join(", ");
-      throw new Error(`Invalid AUM Manifest: ${issues}`);
+      throw new Error(`Invalid AUM Module: ${issues}`);
     }
 
-    return result.data as AgentManifest;
+    return result.data as AgentModule;
   }
 
-  public static resolveEnvironment(manifest: AgentManifest, customEnv: Record<string, string | undefined> = process.env): AgentManifest {
+  public static resolveEnvironment(module: AgentModule, customEnv: Record<string, string | undefined> = process.env): AgentModule {
     const resolvedE: Record<string, string> = {};
 
-    for (const [key, val] of Object.entries(manifest.E || {})) {
+    for (const [key, val] of Object.entries(module.E || {})) {
       if (typeof val === "string" && val.startsWith("$")) {
         const envVarName = val.slice(1);
         resolvedE[key] = customEnv[envVarName] || "";
@@ -99,7 +131,7 @@ export class AUM {
     }
 
     return {
-      ...manifest,
+      ...module,
       E: resolvedE
     };
   }

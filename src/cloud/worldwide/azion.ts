@@ -13,9 +13,9 @@ export interface AzionTokenData {
   saved_at: string;
 }
 
-export class AzionMcpOAuth {
+export class AzionLink {
   public static getTokenPath(): string {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true });
@@ -50,7 +50,7 @@ export class AzionMcpOAuth {
   }
 
   public static loadSavedToken(): AzionTokenData | null {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       const p = path.join(configDir, "azion.json");
       if (fs.existsSync(p)) {
@@ -72,7 +72,7 @@ export class AzionMcpOAuth {
 
     const candidatePaths = [
       configDir ? path.join(configDir, "azion.json") : "",
-      AzionMcpOAuth.getTokenPath(),
+      AzionLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "azion.json"),
       path.resolve(process.cwd(), ".openliate", "azion.json"),
       path.resolve(process.cwd(), "..", ".openliate", "link", "azion.json"),
@@ -109,14 +109,14 @@ export class AzionMcpOAuth {
   }
 
   public static saveToken(data: AzionTokenData): void {
-    const p = AzionMcpOAuth.getTokenPath();
+    const p = AzionLink.getTokenPath();
     const pDir = path.dirname(p);
     if (!fs.existsSync(pDir)) {
       fs.mkdirSync(pDir, { recursive: true });
     }
     fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
 
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       return;
     }
@@ -144,7 +144,7 @@ export class AzionMcpOAuth {
 
     // Configure official Azion Remote MCP servers in .openliate/mcp.json
     try {
-      AzionMcpOAuth.configureMcpServer(data.personal_token);
+      AzionLink.configureMcpServer(data.personal_token);
     } catch {}
   }
 
@@ -201,7 +201,7 @@ export class AzionMcpOAuth {
    * Search Azion documentation & references via the official Azion docs MCP server
    */
   public static async searchDocs(query: string, docsAmount: number = 2, token?: string): Promise<any> {
-    const tok = token || AzionMcpOAuth.loadSavedToken()?.personal_token || process.env.AZION_PERSONAL_TOKEN || "";
+    const tok = token || AzionLink.loadSavedToken()?.personal_token || process.env.AZION_PERSONAL_TOKEN || "";
     try {
       const res = await fetch("https://docs-mcp.azion.com/mcp", {
         method: "POST",
@@ -236,7 +236,7 @@ export class AzionMcpOAuth {
   }
 
   public static clearSavedToken(): void {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       try {
         const p = path.join(configDir, "azion.json");
@@ -248,7 +248,7 @@ export class AzionMcpOAuth {
     }
 
     const candidatePaths = [
-      AzionMcpOAuth.getTokenPath(),
+      AzionLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "azion.json"),
       path.resolve(process.cwd(), ".openliate", "azion.json"),
       path.resolve(process.cwd(), "..", ".openliate", "link", "azion.json"),
@@ -294,11 +294,10 @@ export class AzionMcpOAuth {
   }
 
   /**
-   * Generates Azion Edge Functions entrypoint for OpenLiate LAPI
+   * Generates Azion Edge Functions entrypoint for OpenLiate Liate API
    */
   public static generateEdgeScript(): string {
-    return `// OpenLiate Sovereign Edge Function (Azion Runtime · V8 Isolates)
-// 3,000,000 monthly free runs on distributed 500+ PoP edge cloud
+    return `// OpenLiate Edge Function (Azion Runtime · V8 Isolates)
 import app from "./azion";
 
 export default {
@@ -315,13 +314,13 @@ export default {
  */
 export async function runAzionLinkFlow(key?: string, relink: boolean = false): Promise<string> {
   console.log(`\n===========================================================`);
-  console.log(`  Azion Edge Functions (3M Monthly Runs · 500+ Global PoPs)`);
+  console.log(`  Azion Edge Functions`);
   console.log(`===========================================================\n`);
 
   let token = key || process.env.AZION_PERSONAL_TOKEN;
 
   if (!token && !relink) {
-    const existing = AzionMcpOAuth.loadSavedToken();
+    const existing = AzionLink.loadSavedToken();
     if (existing && existing.personal_token) {
       console.log(`  Found existing Azion credentials on disk.`);
       token = existing.personal_token;
@@ -335,7 +334,7 @@ export async function runAzionLinkFlow(key?: string, relink: boolean = false): P
   }
 
   console.log(`  Verifying Azion token against Azion API v4...`);
-  const verification = await AzionMcpOAuth.verifyToken(token);
+  const verification = await AzionLink.verifyToken(token);
 
   if (!verification.valid) {
     console.warn(`  [Warning]: Azion API verification returned non-OK. Proceeding with credentials.`);
@@ -343,12 +342,12 @@ export async function runAzionLinkFlow(key?: string, relink: boolean = false): P
     console.log(`  Azion Token verified successfully!`);
   }
 
-  AzionMcpOAuth.saveToken({
+  AzionLink.saveToken({
     personal_token: token,
     saved_at: new Date().toISOString()
   });
 
-  console.log(`  Saved Azion token to: ${AzionMcpOAuth.getTokenPath()}`);
+  console.log(`  Saved Azion token to: ${AzionLink.getTokenPath()}`);
   console.log(`  Configured all 5 official Azion MCP servers in .openliate/mcp.json:`);
   console.log(`    - azion-docs:    https://docs-mcp.azion.com/mcp`);
   console.log(`    - azion-build:   https://build-mcp.azion.com/mcp`);
@@ -377,7 +376,7 @@ export async function deployAzion(options: { agent?: string; slug?: string } = {
   }
   console.log(`===========================================================`);
 
-  let token = AzionMcpOAuth.loadSavedToken()?.personal_token || process.env.AZION_PERSONAL_TOKEN;
+  let token = AzionLink.loadSavedToken()?.personal_token || process.env.AZION_PERSONAL_TOKEN;
 
   if (!token) {
     console.log("[OpenLiate] Azion is not linked. Linking first...");
@@ -400,8 +399,10 @@ export async function deployAzion(options: { agent?: string; slug?: string } = {
     }
   } catch {}
 
-  const runtimeUrl = `https://${edgeDomain}/${slug}/run`;
+  const baseUrl = `https://${edgeDomain}/${slug}`;
+  const healthUrl = `https://${edgeDomain}/health`;
   const runEndpoint = `https://${edgeDomain}/run`;
+  const runtimeUrl = baseUrl;
 
   const deployRecord = {
     provider: "azion",
@@ -409,6 +410,8 @@ export async function deployAzion(options: { agent?: string; slug?: string } = {
     uuid7,
     slug,
     domain: edgeDomain,
+    url: baseUrl,
+    healthUrl,
     runtimeUrl,
     runEndpoint,
     deployedAt: new Date().toISOString()
@@ -425,14 +428,13 @@ export async function deployAzion(options: { agent?: string; slug?: string } = {
   console.log("\n===========================================================");
   console.log("OpenLiate deployed live to Azion Edge!");
   console.log(`Function:   ${slug} (UUIDv7: ${uuid7})`);
-  console.log(`Unique URL: ${runtimeUrl}`);
-  console.log(`Compute:    Azion Edge Functions (Worldwide Edge Cloud)`);
-  console.log(`Capacity:   3,000,000 Free AI Agent Runs / Month`);
-  console.log(`Anycast:    500+ Edge Nodes Globally (<10ms edge latency)`);
+  console.log(`Endpoint:   ${baseUrl}`);
+  console.log(`Health:     ${healthUrl}`);
+  console.log(`Compute:    Azion Edge Functions (3M runs/mo)`);
   console.log("===========================================================\n");
 
-  console.log("How to run your agent on Azion Edge Cloud:\n");
-  console.log(`  curl -X POST ${runtimeUrl} \\`);
+  console.log("How to run your agent on Azion Edge:\n");
+  console.log(`  curl -X POST ${runEndpoint} \\`);
   console.log(`    -H "Content-Type: application/json" \\`);
   console.log(`    -d '{"prompt": "Hello Azion Edge Agent!"}'\n`);
 

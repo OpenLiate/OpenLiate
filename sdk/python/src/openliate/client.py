@@ -1,6 +1,6 @@
 """
-OpenLiate Python LAPI Client
-Connects to OpenLiate Orchestration Module (OM) via standard LAPI /run protocol.
+OpenLiate Python Client
+Connects to OpenLiate Orchestration Module (OM) via standard Agent Protocol Interface / Liate API /run protocol.
 """
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -15,7 +15,7 @@ import ssl
 
 def _resolve_via_doh(hostname: str) -> Optional[str]:
     """
-    Fallback DNS resolver using Cloudflare (1.1.1.1) and Google (8.8.8.8) DNS-over-HTTPS.
+    Resilient DNS resolver using Cloudflare (1.1.1.1) and Google (8.8.8.8) DNS-over-HTTPS.
     Protects developers on restrictive local CGNAT or corporate routers from NXDOMAIN / Query Refused errors.
     """
     try:
@@ -96,21 +96,21 @@ class AgentRunResult:
     def __str__(self) -> str:
         return self.response
 
-class LapiClient:
+class LiateApiClient:
     """
-    HTTP client for communicating with OpenLiate LAPI endpoint.
+    HTTP client for communicating with OpenLiate Liate API endpoint (Agent Protocol Interface).
     Supports both standard library urllib (zero dependencies) and httpx (async).
     """
     def __init__(self, endpoint: str = "http://localhost:7071"):
         self.endpoint = endpoint.rstrip("/")
 
-    def run(self, manifest: Dict[str, Any], prompt: str, session_id: Optional[str] = None) -> AgentRunResult:
+    def run(self, module: Dict[str, Any], prompt: str, session_id: Optional[str] = None) -> AgentRunResult:
         """
         Synchronous run via standard urllib.
         """
         url = f"{self.endpoint}/run"
         payload = {
-            "manifest": manifest,
+            "module": module,
             "prompt": prompt
         }
         if session_id:
@@ -118,7 +118,7 @@ class LapiClient:
 
         # Dynamically resolve BYOAI keys from environment
         keys = {}
-        for k, v in manifest.get("E", {}).items():
+        for k, v in module.get("E", {}).items():
             if isinstance(v, str) and v.startswith("$"):
                 var_name = v[1:]
                 keys[k] = os.environ.get(var_name, "")
@@ -145,9 +145,9 @@ class LapiClient:
                 err_msg = err_json.get("error", err_body)
             except Exception:
                 err_msg = err_body
-            raise RuntimeError(f"[OpenLiate LAPI Error HTTP {e.code}]: {err_msg}") from e
+            raise RuntimeError(f"[OpenLiate API Error HTTP {e.code}]: {err_msg}") from e
         except urllib.error.URLError as e:
-            # Fallback for DNS resolution issues on restrictive routers / unpropagated subdomains
+            # Direct resolution for DNS issues on restrictive routers / unpropagated subdomains
             parsed = urlparse(url)
             hostname = parsed.hostname or ""
             doh_ip = _resolve_via_doh(hostname) if hostname else None
@@ -156,12 +156,12 @@ class LapiClient:
                     body = _dispatch_direct_sni(doh_ip, hostname, parsed.path or "/run", data, timeout=120)
                 except Exception as sni_err:
                     raise ConnectionError(
-                        f"[OpenLiate Connection Error]: Unable to reach LAPI engine at {self.endpoint} "
-                        f"(Direct SNI fallback via {doh_ip} failed: {sni_err})."
+                        f"[OpenLiate Connection Error]: Unable to reach Liate API engine at {self.endpoint} "
+                        f"(Direct SNI connection via {doh_ip} failed: {sni_err})."
                     ) from e
             else:
                 raise ConnectionError(
-                    f"[OpenLiate Connection Error]: Unable to reach LAPI engine at {self.endpoint}. "
+                    f"[OpenLiate Connection Error]: Unable to reach Liate API engine at {self.endpoint}. "
                     f"Ensure the OpenLiate engine is running (e.g. `openliate serve` or deployed URL)."
                 ) from e
 
@@ -172,11 +172,11 @@ class LapiClient:
             steps=body.get("steps", []),
             execution_time_ms=body.get("latencyMs", body.get("executionTimeMs", duration_ms)),
             session_id=body.get("sessionId", session_id),
-            agent=body.get("agent", manifest.get("A", {}).get("name", "agent")),
+            agent=body.get("agent", module.get("A", {}).get("name", "agent")),
             raw=body
         )
 
-    async def arun(self, manifest: Dict[str, Any], prompt: str, session_id: Optional[str] = None) -> AgentRunResult:
+    async def arun(self, module: Dict[str, Any], prompt: str, session_id: Optional[str] = None) -> AgentRunResult:
         """
         Asynchronous run via httpx.
         """
@@ -189,7 +189,7 @@ class LapiClient:
 
         url = f"{self.endpoint}/run"
         payload = {
-            "manifest": manifest,
+            "module": module,
             "prompt": prompt
         }
         if session_id:
@@ -202,10 +202,10 @@ class LapiClient:
                 resp.raise_for_status()
                 body = resp.json()
             except httpx.HTTPStatusError as e:
-                raise RuntimeError(f"[OpenLiate LAPI Error HTTP {e.response.status_code}]: {e.response.text}") from e
+                raise RuntimeError(f"[OpenLiate API Error HTTP {e.response.status_code}]: {e.response.text}") from e
             except httpx.RequestError as e:
                 raise ConnectionError(
-                    f"[OpenLiate Connection Error]: Unable to reach LAPI engine at {self.endpoint}. "
+                    f"[OpenLiate Connection Error]: Unable to reach Liate API engine at {self.endpoint}. "
                     f"Ensure OpenLiate is running (`openliate serve` or cloud endpoint)."
                 ) from e
 
@@ -216,7 +216,7 @@ class LapiClient:
             steps=body.get("steps", []),
             execution_time_ms=body.get("latencyMs", body.get("executionTimeMs", duration_ms)),
             session_id=body.get("sessionId", session_id),
-            agent=body.get("agent", manifest.get("A", {}).get("name", "agent")),
+            agent=body.get("agent", module.get("A", {}).get("name", "agent")),
             raw=body
         )
 

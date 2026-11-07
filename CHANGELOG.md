@@ -7,12 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.1] - 2026-11-08 — Unified LIATE Specification, Decentralized Hub & 5 Layers Protocol
+
+### Unified LIATE Standard Specification (`src/core/spec.ts`)
+- **Canonical Specification**: Consolidated `ConfigManager`, `AgentManifest`, `AgentModule`, and the 5 Layers (`L · I · A · T · E`) into a single canonical source of truth at `src/core/spec.ts`.
+- **Eliminated Redundancies**: Retired obsolete `config.ts` and `types.ts`.
+- **Strict Entrypoints**: Standardized agent definitions strictly on `agent.json`, `agent.ts`, and `agent.py`.
+
+### Decentralized Hub Architecture (`openliate hub add` / `openliate add`)
+- **In-Memory Streaming Hub Add**: Implemented pure TypeScript GitHub zipball extractor in `src/cli/commands/hub.ts` using `JSZip` without external tap dependencies or Go binaries.
+- **Dynamic Branch Resolution**: Automatically resolves repository default branches (`main`, `master`, etc.) dynamically via GitHub's zipball API.
+- **Local & Remote Agent Installs**: Seamlessly installs agents from remote GitHub repos (`user/repo` or full HTTPS URL) or local paths into `hub/agents/<name>`.
+
+### Terminology & Protocol Standardization
+- **Liate API**: Standardized protocol naming from `LAPI` to official **Liate API** and **Agent Protocol Interface** across runtime routes (`/api/v1/skills`), docs, SDKs, and tests.
+- **5 Layers**: Replaced all instances of "orthogonal layers" with standard **5 Layers** architecture.
+- **Scaffolding Cleanliness**: Stripped marketing buzzwords across templates, scaffolds, and docstrings.
+
 ## [0.1.0] - 2026-11-04 — Open Source Backend Layer for AI Agents: Built for Sovereign AI Agents From India to the World
 
 ### Dynamic Skills Engine (skills.sh & Remote Resolution)
 - **Edge Dynamic Skill Resolver (`src/skills/resolver.ts`)**: Resolves `skills.sh` slugs, GitHub raw markdown, and nested category structures (`productivity`, `engineering`, `design`) on the fly with in-memory edge caching and zero disk clutter.
 - **Supply Chain Security (`SkillSecurityScanner`)**: Pre-execution AST sanitization blocking prompt injections and destructive shell commands.
-- **Skills REST LAPI (`src/routes/skills.ts`)**: Exposed `GET /lapi/v1/skills` and `POST /lapi/v1/skills/resolve` for edge agent execution.
+- **Skills REST API (`src/routes/skills.ts`)**: Exposed `GET /api/v1/skills` and `POST /api/v1/skills/resolve` for edge agent execution.
 - **Ghost Bug Elimination**: Removed spurious file creation heuristics, strictly requiring multi-line instructions or explicit markdown headers before inline evaluation.
 
 ### Universal Inline MCP & Sovereign AST
@@ -30,11 +47,11 @@ The grand milestone release establishing OpenLiate as the production-ready open-
 ### Mission & Core Doctrine
 - **Primary Tagline**: `Open Source Backend Layer for AI Agents`
 - **Mission**: `Built for Sovereign AI Agents From India to the World`
-- **Version Alignment**: 100% parity across README badges, CLI banners, LAPI runtime doctrine, and YC submission.
+- **Version Alignment**: 100% parity across README badges, CLI banners, Liate API runtime doctrine, and YC submission.
 
 ### Sovereign Indic AI Agents
 - **Sarvam AI Startup Program**: Direct integration with sovereign Indic foundation models (`sarvam-105b`) and Indic voice/text models.
-- **FastMCP Stdio Transport**: Live autonomous agent execution over FastMCP 4.1.6 and Model Context Protocol v2.
+- **MCP Transport**: Live autonomous agent execution over standard Model Context Protocol (MCP v2 stdio & HTTP/SSE).
 
 ### Complete Cloud & Serverless Infrastructure
 - **Unified Hero Entrypoint (`src/liate.ts`)**: Dual-duty single file powering both full SDK module exports and direct CLI runs (`bun run src/liate.ts run ...`).
@@ -53,7 +70,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -65,7 +82,7 @@ Major milestone closing out Phase 1 of the OpenLiate Journey, consolidating the 
 
 ### Phase 1 Consolidation
 - **The Journey So Far**: Unified the progression spanning initial core protocol definition (`0.0.1`–`0.0.10`), multi-cloud catalog infrastructure (`0.0.11`–`0.0.17`), and single hero entrypoint parity (`0.0.18`).
-- **Complete Declarative Standard (L·I·A·T·E)**: Full five-pillar manifest execution over ReAct loops, sovereign Indic foundation models, and FastMCP stdio tool bridges.
+- **Complete Declarative Standard (L·I·A·T·E)**: Full five-layer module execution over ReAct loops, sovereign Indic foundation models, and Model Context Protocol (MCP v2) tool bridges.
 - **Multi-Cloud Autonomous Execution**: Native support for ephemeral database provisioning, scheduled function executions, and branch-scoped AI gateways.
 - **Robust Quality**: 76 automated tests passing across 15 test suites with standalone precompiled native executables.
 
@@ -79,7 +96,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -92,7 +109,7 @@ Milestone establishing `src/liate.ts` as the single hero entrypoint for OpenLiat
 ### Unified Hero Entrypoint (`src/liate.ts`)
 - **Dual-Duty Architecture**: Single branded file serving both as the programmatic SDK export hub and direct execution entrypoint (`bun run src/liate.ts run ...`).
 - **Retired Generic Roots**: Fully eliminated generic `src/index.ts` in favor of the branded `src/liate.ts`.
-- **Runway Ready**: Verified end-to-end live execution with FastMCP stdio transport and Sarvam 105B reasoning.
+- **Runway Ready**: Verified end-to-end live execution with MCP v2 stdio transport and Sarvam 105B reasoning.
 
 ---
 
@@ -104,7 +121,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -117,10 +134,10 @@ Architecture and developer experience milestone establishing the dedicated `.ope
 ### Isolated Workspace Architecture (`.openliate/`)
 - **User Custom Agents (`.openliate/agents/`):**
   - `openliate create` automatically writes user-defined agents into `.openliate/agents/<name>/agent.json`.
-  - Manifest resolution in CLI (`openliate run <name>`) and Runtime Server (`POST /run`) inspects `.openliate/agents/` first before checking built-in `hub/agents/`.
+  - Module resolution in CLI (`openliate run <name>`) and Runtime Server (`POST /run`) inspects `.openliate/agents/` first before checking built-in `hub/agents/`.
   - Hub agent discovery endpoints (`GET /hub/agents`, `GET /hub/agents/:id`) dynamically list and inspect user-created agents alongside official Hub agents.
 - **Local MCP Cache & Custom Server Registry (`.openliate/mcp.json`):**
-  - Automatically initialized during `openliate join`.
+  - Automatically initialized during `openliate start`.
   - Serves as a persistent cache for MCP servers (`sarvam`, `fetch`, `agentmail`, `neon`) and allows direct registration of custom MCP tools without modifying repository hub files.
 - **Isolated Cloud Link Storage (`.openliate/link/`):**
   - Cloud credentials and OAuth tokens for Neon (`neon.json`), Vercel (`vercel.json`), and Supabase (`supabase.json`) are stored cleanly in `.openliate/link/`.
@@ -146,7 +163,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -157,10 +174,10 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 Major architecture and platform polish release establishing the OpenLiate Runtime Server, comprehensive Hub Registry API, dynamic model discovery, and clean decoupled versioning.
 
 ### OpenLiate Hub Registry API (`/hub`)
-- **Complete Hub Manifest (`GET /hub`):** Returns all available assets in the OpenLiate Hub across agents, LLMs, and MCP tools with aggregate resource counts.
+- **Complete Hub Module (`GET /hub`):** Returns all available assets in the OpenLiate Hub across agents, LLMs, and MCP tools with aggregate resource counts.
 - **Granular Hub Endpoints:**
   - `GET /hub/agents` and `GET /agents`: Lists all pre-configured autonomous agents with models, versions, and intents.
-  - `GET /hub/agents/:id` and `GET /agents/:id`: Returns the full parsed manifest (`agent.json`) for individual inspection.
+  - `GET /hub/agents/:id` and `GET /agents/:id`: Returns the full parsed module (`agent.json`) for individual inspection.
   - `GET /hub/llm` and `GET /hub/models`: Dynamic catalog of sovereign LLM definitions.
   - `GET /hub/mcp` and `GET /hub/tools`: Dynamic catalog of Model Context Protocol tool servers.
 
@@ -170,13 +187,13 @@ Major architecture and platform polish release establishing the OpenLiate Runtim
 - **Cloud Orchestration Updates:** Updated Neon, Vercel, and Supabase deployment handlers to `deployRuntime` and `dist/runtime`.
 
 ### Dynamic Layer [L] & Neon AI Gateway
-- **Zero Model Hardcoding:** Removed all hardcoded model arrays and fallback strings; dynamically resolves models via `hub/llm/*.json`.
+- **Zero Model Hardcoding:** Removed all hardcoded model arrays and default strings; dynamically resolves models via `hub/llm/*.json`.
 - **Official Neon AI Gateway (`hub/llm/neon.json`):** Integrated native Neon AI Gateway model definitions with branch-scoped bearer authentication.
 - **Dynamic Routing:** Requests across `/chat` and `/v1/chat/completions` route dynamically through `LLMRouter` with generic header forwarding.
 
 ### Clean Naming & Decoupled Versioning
 - **Zero-Alias Architecture:** Eliminated legacy aliases (`LiateMcp`, `createEngineApp`). Exposes pure, modern APIs: `Agent`, `createAgent`, `create`, `MCP`, and `createRuntimeApp`.
-- **Decoupled Agent Manifest Lifecycle:** OpenLiate release version (`0.0.16`) is maintained in `package.json` and `src/core/version.ts`, while individual agent manifests (`hub/agents/*/agent.json`, root `agent.json`) manage their own versioning starting at `0.0.1`.
+- **Decoupled Agent Module Lifecycle:** OpenLiate release version (`0.0.16`) is maintained in `package.json` and `src/core/version.ts`, while individual agent modules (`hub/agents/*/agent.json`, root `agent.json`) manage their own versioning starting at `0.0.1`.
 - **Dynamic Agent MCP Exposer:** `createAgentMcpServer(agent)` dynamically exposes the agent's individual version (`agent.version || "0.0.1"`).
 - **Brand Harmonization:** Unified `OpenLiate` casing across all terminal banners, deployment logs, and docstrings.
 
@@ -194,7 +211,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -230,7 +247,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -247,7 +264,7 @@ Major public milestone establishing the open-source backend layer for sovereign 
 
 ### Brand Unification & System-Level Configuration
 - **Brand Unification:** Unified brand identity strictly as **OpenLiate** across all cloud endpoints, CLI binaries, OAuth 2.1 metadata, and health checks.
-- **System-Level `.openliate` Configuration:** Global configuration stored in `~/.openliate/config.json` with multi-project fallback, eliminating duplicate API key prompts.
+- **System-Level `.openliate` Configuration:** Global configuration stored in `~/.openliate/config.json` with multi-project resolution, eliminating duplicate API key prompts.
 - **Direct Unscoped Package:** Distributed as `openliate` with `openliate` and `liate` dual binary aliases.
 - **Neon Function Triggers:** Native integration with Neon Postgres for scale-to-zero scheduled background cron triggers.
 - **OpenLiate Brand Standardization:** Unified brand identity across all cloud endpoints, CLI binaries, OAuth 2.1 metadata, and health checks (`@openliate/liate`).
@@ -263,7 +280,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -275,10 +292,10 @@ Complete developer documentation and architecture specification suite.
 
 ### Comprehensive Mintlify Documentation (`docs.openliate.tech`)
 - **Full Architecture Suite:** 20 in-depth MDX documentation pages covering:
-  - **Doctrine & Manifesto:** *"Class is an Agent. Agent is a Function. Function is an API."*
+  - **Doctrine & Philosophy:** *"Class is an Agent. Agent is a Function. Function is an API."*
   - **The 5 Architectural Layers:** Large Models (`[L]`), Integration Memory (`[I]`), Agent ReAct Loop (`[A]`), Tools & MCP (`[T]`), and Environment Sandbox (`[E]`).
-  - **Runtime & Execution Guides:** Quickstart, Agent Unified Manifest (AUM) specification, CLI reference, and Docker deployment.
-  - **LAPI REST API Reference:** Full OpenAPI-style endpoint documentation for `/health`, `/agents`, and `/run`.
+  - **Runtime & Execution Guides:** Quickstart, Agent Unified Module (AUM) specification, CLI reference, and Docker deployment.
+  - **Liate API REST Reference:** Full OpenAPI-style endpoint documentation for `/health`, `/agents`, and `/run`.
 
 ---
 
@@ -290,7 +307,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -322,22 +339,22 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
 ---
 
-## [0.0.7] - 2026-10-31 — LAPI Pure Engine Server and Sovereign Identity
+## [0.0.7] - 2026-10-31 — Liate API Pure Engine Server and Sovereign Identity
 
 High-performance HTTP server interface and Indian sovereign compliance verification.
 
-### LAPI Engine Server (`liate serve`)
-- **Liate Agent Protocol Interface (LAPI):** High-performance HTTP server (`src/server/engine.ts`) built on Hono.
+### Liate API Engine Server (`openliate serve`)
+- **Agent Protocol Interface (Liate API):** High-performance HTTP server built on Hono.
 - **Endpoints:**
-  - `GET /health`: Engine status, version, LAPI protocol specifications, and core doctrine.
+  - `GET /health`: Engine status, version, Liate API protocol specifications, and core doctrine.
   - `GET /agents`: Auto-discovers and lists pre-configured agents from Liate Hub.
-  - `POST /run`: Executes agents on the fly from raw prompts or declarative manifests with session-based memory retention.
+  - `POST /run`: Executes agents on the fly from raw prompts or declarative modules with session-based memory retention.
 
 ### Sovereign Identity Verification
 - **Aadhaar & PAN Verification Tool (`src/tools/builtin/identity.ts`):** Indian Sovereign Aadhaar 12-digit Verhoeff checksum algorithm and Income Tax Department PAN format classifier with automatic credential masking.
@@ -352,7 +369,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -362,13 +379,13 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 
 Autonomous execution CLI runner and OpenLiate Hub pre-built reference agents.
 
-- **Unified CLI Runner (`src/cli.ts`):** Single hero command `liate run <agent.json|agent-name> "<prompt>"` that executes any local manifest or Hub agent.
+- **Unified CLI Runner (`src/cli.ts`):** Single hero command `liate run <agent.json|agent-name> "<prompt>"` that executes any local module or Hub agent.
 - **Liate Hub Agents (`hub/agents/`):** Pre-configured reference agents ready to run out of the box:
   - `research-agent`: Web research and markdown content extraction via `mcp:fetch`.
   - `email-agent`: Autonomous inbox and thread management via `mcp:agentmail`.
   - `identity-agent`: Indian sovereign Aadhaar (Verhoeff checksum) and PAN verification.
   - `general-agent`: Core architecture and reasoning agent.
-- **Automatic Manifest Resolution:** Seamlessly resolves manifest files by path or agent name from `hub/agents/`.
+- **Automatic Module Resolution:** Seamlessly resolves module files by path or agent name from `hub/agents/`.
 - **Automatic .env Discovery:** CLI boots and expands environment variables without manual shell exports.
 
 ---
@@ -381,7 +398,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -391,8 +408,8 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 
 Environment secrets, sandbox guardrails, and automated configuration discovery.
 
-- **Automated .env Loader (`EnvironmentResolver.loadEnv`):** Scans working directory, manifest directory, parent directories, and home directory (`~/.liate/.env`) with zero external dependencies.
-- **Dynamic Secret Expansion:** Safely interpolates `$VAR` syntax in manifests and MCP configs at runtime.
+- **Automated .env Loader (`EnvironmentResolver.loadEnv`):** Scans working directory, module directory, parent directories, and home directory (`~/.liate/.env`) with zero external dependencies.
+- **Dynamic Secret Expansion:** Safely interpolates `$VAR` syntax in modules and MCP configs at runtime.
 - **Secret Masking:** Automatically masks sensitive API keys in logs and traces (`sk_l***5678`).
 - **Sandbox Guardrails:** Configurable network domain allowlisting (`allowedDomains`), timeouts, and network isolation toggles.
 
@@ -406,7 +423,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -435,7 +452,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -460,7 +477,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -485,7 +502,7 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 - **$350 Developer Runway**: Unified $250 serverless compute credits + $100 AI Gateway grant powering zero-cost autonomous agent development.
 - **Official AI Gateway Integration**: Installed `@neon/ai-sdk-provider` and `ai` into the OpenLiate catalog (`src/catalog/neon/gateway.ts`), exposing `Neon.gateway()` and `Neon.ai()`.
 - **63-Model Branch-Scoped Routing**: Live model discovery and routing covering Anthropic Claude 5.5, OpenAI GPT-5.4/6, Google Gemini 3/4, DeepSeek, and Meta Llama 4.
-- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent manifest powered by `neon/gpt-5-4-nano` and Neon serverless memory.
+- **Hero Hub Agent (`hub/agents/neon-agent/agent.json`)**: Out-of-the-box declarative L·I·A·T·E agent module powered by `neon/gpt-5-4-nano` and Neon serverless memory.
 - **Project Infrastructure Declaration (`neon.ts`)**: Automated linking and deployment via `neon init` and `neon deploy`.
 - **README Alignment**: Added official **#2 Milestone** recognition for Neon Cloud alongside #1 Milestone for Sarvam AI.
 
@@ -493,8 +510,8 @@ Major milestone unlocking the Neon AI Gateway across 63 frontier models and serv
 
 ## [0.0.1] - 2026-10-29 — [L] Large Models & Core LIATE Architecture
 
-Initial architectural foundation defining the sovereign agent manifest and LLM inference abstraction.
+Initial architectural foundation defining the sovereign agent module and LLM inference abstraction.
 
-- **Agent Unified Manifest (AUM):** Formally defined the 5-element schema: `L · I · A · T · E`.
+- **Agent Unified Module (AUM):** Formally defined the 5-element schema: `L · I · A · T · E`.
 - **Sarvam AI & OpenAI Compatible Provider:** Pluggable LLM interface supporting local and cloud inference with system prompt injection and streaming capabilities.
 - **Monorepo Structure:** Zero-dependency standalone TypeScript design compiling to standalone binaries via Bun.

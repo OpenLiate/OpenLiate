@@ -2,8 +2,10 @@ import { createRuntimeApp } from "../src/cloud/runtime/hono";
 import { Agent } from "../src/layers/agent/harness";
 import { UniversalLlmClient } from "../src/layers/llm/model";
 
-const SARVAM_KEY = process.env.SARVAM_API_KEY || "sk_rovev9gc_536gQwrqAm7S6iZMTL9mtLyG";
-process.env.SARVAM_API_KEY = SARVAM_KEY;
+const SARVAM_KEY = process.env.SARVAM_API_KEY || "";
+if (!SARVAM_KEY) {
+  console.warn("[Notice] SARVAM_API_KEY is not set. Live LLM phases will be skipped or mock-tested.");
+}
 
 async function runBenchmark() {
   console.log("===========================================================");
@@ -25,7 +27,7 @@ async function runBenchmark() {
   // -------------------------------------------------------------
   // Test 2: Live In-Memory Web Standards Request / Health Check
   // -------------------------------------------------------------
-  console.log("[Phase 2] Web Standards Request Throughput (LAPI /health)...");
+  console.log("[Phase 2] Web Standards Request Throughput (Liate API /health)...");
   const pingStart = performance.now();
   const healthRes = await app.fetch(new Request("http://localhost/health"));
   const pingEnd = performance.now();
@@ -36,95 +38,102 @@ async function runBenchmark() {
   // -------------------------------------------------------------
   // Test 3: Real Sarvam 105b Live LLM Call (Zero Simulation)
   // -------------------------------------------------------------
-  console.log("[Phase 3] Live Model Invocation: Sarvam 105b (api.sarvam.ai)...");
-  const client = new UniversalLlmClient(SARVAM_KEY);
-  const prompt = "Explain in 2 short bullet points why sovereign AI models are critical for India.";
-  
-  const llmStart = performance.now();
-  let llmResponse: any;
-  try {
-    llmResponse = await client.chat([
-      { role: "system", content: "You are a sovereign AI assistant powered by OpenLiate." },
-      { role: "user", content: prompt }
-    ], {
-      model: "sarvam-105b",
-      apiKey: SARVAM_KEY,
-      temperature: 0.2,
-      maxTokens: 512
-    });
-  } catch (err: any) {
-    console.error("  Sarvam Live API Error:", err.message);
-    throw err;
-  }
-  const llmEnd = performance.now();
-  const llmDuration = (llmEnd - llmStart).toFixed(2);
+  if (SARVAM_KEY) {
+    console.log("[Phase 3] Live Model Invocation: Sarvam 105b (api.sarvam.ai)...");
+    const client = new UniversalLlmClient(SARVAM_KEY);
+    const prompt = "Explain in 2 short bullet points the benefits of fast edge AI models.";
+    
+    const llmStart = performance.now();
+    let llmResponse: any;
+    try {
+      llmResponse = await client.chat([
+        { role: "system", content: "You are an AI assistant powered by OpenLiate." },
+        { role: "user", content: prompt }
+      ], {
+        model: "sarvam-105b",
+        apiKey: SARVAM_KEY,
+        temperature: 0.2,
+        maxTokens: 512
+      });
+    } catch (err: any) {
+      console.error("  Sarvam Live API Error:", err.message);
+      throw err;
+    }
+    const llmEnd = performance.now();
+    const llmDuration = (llmEnd - llmStart).toFixed(2);
 
-  console.log(`  Model: ${llmResponse.model}`);
-  console.log(`  Latency: ${llmDuration} ms`);
-  if (llmResponse.usage) {
-    console.log(`  Tokens: Prompt: ${llmResponse.usage.promptTokens}, Completion: ${llmResponse.usage.completionTokens}, Total: ${llmResponse.usage.totalTokens}`);
-    const tps = ((llmResponse.usage.completionTokens / (parseFloat(llmDuration) / 1000))).toFixed(1);
-    console.log(`  Throughput: ~${tps} tokens/sec`);
+    console.log(`  Model: ${llmResponse.model}`);
+    console.log(`  Latency: ${llmDuration} ms`);
+    if (llmResponse.usage) {
+      console.log(`  Tokens: Prompt: ${llmResponse.usage.promptTokens}, Completion: ${llmResponse.usage.completionTokens}, Total: ${llmResponse.usage.totalTokens}`);
+      const tps = ((llmResponse.usage.completionTokens / (parseFloat(llmDuration) / 1000))).toFixed(1);
+      console.log(`  Throughput: ~${tps} tokens/sec`);
+    }
+    console.log("\n  --- Real Response from Sarvam 105b ---");
+    console.log(llmResponse.text.trim());
+    console.log("  --------------------------------------\n");
+  } else {
+    console.log("[Phase 3] Live Model Invocation: [SKIPPED] SARVAM_API_KEY is not set.\n");
   }
-  console.log("\n  --- Real Response from Sarvam 105b ---");
-  console.log(llmResponse.text.trim());
-  console.log("  --------------------------------------\n");
 
   // -------------------------------------------------------------
-  // Test 4: Live Agent Execution via LAPI POST /run (Full ReAct + I)
+  // Test 4: Live Agent Execution via Liate API POST /run (Full ReAct + I)
   // -------------------------------------------------------------
-  console.log("[Phase 4] Full Agent Execution (L·I·A·T·E Pipeline via POST /run)...");
-  const agentRunStart = performance.now();
-  const runPayload = {
-    prompt: "Who is OpenLiate and what is the sovereign vision?",
-    sessionId: "bench-session-2026",
-    agent: {
-      L: {
-        provider: "sarvam",
-        model: "sarvam-105b"
+  if (SARVAM_KEY) {
+    console.log("[Phase 4] Full Agent Execution (L·I·A·T·E Pipeline via POST /run)...");
+    const agentRunStart = performance.now();
+    const runPayload = {
+      prompt: "Who is OpenLiate and what is its architecture?",
+      sessionId: "bench-session-2026",
+      agent: {
+        L: {
+          provider: "sarvam",
+          model: "sarvam-105b"
+        },
+        I: {
+          knowledge: [
+            "OpenLiate is the open source backend layer for AI agents.",
+            "Architecture: 5 Layers (L·I·A·T·E: Model, Knowledge, Harness, Tools, Sandbox)."
+          ]
+        },
+        A: {
+          name: "indic_agent",
+          intent: "AI benchmark agent",
+          maxSteps: 3
+        },
+        T: [],
+        E: {
+          SARVAM_API_KEY: SARVAM_KEY
+        }
       },
-      I: {
-        knowledge: [
-          "OpenLiate is the sovereign open source backend layer for AI agents.",
-          "Mission: Enable AI agents to run on sovereign cloud infrastructure from India to the world.",
-          "Architecture: 5 Orthogonal Layers (Model, Knowledge, Harness, Tools, Sandbox)."
-        ]
-      },
-      A: {
-        name: "indic_agent",
-        intent: "Sovereign AI benchmark agent",
-        maxSteps: 3
-      },
-      T: [],
-      E: {
+      keys: {
         SARVAM_API_KEY: SARVAM_KEY
       }
-    },
-    keys: {
-      SARVAM_API_KEY: SARVAM_KEY
-    }
-  };
+    };
 
-  const runRes = await app.fetch(new Request("http://localhost/run", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SARVAM_KEY}`
-    },
-    body: JSON.stringify(runPayload)
-  }));
+    const runRes = await app.fetch(new Request("http://localhost/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SARVAM_KEY}`
+      },
+      body: JSON.stringify(runPayload)
+    }));
 
-  const agentRunEnd = performance.now();
-  const runDuration = (agentRunEnd - agentRunStart).toFixed(2);
-  const runResult = await runRes.json() as any;
+    const agentRunEnd = performance.now();
+    const runDuration = (agentRunEnd - agentRunStart).toFixed(2);
+    const runResult = await runRes.json() as any;
 
-  console.log(`  Agent: ${runResult.agent}`);
-  console.log(`  Execution Status: ${runResult.success ? "SUCCESS" : "FAILED"}`);
-  console.log(`  Total Execution Latency: ${runDuration} ms`);
-  console.log(`  Steps Executed: ${runResult.totalSteps || 1}`);
-  console.log("\n  --- Agent Run Result ---");
-  console.log(runResult.text || runResult.thought || JSON.stringify(runResult));
-  console.log("  ------------------------\n");
+    console.log(`  Agent: ${runResult.agent}`);
+    console.log(`  Execution Status: ${runResult.success ? "SUCCESS" : "FAILED"}`);
+    console.log(`  Total Execution Latency: ${runDuration} ms`);
+    console.log(`  Steps Executed: ${runResult.totalSteps || 1}`);
+    console.log("\n  --- Agent Run Result ---");
+    console.log(runResult.text || runResult.thought || JSON.stringify(runResult));
+    console.log("  ------------------------\n");
+  } else {
+    console.log("[Phase 4] Full Agent Execution: [SKIPPED] SARVAM_API_KEY is not set.\n");
+  }
 
   // -------------------------------------------------------------
   // Test 5: Memory & Resource Overhead

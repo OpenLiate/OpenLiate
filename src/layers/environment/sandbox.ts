@@ -2,11 +2,11 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import type { SandboxConfig } from "./types";
-import { ConfigManager } from "../../core/config";
+import { ConfigManager } from "../../core/spec";
 
 export class EnvironmentResolver {
   /**
-   * Automatically loads .env and .env.local files from cwd, manifest dir, parent dirs, and home dir
+   * Automatically loads .env and .env.local files from cwd, module dir, parent dirs, and home dir
    */
   public static loadEnv(targetPath?: string): void {
     // 1. Load keys from ~/.openliate/config.json

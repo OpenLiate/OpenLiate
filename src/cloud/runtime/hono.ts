@@ -11,16 +11,8 @@ import type { MemoryProvider } from "../../layers/integration/types";
 import { InMemorySession } from "../../layers/integration/memory";
 import { LLMRouter, HubResolver } from "../../layers/llm/model";
 import { OPENLIATE_VERSION } from "../../core/version";
+import { resilientFetch } from "../../core/fetch.js";
 import { skillsRouter } from "../../routes/skills";
-
-// Embedded sovereign hub definitions for standalone edge isolates where fs is absent
-import sarvamHubJson from "../../../hub/llm/sarvam.json";
-import neonHubJson from "../../../hub/llm/neon.json";
-
-const embeddedLlmHub: Record<string, any> = {
-  sarvam: sarvamHubJson,
-  neon: neonHubJson
-};
 
 const globalSessionStore = new Map<string, MemoryProvider>();
 
@@ -36,7 +28,7 @@ export function createRuntimeApp() {
   app.use("*", cors());
 
   // Mount Skills Router (skills.sh & Edge Dynamic Resolver)
-  app.route("/lapi/v1/skills", skillsRouter);
+  app.route("/api/v1/skills", skillsRouter);
   app.route("/skills", skillsRouter);
 
   // Health and runtime information
@@ -45,8 +37,8 @@ export function createRuntimeApp() {
       status: "ok",
       runtime: "openliate",
       version: OPENLIATE_VERSION,
-      protocol: "LAPI/v1",
-      gateway: "Sarvam AI & Neon Cloud Grid",
+      protocol: "Liate API v1",
+      gateway: "Sarvam AI & Neon AI Gateway",
       doctrine: "OpenLiate — Built for Sovereign AI Agents From India to the World",
       uptime: typeof process !== "undefined" && typeof process.uptime === "function" ? process.uptime() : 0,
       timestamp: new Date().toISOString()
@@ -58,7 +50,7 @@ export function createRuntimeApp() {
       name: "OpenLiate",
       version: OPENLIATE_VERSION,
       status: "running",
-      gateway: "Sarvam AI & Neon Cloud Grid",
+      gateway: "Sarvam AI & Neon AI Gateway",
       doctrine: "OpenLiate — Built for Sovereign AI Agents From India to the World",
       endpoints: {
         chat: "POST /chat",
@@ -67,8 +59,8 @@ export function createRuntimeApp() {
         openliate_agents: "GET /hub/agents",
         openliate_llm: "GET /hub/llm",
         openliate_mcp: "GET /hub/mcp",
-        openliate_skills: "GET /lapi/v1/skills",
-        openliate_skills_resolve: "POST /lapi/v1/skills/resolve",
+        openliate_skills: "GET /api/v1/skills",
+        openliate_skills_resolve: "POST /api/v1/skills/resolve",
         openliate_run: "POST /run",
         health: "GET /health",
         openai_chat: "POST /v1/chat/completions",
@@ -81,57 +73,72 @@ export function createRuntimeApp() {
   // Models & Chat Routes
   // =========================================================================
 
-  const handleGetModels = (c: any) => {
+  const handleGetModels = async (c: any) => {
     const list: any[] = [];
-    let loadedFromFs = false;
+    const seenIds = new Set<string>();
 
-    try {
-      const candidateHubDirs = [
-        path.resolve(process.cwd(), "hub", "llm"),
-        path.resolve(process.cwd(), "OpenLiate", "hub", "llm"),
-        path.resolve(__dirname, "../../hub/llm"),
-        path.resolve(__dirname, "../../../hub/llm")
-      ];
-      const hubDir = candidateHubDirs.find((d) => fs.existsSync(d));
-
-      if (hubDir) {
-        const files = fs.readdirSync(hubDir).filter((f) => f.endsWith(".json"));
-        for (const file of files) {
-          try {
-            const raw = fs.readFileSync(path.join(hubDir, file), "utf-8");
-            const def = JSON.parse(raw);
-            if (Array.isArray(def.available_models)) {
-              for (const modelId of def.available_models) {
-                list.push({
-                  id: modelId,
-                  object: "model",
-                  created: 1740000000,
-                  owned_by: `${def.provider || def.name}-ai`,
-                  description: `${def.name} (${modelId}) Model`
-                });
-              }
+    // 1. Live model discovery from Sarvam AI Token Factory v2
+    const sarvamKey = (typeof process !== "undefined" && process.env) ? process.env.SARVAM_API_KEY : undefined;
+    if (sarvamKey) {
+      try {
+        const res = await resilientFetch("https://api.sarvam.ai/v2/models", {
+          headers: {
+            "api-subscription-key": sarvamKey,
+            Authorization: `Bearer ${sarvamKey}`
+          },
+          signal: AbortSignal.timeout(1500)
+        });
+        if (res.ok) {
+          const data: any = await res.json();
+          const items = Array.isArray(data) ? data : (data.data || []);
+          for (const m of items) {
+            const id = typeof m === "string" ? m : m.id;
+            if (id && !seenIds.has(id)) {
+              seenIds.add(id);
+              list.push({
+                id,
+                object: "model",
+                created: 1740000000,
+                owned_by: "sarvam-ai",
+                description: `Sarvam Token Factory v2 (${id}) Model`
+              });
             }
-          } catch {}
-        }
-        loadedFromFs = list.length > 0;
-      }
-    } catch {}
-
-    // Fall back to embedded hub if running in V8 isolate without disk access
-    if (!loadedFromFs) {
-      for (const [providerKey, def] of Object.entries(embeddedLlmHub)) {
-        if (Array.isArray(def.available_models)) {
-          for (const modelId of def.available_models) {
-            list.push({
-              id: modelId,
-              object: "model",
-              created: 1740000000,
-              owned_by: `${def.provider || providerKey}-ai`,
-              description: `${def.name || providerKey} (${modelId}) Model`
-            });
           }
         }
-      }
+      } catch {}
+    }
+
+    // 2. Live model discovery from Neon AI Gateway (branch-scoped)
+    const neonBaseUrl = (typeof process !== "undefined" && process.env) ? process.env.NEON_AI_GATEWAY_BASE_URL : undefined;
+    const neonToken = (typeof process !== "undefined" && process.env) ? process.env.NEON_AI_GATEWAY_TOKEN : undefined;
+    if (neonBaseUrl && neonToken) {
+      try {
+        const rawBase = neonBaseUrl.replace(/\/+$/, "");
+        const v1Base = rawBase.endsWith("/v1") ? rawBase : `${rawBase}/v1`;
+        const res = await resilientFetch(`${v1Base}/models`, {
+          headers: {
+            Authorization: `Bearer ${neonToken}`
+          },
+          signal: AbortSignal.timeout(1500)
+        });
+        if (res.ok) {
+          const data: any = await res.json();
+          const items = Array.isArray(data) ? data : (data.data || []);
+          for (const m of items) {
+            const id = typeof m === "string" ? m : m.id;
+            if (id && !seenIds.has(id)) {
+              seenIds.add(id);
+              list.push({
+                id,
+                object: "model",
+                created: 1740000000,
+                owned_by: "neon-ai-gateway",
+                description: `Neon AI Gateway (${id}) Model`
+              });
+            }
+          }
+        }
+      } catch {}
     }
 
     return c.json({
@@ -203,12 +210,10 @@ export function createRuntimeApp() {
       }
     }
 
-    let defaultHubDef: any = embeddedLlmHub.sarvam;
-    try {
-      defaultHubDef = HubResolver.loadLLM("sarvam");
-    } catch {}
-
-    const requestedModel = body.model || defaultHubDef.default_model;
+    const requestedModel = body.model;
+    if (!requestedModel) {
+      return c.json({ error: { message: "Missing required field 'model' in request body" } }, 400);
+    }
     const isStream = Boolean(body.stream);
 
     const router = new LLMRouter();
@@ -271,7 +276,7 @@ export function createRuntimeApp() {
         object: "chat.completion",
         created,
         model: response.model,
-        system_fingerprint: "fp_openliate_sovereign",
+        system_fingerprint: "fp_openliate",
         choices: [
           {
             index: 0,
@@ -292,7 +297,7 @@ export function createRuntimeApp() {
       return c.json(
         {
           error: {
-            message: err.message || "Sovereign gateway failed to complete request",
+            message: err.message || "Gateway failed to complete request",
             type: "api_error",
             code: 500
           }
@@ -341,18 +346,20 @@ export function createRuntimeApp() {
           const dirs = fs.readdirSync(dir, { withFileTypes: true });
           for (const d of dirs) {
             if (d.isDirectory() && !seenIds.has(d.name)) {
-              const manifestPath = path.join(dir, d.name, "agent.json");
-              if (fs.existsSync(manifestPath)) {
+              const modulePath = path.join(dir, d.name, "agent.json");
+              if (fs.existsSync(modulePath)) {
                 try {
-                  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+                  const module = JSON.parse(fs.readFileSync(modulePath, "utf-8"));
                   seenIds.add(d.name);
                   agents.push({
                     id: d.name,
-                    name: manifest.A?.name || manifest.name || d.name,
-                    version: manifest.A?.version || manifest.version || "0.0.1",
-                    intent: manifest.A?.intent || manifest.intent || "",
-                    model: typeof manifest.L === "string" ? manifest.L : (manifest.L?.model || manifest.L?.provider || ""),
-                    tools: Array.isArray(manifest.T) ? manifest.T : []
+                    name: module.A?.name || module.name || d.name,
+                    version: module.A?.version || module.version || "0.0.1",
+                    intent: module.A?.intent || module.intent || "",
+                    model: typeof module.L === "string" ? module.L : (module.L?.model || module.L?.provider || ""),
+                    tools: Array.isArray(module.T)
+                      ? module.T
+                      : (module.T && typeof module.T === "object" ? Object.keys(module.T) : [])
                   });
                 } catch {}
               }
@@ -367,43 +374,17 @@ export function createRuntimeApp() {
 
   function getHubLLMs() {
     const llms: any[] = [];
-    let loadedFromFs = false;
-
-    try {
-      const hubDir = resolveHubDir("llm");
-      if (hubDir && fs.existsSync(hubDir)) {
-        const files = fs.readdirSync(hubDir).filter((f) => f.endsWith(".json"));
-        for (const f of files) {
-          try {
-            const filePath = path.join(hubDir, f);
-            const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-            llms.push({
-              id: data.provider || data.name || path.basename(f, ".json"),
-              name: data.name || data.provider,
-              version: data.version,
-              default_model: data.default_model,
-              available_models: data.available_models || [],
-              features: data.features || {}
-            });
-          } catch {}
-        }
-        loadedFromFs = llms.length > 0;
-      }
-    } catch {}
-
-    if (!loadedFromFs) {
-      for (const [k, data] of Object.entries(embeddedLlmHub)) {
-        llms.push({
-          id: data.provider || data.name || k,
-          name: data.name || data.provider,
-          version: data.version,
-          default_model: data.default_model,
-          available_models: data.available_models || [],
-          features: data.features || {}
-        });
-      }
+    const gateways = HubResolver.getBuiltinGateways();
+    for (const [k, data] of Object.entries(gateways)) {
+      llms.push({
+        id: data.provider || data.name || k,
+        name: data.name || data.provider,
+        version: data.version,
+        endpoint: data.endpoint,
+        models_endpoint: data.models_endpoint,
+        features: data.features || {}
+      });
     }
-
     return llms;
   }
 
@@ -453,7 +434,7 @@ export function createRuntimeApp() {
   app.get("/hub/agents", handleGetAgents);
   app.get("/agents", handleGetAgents);
 
-  // 3. Hub Agent by ID (Inspect Manifest)
+  // 3. Hub Agent by ID (Inspect Module)
   const handleGetAgentById = (c: any) => {
     const id = c.req.param("id");
     try {
@@ -462,14 +443,14 @@ export function createRuntimeApp() {
         path.resolve(process.cwd(), "OpenLiate", ".openliate", "agents", id, "agent.json"),
         path.join(resolveHubDir("agents"), id, "agent.json")
       ];
-      const manifestPath = candidatePaths.find((p) => fs.existsSync(p));
-      if (!manifestPath) {
+      const modulePath = candidatePaths.find((p) => fs.existsSync(p));
+      if (!modulePath) {
         return c.json({ error: `Agent '${id}' not found in .openliate/agents/ or hub/agents/` }, 404);
       }
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-      return c.json({ id, manifest });
+      const module = JSON.parse(fs.readFileSync(modulePath, "utf-8"));
+      return c.json({ id, module });
     } catch (err: any) {
-      return c.json({ error: `Failed to read manifest for '${id}': ${err.message}` }, 500);
+      return c.json({ error: `Failed to read module for '${id}': ${err.message}` }, 500);
     }
   };
   app.get("/hub/agents/:id", handleGetAgentById);
@@ -509,7 +490,7 @@ export function createRuntimeApp() {
     const onTheFlyKeys: Record<string, string> = {};
 
     // First, load any direct literal values from E (skipping $VAR references)
-    const rawE = { ...(body.E || {}), ...(body.agent?.E || {}), ...(body.manifest?.E || {}) };
+    const rawE = { ...(body.E || {}), ...(body.agent?.E || {}), ...(body.module?.E || {}) };
     for (const [k, v] of Object.entries(rawE)) {
       if (typeof v === "string" && !v.startsWith("$") && v) {
         onTheFlyKeys[k] = v;
@@ -538,16 +519,22 @@ export function createRuntimeApp() {
       }
     }
 
-    // 2. Resolve Agent Manifest (On-The-Fly Object or Path)
-    let manifestPath: string | null = null;
-    let inlineManifest: any = null;
+    // 2. Resolve Agent Module (On-The-Fly Object or Path)
+    let modulePath: string | null = null;
+    let inlineModule: any = null;
+
+    if (body.manifest) {
+      return c.json({
+        error: "[OpenLiate Error]: 'manifest' has been permanently retired. Declare your agent specification as 'module' (AUM) or 'agent'."
+      }, 400);
+    }
 
     if (body.agent && typeof body.agent === "object") {
-      inlineManifest = body.agent;
-    } else if (body.manifest && typeof body.manifest === "object") {
-      inlineManifest = body.manifest;
+      inlineModule = body.agent;
+    } else if (body.module && typeof body.module === "object") {
+      inlineModule = body.module;
     } else if (body.L) {
-      inlineManifest = body;
+      inlineModule = body;
     } else if (typeof body.agent === "string") {
       try {
         const candidates = [
@@ -568,13 +555,13 @@ export function createRuntimeApp() {
           if (fs.existsSync(p)) {
             const stat = fs.statSync(p);
             if (stat.isFile()) {
-              manifestPath = p;
+              modulePath = p;
               break;
             }
             if (stat.isDirectory()) {
               const sub = path.join(p, "agent.json");
               if (fs.existsSync(sub)) {
-                manifestPath = sub;
+                modulePath = sub;
                 break;
               }
             }
@@ -583,7 +570,7 @@ export function createRuntimeApp() {
       } catch {}
     }
 
-    if (!manifestPath && !inlineManifest) {
+    if (!modulePath && !inlineModule) {
       try {
         const defaultCandidates = [
           path.resolve(process.cwd(), "agent.json"),
@@ -592,14 +579,14 @@ export function createRuntimeApp() {
         ];
         for (const p of defaultCandidates) {
           if (fs.existsSync(p)) {
-            manifestPath = p;
+            modulePath = p;
             break;
           }
         }
       } catch {}
     }
 
-    if (!manifestPath && !inlineManifest) {
+    if (!modulePath && !inlineModule) {
       return c.json(
         {
           error: "Missing agent definition. Provide an on-the-fly agent object (L·I·A·T·E) or valid agent path."
@@ -612,8 +599,8 @@ export function createRuntimeApp() {
     const sessionId =
       body.sessionId ||
       body.session ||
-      inlineManifest?.I?.sessionId ||
-      inlineManifest?.I?.session;
+      inlineModule?.I?.sessionId ||
+      inlineModule?.I?.session;
 
     let sessionMemory: MemoryProvider | undefined;
     if (sessionId) {
@@ -638,20 +625,20 @@ export function createRuntimeApp() {
     }
 
     // 4. Load environment & execute
-    if (manifestPath) {
+    if (modulePath) {
       try {
-        EnvironmentResolver.loadEnv(manifestPath);
+        EnvironmentResolver.loadEnv(modulePath);
       } catch {}
     }
 
     const t0 = Date.now();
     try {
-      if (inlineManifest) {
-        inlineManifest.keys = { ...onTheFlyKeys };
+      if (inlineModule) {
+        inlineModule.keys = { ...onTheFlyKeys };
       }
-      const agent = inlineManifest
-        ? new Agent({ manifest: inlineManifest, memory: sessionMemory })
-        : new Agent({ manifest: manifestPath!, memory: sessionMemory });
+      const agent = inlineModule
+        ? new Agent({ module: inlineModule, memory: sessionMemory })
+        : new Agent({ module: modulePath!, memory: sessionMemory });
 
       const result = await agent.run(prompt);
       const latencyMs = Date.now() - t0;
@@ -666,7 +653,7 @@ export function createRuntimeApp() {
         model: result.model,
         totalSteps: result.totalSteps,
         latencyMs,
-        protocol: "LAPI/v1"
+        protocol: "Liate API v1"
       });
     } catch (err: any) {
       return c.json(

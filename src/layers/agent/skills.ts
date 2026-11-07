@@ -171,7 +171,7 @@ export class SkillsResolver {
   /**
    * Resolves a skill reference synchronously from local files, workspace, or cache
    */
-  public static resolveSkill(skillRef: string, manifestBaseDir: string = process.cwd()): ResolvedSkill | null {
+  public static resolveSkill(skillRef: string, moduleBaseDir: string = process.cwd()): ResolvedSkill | null {
     let trimmed = skillRef.trim();
     if (!trimmed) return null;
 
@@ -186,7 +186,7 @@ export class SkillsResolver {
 
     // 1. Direct file path & Hub check
     const candidatePaths = [
-      path.resolve(manifestBaseDir, trimmed),
+      path.resolve(moduleBaseDir, trimmed),
       path.resolve(process.cwd(), trimmed),
       path.resolve(process.cwd(), ".openliate", "skills", trimmed, "SKILL.md"),
       path.resolve(process.cwd(), ".openliate", "skills", `${trimmed}.md`),
@@ -194,9 +194,9 @@ export class SkillsResolver {
       path.resolve(process.cwd(), ".openliate", "skills", "cache", `${trimmed.replace(/[^a-zA-Z0-9_.-]/g, "_")}.md`),
       path.resolve(os.homedir(), ".openliate", "skills", trimmed, "SKILL.md"),
       path.resolve(os.homedir(), ".openliate", "skills", `${trimmed}.md`),
-      path.resolve(manifestBaseDir, "skills", trimmed, "SKILL.md"),
-      path.resolve(manifestBaseDir, "skills", `${trimmed}.md`),
-      path.resolve(manifestBaseDir, `${trimmed}.md`),
+      path.resolve(moduleBaseDir, "skills", trimmed, "SKILL.md"),
+      path.resolve(moduleBaseDir, "skills", `${trimmed}.md`),
+      path.resolve(moduleBaseDir, `${trimmed}.md`),
       path.resolve(process.cwd(), "hub", "skills", trimmed, "SKILL.md"),
       path.resolve(process.cwd(), "hub", "skills", `${trimmed}.md`),
       path.resolve(process.cwd(), "OpenLiate", "hub", "skills", trimmed, "SKILL.md"),
@@ -260,8 +260,8 @@ export class SkillsResolver {
   /**
    * Resolves a skill asynchronously, fetching from skills.sh or GitHub raw if not found locally
    */
-  public static async resolveSkillAsync(skillRef: string, manifestBaseDir: string = process.cwd()): Promise<ResolvedSkill | null> {
-    const local = this.resolveSkill(skillRef, manifestBaseDir);
+  public static async resolveSkillAsync(skillRef: string, moduleBaseDir: string = process.cwd()): Promise<ResolvedSkill | null> {
+    const local = this.resolveSkill(skillRef, moduleBaseDir);
     if (local) return local;
 
     let trimmed = skillRef.trim();
@@ -347,7 +347,7 @@ export class SkillsResolver {
         }
       } catch {}
 
-      // 2b. Fallback to GitHub raw candidate URLs
+      // 2b. Resolve from GitHub raw candidate URLs
       const skillName = subSkill || (idParts.length > 2 ? idParts.slice(2).join("/") : repo);
       const candidateUrls: string[] = [];
 
@@ -419,7 +419,7 @@ export class SkillsResolver {
    */
   public static compileSkills(
     skills?: string | string[],
-    manifestBaseDir: string = process.cwd()
+    moduleBaseDir: string = process.cwd()
   ): string {
     if (!skills) return "";
 
@@ -427,7 +427,7 @@ export class SkillsResolver {
     const resolvedSkills: ResolvedSkill[] = [];
 
     for (const ref of skillList) {
-      const res = this.resolveSkill(ref, manifestBaseDir);
+      const res = this.resolveSkill(ref, moduleBaseDir);
       if (res && res.content) {
         if (res.audit && res.audit.status === "block") {
           console.warn(`[Skills Security] BLOCKED unsafe skill "${res.name}":`, res.audit.issues);
@@ -451,7 +451,7 @@ export class SkillsResolver {
    */
   public static async compileSkillsAsync(
     skills?: string | string[],
-    manifestBaseDir: string = process.cwd()
+    moduleBaseDir: string = process.cwd()
   ): Promise<string> {
     if (!skills) return "";
 
@@ -459,7 +459,7 @@ export class SkillsResolver {
     const resolvedSkills: ResolvedSkill[] = [];
 
     for (const ref of skillList) {
-      const res = await this.resolveSkillAsync(ref, manifestBaseDir);
+      const res = await this.resolveSkillAsync(ref, moduleBaseDir);
       if (res && res.content) {
         if (res.audit && res.audit.status === "block") {
           console.warn(`[Skills Security] BLOCKED unsafe skill "${res.name}":`, res.audit.issues);

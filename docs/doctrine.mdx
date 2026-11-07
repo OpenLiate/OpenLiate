@@ -12,7 +12,7 @@ OpenLiate is structured around four fundamental architectural principles:
 1. Class is an Agent.
 2. Agent is a Function.
 3. Function is an API.
-4. LAPI is Your Backend.
+4. Liate API is Your Backend.
 ```
 
 ---
@@ -46,7 +46,7 @@ When invoked, the entire agent class collapses into a single, callable, pure fun
 import { Agent } from "openliate";
 
 const agent = new Agent({
-  manifest: "agent.json"
+  module: "agent.json"
 });
 
 const result = await agent.run({
@@ -63,15 +63,15 @@ console.log(result.output);
 
 Every agent function can be seamlessly exported as a network service without writing boilerplate router code. 
 
-By passing the agent to the LAPI server, the function is automatically mounted as an HTTP microservice with built-in CORS, error handling, and parameter validation.
+By passing the agent to the Liate API server, the function is automatically mounted as an HTTP microservice with built-in CORS, error handling, and parameter validation.
 
 ---
 
-## 4. LAPI is Your Backend
+## 4. Agent Protocol Interface (Liate API) is Your Backend
 
-The **Liate Agent Protocol Interface (LAPI)** acts as the headless backend for modern AI applications. 
+The **Agent Protocol Interface (Liate API)** acts as the headless backend for modern AI applications. 
 
-Frontends (Next.js, React, mobile apps, or voice clients) interact directly with LAPI endpoints:
+Frontends (Next.js, React, mobile apps, or voice clients) interact directly with Liate API endpoints:
 * **`GET /health`** — Verify engine readiness and active doctrine.
 * **`GET /agents`** — Query the agent registry in the local Hub.
 * **`POST /run`** — Execute any agent dynamically with UUIDv7 monotonic session tracking.

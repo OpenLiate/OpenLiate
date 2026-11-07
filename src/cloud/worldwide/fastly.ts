@@ -19,7 +19,7 @@ export interface FastlyTokenData {
 
 export class FastlyLink {
   public static getTokenPath(): string {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true });
@@ -54,7 +54,7 @@ export class FastlyLink {
   }
 
   public static loadSavedToken(): FastlyTokenData | null {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       const p = path.join(configDir, "fastly.json");
       if (fs.existsSync(p)) {
@@ -121,7 +121,7 @@ export class FastlyLink {
     }
     fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
 
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       return;
     }
@@ -156,7 +156,7 @@ export class FastlyLink {
   }
 
   public static clearSavedToken(): void {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       try {
         const p = path.join(configDir, "fastly.json");
@@ -297,7 +297,7 @@ export class FastlyLink {
  */
 export async function runFastlyLinkFlow(key?: string): Promise<string> {
   console.log(`\n===========================================================`);
-  console.log(`  Fastly Edge Cloud Compute (10M Monthly Runs · WASM Engine)`);
+  console.log(`  Fastly Compute (WASM Engine)`);
   console.log(`===========================================================\n`);
 
   let token = key || process.env.FASTLY_API_TOKEN;
@@ -485,8 +485,10 @@ export async function deployFastly(options: { agent?: string; serviceId?: string
     }
   } catch {}
 
+  const baseUrl = `https://${domain}`;
+  const healthUrl = `https://${domain}/health`;
   const runEndpoint = `https://${domain}/run`;
-  const runtimeUrl = `https://${domain}/${slug}/run`;
+  const runtimeUrl = `https://${domain}/${slug}`;
 
   // Persist deployment to .openliate/deployments/fastly.json
   const deployRecord = {
@@ -496,6 +498,8 @@ export async function deployFastly(options: { agent?: string; serviceId?: string
     uuid7,
     slug,
     domain,
+    url: baseUrl,
+    healthUrl,
     runtimeUrl,
     runEndpoint,
     deployedAt: new Date().toISOString()
@@ -513,15 +517,13 @@ export async function deployFastly(options: { agent?: string; serviceId?: string
   console.log("OpenLiate Runtime deployed live to Fastly Compute!");
   console.log(`Deployment: ${slug} (UUIDv7: ${uuid7})`);
   console.log(`Service ID: ${serviceId}`);
-  console.log(`Endpoint:   https://${domain}`);
-  console.log(`Unique URL: ${runtimeUrl}`);
-  console.log(`Compute:    Fastly WASM (Wasmtime Lucet Edge Isolates)`);
-  console.log(`Capacity:   10,000,000 Free AI Agent Runs / Month`);
-  console.log(`Anycast:    300+ Points of Presence Worldwide (<10ms global latency)`);
+  console.log(`Endpoint:   ${baseUrl}`);
+  console.log(`Health:     ${healthUrl}`);
+  console.log(`Compute:    Fastly WASM Compute (10M runs/mo · Wasmtime Lucet Edge Isolates)`);
   console.log("Tooling:    Remote MCP & Fastly MCP Server Enabled");
   console.log("===========================================================\n");
 
-  console.log("How to run your agent on Fastly Edge Grid:\n");
+  console.log("How to run your agent on Fastly Compute:\n");
   console.log(`  curl -X POST ${runtimeUrl} \\`);
   console.log(`    -H "Content-Type: application/json" \\`);
   console.log(`    -d '{"prompt": "Hello Fastly Edge Agent!"}'\n`);

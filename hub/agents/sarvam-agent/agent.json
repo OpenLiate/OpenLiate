@@ -6,7 +6,7 @@
   "A": {
     "name": "sarvam_agent",
     "version": "0.0.1",
-    "intent": "Autonomous Sovereign Indic AI Agent powered by Sarvam 105B",
+    "intent": "Indic AI Agent powered by Sarvam 105B",
     "maxSteps": 5
   },
   "T": [],

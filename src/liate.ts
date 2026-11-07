@@ -1,15 +1,15 @@
 /**
- * OpenLiate — Sovereign AI Agent Backend
+ * OpenLiate — Open Source Backend Layer for AI Agents
  * Universal Entrypoint: SDK Exports & Direct CLI Runner
  *
  * Can be imported in code:
  *   import { Agent, MCP } from "openliate";
  *
- * Or executed directly via Bun / Node (matches YC demo video):
+ * Or executed directly via Bun / Node:
  *   bun run src/liate.ts run hub/agents/sarvam-agent/agent.json "Hi how are you"
  */
 
-// 1. The 5 Sovereign LIATE Pillars (Layer 1 to 5)
+// 1. The 5 LIATE Layers (Layer 1 to 5)
 export * from "./layers/llm/model";
 export * from "./layers/integration/memory";
 export * from "./layers/integration/types";
@@ -24,9 +24,9 @@ export * from "./layers/tools/registry";
 export * from "./layers/environment/sandbox";
 export * from "./layers/environment/types";
 
-// 2. Core, Infrastructure, Cloud Link & Runtime Server
-export type { AgentRunResult } from "./layers/agent/types";
-export { base64url, generatePKCE, type ClientRegistration } from "./core/pkce";
+// 2. Core (AUM & OM), Infrastructure & Cloud Link
+export * from "./core/spec";
+export * from "./core/aum";
 export * from "./core/om";
 export * from "./cloud/link";
 export * from "./cloud/runtime/hono";
@@ -35,6 +35,7 @@ export * from "./layers/integration/repo";
 export * from "./layers/integration/lib";
 export * from "./skills/resolver";
 export * from "./routes/skills";
+export * from "./scaffold/project";
 
 // 3. Direct CLI Runner (only when executed directly as script, not when imported)
 const isDirectScript = typeof process !== "undefined" &&

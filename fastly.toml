@@ -1,7 +1,7 @@
 # This file describes a Fastly Compute package. To learn more visit:
 # https://www.fastly.com/documentation/reference/compute/fastly-toml
 
-authors = ["OpenLiate <hello@tryliate.com>"]
+authors = ["OpenLiate <hello@openliate.tech>"]
 description = "Open Source Backend Layer for AI Agents on Fastly Compute WASM"
 language = "javascript"
 manifest_version = 3

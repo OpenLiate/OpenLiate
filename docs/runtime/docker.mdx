@@ -27,7 +27,7 @@ docker run -d \
 FROM oven/bun:1.2-alpine AS runtime
 WORKDIR /app
 
-# Copy dependency manifests
+# Copy package dependencies
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 

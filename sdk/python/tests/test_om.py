@@ -13,26 +13,35 @@ class TestOpenLiatePythonSDK(unittest.TestCase):
             L = "sarvam/sarvam-105b"
             I = {"memory": "sessions/test-python"}
             A = {"name": "greeting_agent", "intent": "Friendly assistant"}
-            T = ["fetch"]
+            T = {
+                "fetch": {
+                    "command": "uvx",
+                    "args": ["mcp-server-fetch"],
+                    "tools": ["*"]
+                }
+            }
             E = {"SARVAM_API_KEY": "test_key_python"}
 
         agent = GreetingAgent()
-        manifest = agent.to_manifest()
+        module = agent.to_module()
 
-        self.assertEqual(manifest["L"], "sarvam/sarvam-105b")
-        self.assertEqual(manifest["I"], {"memory": "sessions/test-python"})
-        self.assertEqual(manifest["A"]["name"], "greeting_agent")
-        self.assertEqual(manifest["A"]["intent"], "Friendly assistant")
-        self.assertEqual(manifest["T"], ["fetch"])
-        self.assertEqual(manifest["E"]["SARVAM_API_KEY"], "test_key_python")
+        self.assertEqual(module["L"], "sarvam/sarvam-105b")
+        self.assertEqual(module["I"], {"memory": "sessions/test-python"})
+        self.assertEqual(module["A"]["name"], "greeting_agent")
+        self.assertEqual(module["A"]["intent"], "Friendly assistant")
+        self.assertEqual(module["T"]["fetch"]["command"], "uvx")
+        self.assertEqual(module["E"]["SARVAM_API_KEY"], "test_key_python")
 
     def test_strict_layer_l_enforcement(self):
         class IncompleteAgent(liate):
+            I = {"memory": "sessions/no-model"}
             A = {"name": "no_model"}
+            T = []
+            E = {}
 
         agent = IncompleteAgent()
         with self.assertRaises(ValueError) as ctx:
-            agent.to_manifest()
+            agent.to_module()
         self.assertIn("Missing required Layer [L]", str(ctx.exception))
 
     def test_full_name_liate_properties(self):
@@ -40,30 +49,44 @@ class TestOpenLiatePythonSDK(unittest.TestCase):
             LLM = "sarvam/sarvam-105b"
             Integration = {"memory": "sessions/python-full"}
             Agent = {"name": "full_python_agent"}
-            Tools = ["fetch"]
+            Tools = {
+                "fetch": {
+                    "command": "uvx",
+                    "args": ["mcp-server-fetch"],
+                    "tools": ["*"]
+                }
+            }
             Environment = {"SARVAM_API_KEY": "py_key"}
 
         agent = FullNameAgent()
-        manifest = agent.to_manifest()
-        self.assertEqual(manifest["L"], "sarvam/sarvam-105b")
-        self.assertEqual(manifest["I"]["memory"], "sessions/python-full")
-        self.assertEqual(manifest["A"]["name"], "full_python_agent")
-        self.assertEqual(manifest["T"], ["fetch"])
+        module = agent.to_module()
+        self.assertEqual(module["L"], "sarvam/sarvam-105b")
+        self.assertEqual(module["I"]["memory"], "sessions/python-full")
+        self.assertEqual(module["A"]["name"], "full_python_agent")
+        self.assertEqual(module["T"]["fetch"]["command"], "uvx")
+        self.assertEqual(module["E"]["SARVAM_API_KEY"], "py_key")
 
     def test_lowercase_liate_properties(self):
         class LowercaseAgent(liate):
             llm = "sarvam/sarvam-105b"
             integration = {"memory": "sessions/python-lower"}
             agent = {"name": "lower_python_agent"}
-            tools = ["fetch"]
+            tools = {
+                "fetch": {
+                    "command": "uvx",
+                    "args": ["mcp-server-fetch"],
+                    "tools": ["*"]
+                }
+            }
             environment = {"SARVAM_API_KEY": "py_key"}
 
         agent = LowercaseAgent()
-        manifest = agent.to_manifest()
-        self.assertEqual(manifest["L"], "sarvam/sarvam-105b")
-        self.assertEqual(manifest["I"]["memory"], "sessions/python-lower")
-        self.assertEqual(manifest["A"]["name"], "lower_python_agent")
-        self.assertEqual(manifest["T"], ["fetch"])
+        module = agent.to_module()
+        self.assertEqual(module["L"], "sarvam/sarvam-105b")
+        self.assertEqual(module["I"]["memory"], "sessions/python-lower")
+        self.assertEqual(module["A"]["name"], "lower_python_agent")
+        self.assertEqual(module["T"]["fetch"]["command"], "uvx")
+        self.assertEqual(module["E"]["SARVAM_API_KEY"], "py_key")
 
     def test_agent_run_result_dataclass(self):
         res = AgentRunResult(

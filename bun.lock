@@ -17,6 +17,7 @@
         "@supabase/supabase-js": "2.118.0",
         "@vercel/sdk": "1.28.56",
         "ai": "7.0.162",
+        "coderabbit": "0.9.3",
         "hono": "^4.7.0",
         "jszip": "3.10.2",
         "neon-new": "0.15.1",
@@ -487,6 +488,8 @@
     "chownr": ["chownr@3.0.0", "", {}, "sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g=="],
 
     "cliui": ["cliui@9.0.1", "", { "dependencies": { "string-width": "^7.2.0", "strip-ansi": "^7.1.0", "wrap-ansi": "^9.0.0" } }, "sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w=="],
+
+    "coderabbit": ["coderabbit@0.9.3", "", { "os": [ "linux", "win32", "darwin", ], "cpu": [ "x64", "arm64", ], "hasInstallScript": true, "bin": { "cr": "bin/cr.js", "coderabbit": "bin/coderabbit.js" } }, "sha512-+d/bByrS+VRIy7lVEvBj+Q5zz25CQNJy5JBiw6DBctbh+D24LEW8kkwQQhk+jSihWTuLZbET9UTKfEkF00HEFQ=="],
 
     "combined-stream": ["combined-stream@1.0.8", "", { "dependencies": { "delayed-stream": "~1.0.0" } }, "sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg=="],
 

@@ -53,9 +53,9 @@
           {
             "group": "Runtime & Execution",
             "pages": [
-              "runtime/manifest",
+              "runtime/module",
               "runtime/hub",
-              "runtime/lapi",
+              "runtime/api",
               "runtime/link",
               "runtime/docker"
             ]
@@ -66,7 +66,7 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "LAPI HTTP Server",
+            "group": "Liate API Server",
             "pages": [
               "api-reference/introduction",
               "api-reference/health",

@@ -1,12 +1,12 @@
 ---
-title: "Agent Unified Manifest (AUM)"
+title: "Agent Unified Module (AUM)"
 description: "The complete Zod-validated schema specification for agent.json"
 icon: "file-code"
 ---
 
 ## Overview
 
-The **Agent Unified Manifest (AUM)** is OpenLiate's declarative specification for autonomous agents. Implemented in `src/core/aum.ts`, every manifest is validated against `AUMSchema` using [Zod](https://zod.dev).
+The **Agent Unified Module (AUM)** is OpenLiate's declarative specification for autonomous agents. Implemented in `src/core/aum.ts`, every module is validated against `AUMSchema` using [Zod](https://zod.dev).
 
 ---
 
@@ -22,13 +22,16 @@ The **Agent Unified Manifest (AUM)** is OpenLiate's declarative specification fo
   "A": {
     "name": "identity_agent",
     "version": "1.0.0",
-    "intent": "Verify Indian identity credentials (Aadhaar & PAN)",
+    "intent": "Verify Indian identity credentials",
     "maxSteps": 5
   },
-  "T": [
-    "verify_identity",
-    "mcp:fetch"
-  ],
+  "T": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "tools": ["*"]
+    }
+  },
   "E": {
     "SARVAM_API_KEY": "$SARVAM_API_KEY"
   }

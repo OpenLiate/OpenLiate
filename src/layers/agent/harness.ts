@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { AUM } from "../../core/aum";
-import type { AgentManifest } from "../../core/types";
+import { ConfigManager, type AgentModule } from "../../core/spec";
 import { UniversalLlmClient, normalizeModelConfig } from "../llm/model";
 import { IntegrationResolver, LiateKnowledge, type KnowledgeContext } from "../integration/knowledge";
 import { LiateRepo, type RepoContext } from "../integration/repo";
@@ -11,12 +11,11 @@ import { ReActLoop, type LLMFunctionCaller } from "./loop";
 import type { AgentTool, AgentContext, AgentRunResult, AgentExecutionOptions } from "./types";
 import { ToolRegistry } from "../tools/registry";
 import { EnvironmentResolver } from "../environment/sandbox";
-import { ConfigManager } from "../../core/config";
 import { OPENLIATE_VERSION } from "../../core/version";
 import { SkillsResolver } from "./skills";
 
-export interface AgentConfigOptions {
-  manifest?: string | AgentManifest;
+export interface AgentOptions {
+  module?: string | AgentModule;
   name?: string;
   version?: string;
   intent?: string;
@@ -32,12 +31,12 @@ export class Agent {
   public readonly version: string;
   public readonly intent: string;
   public readonly model: string;
-  public readonly manifest?: AgentManifest;
+  public readonly module?: AgentModule;
   public compiledSkills: string = "";
   public repoContext?: RepoContext;
   public knowledgeContext?: KnowledgeContext;
   private rawSkillsConfig?: string | string[];
-  private manifestBaseDir: string = process.cwd();
+  private moduleBaseDir: string = process.cwd();
   private memory: MemoryProvider;
   private llm: LLMFunctionCaller;
   private tools: Map<string, AgentTool> = new Map();
@@ -45,40 +44,40 @@ export class Agent {
   private toolsInitialized: boolean = false;
   private rawToolSpecs: any[] = [];
 
-  constructor(options: AgentConfigOptions = {}) {
-    let resolvedManifest: AgentManifest | undefined;
+  constructor(options: AgentOptions = {}) {
+    let resolvedModule: AgentModule | undefined;
 
-    const manifestBaseDir = typeof options.manifest === "string"
-      ? path.dirname(path.resolve(process.cwd(), options.manifest))
+    const moduleBaseDir = typeof options.module === "string"
+      ? path.dirname(path.resolve(process.cwd(), options.module))
       : process.cwd();
 
-    if (typeof options.manifest === "string") {
-      const manifestPath = path.resolve(process.cwd(), options.manifest);
-      EnvironmentResolver.loadEnv(manifestPath);
-      const raw = fs.readFileSync(manifestPath, "utf-8");
-      resolvedManifest = AUM.resolveEnvironment(AUM.parse(raw));
-    } else if (typeof options.manifest === "object") {
+    if (typeof options.module === "string") {
+      const modulePath = path.resolve(process.cwd(), options.module);
+      EnvironmentResolver.loadEnv(modulePath);
+      const raw = fs.readFileSync(modulePath, "utf-8");
+      resolvedModule = AUM.resolveEnvironment(AUM.parse(raw));
+    } else if (typeof options.module === "object") {
       EnvironmentResolver.loadEnv();
-      resolvedManifest = AUM.resolveEnvironment(AUM.parse(options.manifest));
+      resolvedModule = AUM.resolveEnvironment(AUM.parse(options.module));
     }
 
-    this.manifest = resolvedManifest;
+    this.module = resolvedModule;
 
-    // Resolve Name, Version, and Intent from manifest or programmatic options
-    const aObj = typeof resolvedManifest?.A === "object" ? resolvedManifest.A : undefined;
-    const aName = typeof resolvedManifest?.A === "string" ? resolvedManifest.A : aObj?.name;
+    // Resolve Name, Version, and Intent from module or programmatic options
+    const aObj = typeof resolvedModule?.A === "object" ? resolvedModule.A : undefined;
+    const aName = typeof resolvedModule?.A === "string" ? resolvedModule.A : aObj?.name;
     this.name = options.name || aName || "unnamed_agent";
     this.version = options.version || aObj?.version || "0.0.1";
     this.intent = options.intent || aObj?.intent || "Autonomous AI Agent";
     this.maxSteps = typeof (aObj as any)?.maxSteps === "number" ? (aObj as any).maxSteps : 10;
 
     // Resolve Layer [A] Skills (skills.md, SKILL.md, .openliate/skills, or hub/skills)
-    this.manifestBaseDir = manifestBaseDir;
-    this.rawSkillsConfig = (options as any).skills || (aObj as any)?.skills || (resolvedManifest?.I as any)?.skills;
-    this.compiledSkills = SkillsResolver.compileSkills(this.rawSkillsConfig, manifestBaseDir);
+    this.moduleBaseDir = moduleBaseDir;
+    this.rawSkillsConfig = (options as any).skills || (aObj as any)?.skills || (resolvedModule?.I as any)?.skills;
+    this.compiledSkills = SkillsResolver.compileSkills(this.rawSkillsConfig, moduleBaseDir);
 
     // Resolve Model ([L] Layer) - strictly dynamic, no hardcoding
-    const normalizedL = resolvedManifest?.L ? normalizeModelConfig(resolvedManifest.L) : undefined;
+    const normalizedL = resolvedModule?.L ? normalizeModelConfig(resolvedModule.L) : undefined;
     const resolvedModel = options.model || normalizedL?.model;
     if (!resolvedModel) {
       throw new Error("Missing required model definition in Layer [L]");
@@ -89,8 +88,8 @@ export class Agent {
     if (options.memory && typeof options.memory === "object" && "append" in options.memory) {
       this.memory = options.memory as MemoryProvider;
     } else {
-      const memoryConfig = options.memory || resolvedManifest?.I;
-      const sId = options.sessionId || (typeof resolvedManifest?.I === "object" ? (resolvedManifest.I as any).sessionId || (resolvedManifest.I as any).session : undefined);
+      const memoryConfig = options.memory || resolvedModule?.I;
+      const sId = options.sessionId || (typeof resolvedModule?.I === "object" ? (resolvedModule.I as any).sessionId || (resolvedModule.I as any).session : undefined);
       this.memory = IntegrationResolver.resolveMemory(memoryConfig, {
         agentName: this.name,
         agentVersion: this.version
@@ -101,22 +100,22 @@ export class Agent {
     const provider = resolvedModel.includes("/") ? resolvedModel.split("/")[0].toLowerCase() : "sarvam";
 
     const resolvedApiKey = options.apiKey
-      || (provider === "neon" ? (resolvedManifest?.E?.NEON_AI_GATEWAY_TOKEN || process.env.NEON_AI_GATEWAY_TOKEN || ConfigManager.getKey("NEON_AI_GATEWAY_TOKEN"))
-                              : (resolvedManifest?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY")));
+      || (provider === "neon" ? (resolvedModule?.E?.NEON_AI_GATEWAY_TOKEN || process.env.NEON_AI_GATEWAY_TOKEN || ConfigManager.getKey("NEON_AI_GATEWAY_TOKEN"))
+                              : (resolvedModule?.E?.SARVAM_API_KEY || process.env.SARVAM_API_KEY || ConfigManager.getKey("SARVAM_API_KEY")));
     this.llm = new UniversalLlmClient(resolvedApiKey, { provider });
 
-    // Collect tool specs from options or manifest ([T] Layer)
+    // Collect tool specs from options or module ([T] Layer)
     if (options.tools) {
       this.rawToolSpecs.push(...options.tools);
     }
-    if (resolvedManifest?.T) {
-      if (Array.isArray(resolvedManifest.T)) {
-        this.rawToolSpecs.push(...resolvedManifest.T);
-      } else if (typeof resolvedManifest.T === "object") {
-        if ("command" in resolvedManifest.T || "url" in resolvedManifest.T) {
-          this.rawToolSpecs.push({ id: "inline_tool", name: "inline_tool", ...(resolvedManifest.T as Record<string, any>) });
+    if (resolvedModule?.T) {
+      if (Array.isArray(resolvedModule.T)) {
+        this.rawToolSpecs.push(...resolvedModule.T);
+      } else if (typeof resolvedModule.T === "object") {
+        if ("command" in resolvedModule.T || "url" in resolvedModule.T) {
+          this.rawToolSpecs.push({ id: "inline_tool", name: "inline_tool", ...(resolvedModule.T as Record<string, any>) });
         } else {
-          for (const [key, val] of Object.entries(resolvedManifest.T as Record<string, any>)) {
+          for (const [key, val] of Object.entries(resolvedModule.T as Record<string, any>)) {
             if (typeof val === "object" && val !== null) {
               this.rawToolSpecs.push({ id: key, name: key, ...val });
             } else {
@@ -159,21 +158,21 @@ export class Agent {
     if (this.toolsInitialized) return;
 
     if (this.rawToolSpecs.length > 0) {
-      const manifestKeys = ((this.manifest as any)?.keys as Record<string, string>) || {};
-      const manifestEnv = ((this.manifest as any)?.env as Record<string, string>) || {};
-      const rawE = (this.manifest?.E as Record<string, string>) || {};
+      const moduleKeys = ((this.module as any)?.keys as Record<string, string>) || {};
+      const moduleEnv = ((this.module as any)?.env as Record<string, string>) || {};
+      const rawE = (this.module?.E as Record<string, string>) || {};
 
       // Build customEnv with real secret values taking priority over literal $VAR placeholders
       const customEnv: Record<string, string | undefined> = {
         ...process.env,
-        ...manifestEnv,
-        ...manifestKeys
+        ...moduleEnv,
+        ...moduleKeys
       };
 
       for (const [k, v] of Object.entries(rawE)) {
         if (typeof v === "string" && v.startsWith("$")) {
           const varName = v.slice(1);
-          const resolvedVal = manifestKeys[k] || manifestKeys[varName] || manifestEnv[k] || manifestEnv[varName] || process.env[k] || process.env[varName];
+          const resolvedVal = moduleKeys[k] || moduleKeys[varName] || moduleEnv[k] || moduleEnv[varName] || process.env[k] || process.env[varName];
           if (resolvedVal) {
             customEnv[k] = resolvedVal;
           }
@@ -189,8 +188,8 @@ export class Agent {
     }
 
     // Resolve Layer [I] Context Integration (e.g. Neon Functions Context.dev)
-    if (this.manifest?.I) {
-      const iBlock = this.manifest.I as any;
+    if (this.module?.I) {
+      const iBlock = this.module.I as any;
       const contextTools = IntegrationResolver.resolveContextTools(iBlock);
       for (const ct of contextTools) {
         if (!this.tools.has(ct.name)) {
@@ -227,7 +226,7 @@ export class Agent {
       // 3. Knowledge Integration
       if (iBlock.knowledge) {
         try {
-          this.knowledgeContext = await LiateKnowledge.resolve(iBlock.knowledge, this.manifestBaseDir);
+          this.knowledgeContext = await LiateKnowledge.resolve(iBlock.knowledge, this.moduleBaseDir);
           const kTool = LiateKnowledge.asTool(this.knowledgeContext);
           if (!this.tools.has(kTool.name)) {
             this.tools.set(kTool.name, kTool);
@@ -239,7 +238,7 @@ export class Agent {
     }
 
     // Resolve Layer [A] Subagents & Agent Swarm delegation
-    const aObj = typeof this.manifest?.A === "object" ? this.manifest.A : undefined;
+    const aObj = typeof this.module?.A === "object" ? this.module.A : undefined;
     const subagents: (string | any)[] = (aObj as any)?.subagents || (aObj as any)?.agents || [];
     if (Array.isArray(subagents)) {
       for (const sub of subagents) {
@@ -267,13 +266,13 @@ export class Agent {
               let subAgentInstance: Agent | null = null;
               for (const p of subPaths) {
                 if (fs.existsSync(p)) {
-                  subAgentInstance = new Agent({ manifest: p });
+                  subAgentInstance = new Agent({ module: p });
                   break;
                 }
               }
               if (!subAgentInstance) {
                 subAgentInstance = new Agent({
-                  manifest: {
+                  module: {
                     L: this.model,
                     A: { name: subName, intent: `Subagent ${subName}` }
                   }
@@ -295,7 +294,7 @@ export class Agent {
 
     if (!this.compiledSkills && this.rawSkillsConfig) {
       try {
-        this.compiledSkills = await SkillsResolver.compileSkillsAsync(this.rawSkillsConfig, this.manifestBaseDir);
+        this.compiledSkills = await SkillsResolver.compileSkillsAsync(this.rawSkillsConfig, this.moduleBaseDir);
       } catch {}
     }
 
@@ -400,10 +399,10 @@ export class Agent {
   }
 }
 
-export function createAgent(options?: AgentConfigOptions | string): Agent {
-  return new Agent(typeof options === "string" ? { manifest: options } : options);
+export function createAgent(options?: AgentOptions | string): Agent {
+  return new Agent(typeof options === "string" ? { module: options } : options);
 }
 
-export function create(options?: AgentConfigOptions | string): Agent {
+export function create(options?: AgentOptions | string): Agent {
   return createAgent(options);
 }

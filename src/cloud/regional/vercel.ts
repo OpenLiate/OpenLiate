@@ -28,9 +28,9 @@ export interface VercelTokenData {
 }
 
 
-export class VercelMcpOAuth {
+export class VercelLink {
   public static getTokenPath(): string {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true });
@@ -65,11 +65,11 @@ export class VercelMcpOAuth {
   }
 
   public static loadToken(): VercelTokenData | null {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     const candidatePaths = [
       configDir ? path.join(configDir, "vercel.json") : "",
       configDir ? path.join(configDir, "vercel_token.json") : "",
-      VercelMcpOAuth.getTokenPath(),
+      VercelLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "vercel.json"),
       path.resolve(process.cwd(), ".openliate", "link", "vercel_token.json"),
       path.resolve(process.cwd(), ".openliate", "vercel.json"),
@@ -106,14 +106,14 @@ export class VercelMcpOAuth {
   }
 
   public static saveToken(data: VercelTokenData): void {
-    const tokenPath = VercelMcpOAuth.getTokenPath();
+    const tokenPath = VercelLink.getTokenPath();
     const dir = path.dirname(tokenPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2), "utf-8");
 
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     if (configDir) {
       return;
     }
@@ -140,11 +140,11 @@ export class VercelMcpOAuth {
   }
 
   public static clearToken(): void {
-    const configDir = process.env.OPENLIATE_CONFIG_DIR || process.env.LIATE_CONFIG_DIR;
+    const configDir = process.env.OPENLIATE_CONFIG_DIR;
     const candidatePaths = [
       configDir ? path.join(configDir, "vercel.json") : "",
       configDir ? path.join(configDir, "vercel_token.json") : "",
-      VercelMcpOAuth.getTokenPath(),
+      VercelLink.getTokenPath(),
       path.resolve(process.cwd(), ".openliate", "link", "vercel.json"),
       path.resolve(process.cwd(), ".openliate", "link", "vercel_token.json"),
       path.resolve(process.cwd(), ".openliate", "vercel.json"),
@@ -332,20 +332,20 @@ export class VercelMcpClient {
   public async deployRuntime(options: {
     name?: string;
     target?: string;
-    mode?: "function" | "daemon";
     files?: Array<{ file: string; data: string; encoding?: string }>;
   } = {}): Promise<{
     id: string;
     url: string;
+    healthUrl?: string;
     runtimeUrl: string;
+    runEndpoint?: string;
     projectId?: string;
     name: string;
-    mode: "function" | "daemon";
+    ready?: boolean;
   }> {
-    const isDaemon = options.mode === "daemon";
     const uuid7 = generateUUIDv7();
     const cleanId = uuid7.replace(/-/g, "").slice(0, 8);
-    const projectName = options.name || (isDaemon ? `openliate-daemon-${cleanId}` : `openliate-${cleanId}`);
+    const projectName = options.name || `openliate-${cleanId}`;
 
     let bundleCode = "";
     if (options.files && options.files.length > 0) {
@@ -373,116 +373,46 @@ export class VercelMcpClient {
       );
     }
 
-    let files: Array<{ file: string; data: string; encoding?: string }>;
-
-    if (isDaemon) {
-      let dockerfileContent = "";
-      const dockerfileCandidates = [
-        path.resolve(process.cwd(), "Dockerfile"),
-        path.resolve(process.cwd(), "OpenLiate", "Dockerfile"),
-        path.resolve(__dirname, "..", "..", "Dockerfile")
-      ];
-      for (const df of dockerfileCandidates) {
-        if (fs.existsSync(df)) {
-          dockerfileContent = fs.readFileSync(df, "utf-8");
-          break;
-        }
-      }
-      if (!dockerfileContent) {
-        dockerfileContent = `FROM node:24-alpine
-WORKDIR /app
-COPY dist/runtime ./dist/runtime
-COPY package.json ./package.json
-EXPOSE 3000
-CMD ["node", "dist/runtime/index.js"]`;
-      }
-
-      files = [
-        {
-          file: "dist/runtime/index.js",
-          data: bundleCode,
-          encoding: "utf-8"
-        },
-        {
-          file: "Dockerfile",
-          data: dockerfileContent,
-          encoding: "utf-8"
-        },
-        {
-          file: "package.json",
-          data: JSON.stringify(
-            {
-              name: projectName,
-              version: OPENLIATE_VERSION,
-              type: "module",
-              main: "dist/runtime/index.js"
-            },
-            null,
-            2
-          ),
-          encoding: "utf-8"
-        },
-        {
-          file: "vercel.json",
-          data: JSON.stringify(
-            {
-              version: 2,
-              daemons: {
-                "openliate-daemon": {
-                  entrypoint: "Dockerfile",
-                  command: ["node", "dist/runtime/index.js"],
-                  instances: {
-                    iad1: 1
+    const files = options.files && options.files.length > 0
+      ? options.files
+      : [
+          {
+            file: "api/index.js",
+            data: bundleCode,
+            encoding: "utf-8"
+          },
+          {
+            file: "package.json",
+            data: JSON.stringify(
+              {
+                name: projectName,
+                version: OPENLIATE_VERSION,
+                type: "module",
+                main: "api/index.js"
+              },
+              null,
+              2
+            ),
+            encoding: "utf-8"
+          },
+          {
+            file: "vercel.json",
+            data: JSON.stringify(
+              {
+                version: 2,
+                routes: [
+                  {
+                    src: "/(.*)",
+                    dest: "/api/index.js"
                   }
-                }
-              }
-            },
-            null,
-            2
-          ),
-          encoding: "utf-8"
-        }
-      ];
-    } else {
-      files = [
-        {
-          file: "api/index.js",
-          data: bundleCode,
-          encoding: "utf-8"
-        },
-        {
-          file: "package.json",
-          data: JSON.stringify(
-            {
-              name: projectName,
-              version: OPENLIATE_VERSION,
-              type: "module",
-              main: "api/index.js"
-            },
-            null,
-            2
-          ),
-          encoding: "utf-8"
-        },
-        {
-          file: "vercel.json",
-          data: JSON.stringify(
-            {
-              version: 2,
-              routes: [
-                {
-                  src: "/(.*)",
-                  dest: "/api/index.js"
-                }
-              ]
-            },
-            null,
-            2
-          ),
-          encoding: "utf-8"
-        }
-      ];
-    }
+                ]
+              },
+              null,
+              2
+            ),
+            encoding: "utf-8"
+          }
+        ];
 
     const deployPayload = {
       name: projectName,
@@ -514,7 +444,9 @@ CMD ["node", "dist/runtime/index.js"]`;
 
     const rawUrl = deployData.alias?.[0] || deployData.url;
     const deploymentUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
-    const runtimeUrl = `${deploymentUrl}/run`;
+    const healthUrl = `${deploymentUrl}/health`;
+    const runEndpoint = `${deploymentUrl}/run`;
+    const runtimeUrl = deploymentUrl;
 
     try {
       const deployPath = path.resolve(process.cwd(), ".openliate", "vercel_deployment.json");
@@ -528,7 +460,9 @@ CMD ["node", "dist/runtime/index.js"]`;
           {
             projectName,
             deploymentUrl,
+            healthUrl,
             runtimeUrl,
+            runEndpoint,
             id: deployData.id,
             uuid7,
             deployedAt: new Date().toISOString()
@@ -543,10 +477,12 @@ CMD ["node", "dist/runtime/index.js"]`;
     return {
       id: deployData.id,
       url: deploymentUrl,
+      healthUrl,
       runtimeUrl,
+      runEndpoint,
       projectId: deployData.project?.id || deployData.projectId || deployData.id,
       name: projectName,
-      mode: isDaemon ? "daemon" : "function"
+      ready: true
     };
   }
 }
@@ -559,12 +495,12 @@ export async function runVercelLinkFlow(options: {
   const redirectUri = `http://localhost:${port}/callback`;
 
   console.log(`\n▲ [OpenLiate] Registering Dynamic Client with Vercel MCP...`);
-  const reg = await VercelMcpOAuth.registerClient(redirectUri);
+  const reg = await VercelLink.registerClient(redirectUri);
 
   const { codeVerifier, codeChallenge } = generatePKCE();
   const state = base64url(randomBytes(16));
 
-  const authUrl = VercelMcpOAuth.buildAuthUrl(reg.client_id, redirectUri, codeChallenge, state);
+  const authUrl = VercelLink.buildAuthUrl(reg.client_id, redirectUri, codeChallenge, state);
 
   return new Promise<VercelTokenData>((resolve, reject) => {
     const server = http.createServer(async (req, res) => {
@@ -607,14 +543,14 @@ export async function runVercelLinkFlow(options: {
           server.close();
 
           console.log(`▲ [OpenLiate] Exchanging Authorization Code with Vercel...`);
-          const tokenData = await VercelMcpOAuth.exchangeCodeForToken(
+          const tokenData = await VercelLink.exchangeCodeForToken(
             reg.client_id,
             code,
             codeVerifier,
             redirectUri
           );
 
-          VercelMcpOAuth.saveToken(tokenData);
+          VercelLink.saveToken(tokenData);
           console.log(`▲ [OpenLiate] Vercel MCP Access Token saved successfully!`);
           resolve(tokenData);
         }

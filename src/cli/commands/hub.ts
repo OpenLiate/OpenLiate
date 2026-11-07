@@ -1,24 +1,28 @@
 import fs from "fs";
 import path from "path";
+import JSZip from "jszip";
 import * as p from "@clack/prompts";
 import { Agent } from "../../layers/agent/harness";
 import { EnvironmentResolver } from "../../layers/environment/sandbox";
 import { MCP } from "../../layers/tools/mcp";
 import { OPENLIATE_VERSION } from "../../core/version";
+import { handleCreateCommand } from "./create";
 
-interface HubAgentSummary {
+export { handleCreateCommand };
+
+export interface HubAgentSummary {
   id: string;
   name: string;
   intent: string;
   model: string;
   tools: string[];
-  manifestPath: string;
+  modulePath: string;
 }
 
 export function listHubAgents(): HubAgentSummary[] {
   const scanDirs = [
-    path.resolve(process.cwd(), ".openliate", "agents"),
     path.resolve(process.cwd(), "hub", "agents"),
+    path.resolve(process.cwd(), ".openliate", "agents"),
     path.resolve(process.cwd(), "OpenLiate", "hub", "agents"),
     path.resolve(__dirname, "..", "..", "..", "hub", "agents")
   ];
@@ -31,20 +35,42 @@ export function listHubAgents(): HubAgentSummary[] {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const ent of entries) {
         if (ent.isDirectory() && !seenIds.has(ent.name)) {
-          const manifestPath = path.join(dir, ent.name, "agent.json");
-          if (fs.existsSync(manifestPath)) {
-            try {
-              const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-              seenIds.add(ent.name);
-              list.push({
-                id: ent.name,
-                name: raw.A?.name || ent.name,
-                intent: raw.A?.intent || "Autonomous Sovereign Agent",
-                model: typeof raw.L === "string" ? raw.L : (raw.L?.model || "sarvam/sarvam-105b"),
-                tools: Array.isArray(raw.T) ? raw.T : [],
-                manifestPath
-              });
-            } catch {}
+          const candidateFiles = ["agent.json", "agent.ts", "agent.py"];
+          let modulePath: string | null = null;
+          for (const cand of candidateFiles) {
+            const pth = path.join(dir, ent.name, cand);
+            if (fs.existsSync(pth)) {
+              modulePath = pth;
+              break;
+            }
+          }
+          if (modulePath) {
+            seenIds.add(ent.name);
+            let name = ent.name;
+            let intent = "AI Agent";
+            let model = "sarvam/sarvam-105b";
+            let tools: string[] = [];
+
+            if (modulePath.endsWith(".json")) {
+              try {
+                const raw = JSON.parse(fs.readFileSync(modulePath, "utf-8"));
+                name = raw.A?.name || ent.name;
+                intent = raw.A?.intent || "AI Agent";
+                model = typeof raw.L === "string" ? raw.L : (raw.L?.model || "sarvam/sarvam-105b");
+                tools = Array.isArray(raw.T)
+                  ? raw.T
+                  : (raw.T && typeof raw.T === "object" ? Object.keys(raw.T) : []);
+              } catch {}
+            }
+
+            list.push({
+              id: ent.name,
+              name,
+              intent,
+              model,
+              tools,
+              modulePath
+            });
           }
         }
       }
@@ -54,214 +80,132 @@ export function listHubAgents(): HubAgentSummary[] {
   return list;
 }
 
-export async function handleCreateCommand(): Promise<void> {
-  console.log("");
-  p.intro("\x1b[36mOpenLiate — 5-Pillar L·I·A·T·E Agent Builder\x1b[0m");
-  p.note(
-    "Construct an autonomous agent aligned with the 5 Sovereign Pillars:\n" +
-    "[L] Model  ->  [I] Knowledge  ->  [A] Harness  ->  [T] Tools  ->  [E] Sandbox",
-    "LIATE Architecture"
-  );
-
-  // Pillar 1: [L] Model
-  const modelChoice = await p.select({
-    message: "1. [L] Model Layer — Select Intelligence Factory:",
-    options: [
-      {
-        value: "sarvam/sarvam-105b",
-        label: "sarvam/sarvam-105b — [Sovereign Indic Flagship]",
-        hint: "Sarvam AI Indian LLM (22 Languages)"
-      },
-      {
-        value: "sarvam/sarvam-2b",
-        label: "sarvam/sarvam-2b — [Ultra-fast Sovereign Edge]",
-        hint: "Sub-millisecond latency for real-time tasks"
-      },
-      {
-        value: "neon/gpt-4o",
-        label: "neon/gpt-4o — [Neon AI Gateway Frontier]",
-        hint: "Frontier multi-modal intelligence via Neon"
-      },
-      {
-        value: "neon/claude-3-5-sonnet",
-        label: "neon/claude-3-5-sonnet — [Neon AI Gateway Reasoning]",
-        hint: "Complex code synthesis and reasoning via Neon"
-      },
-      {
-        value: "neon/meta-llama-3.3-70b",
-        label: "neon/meta-llama-3.3-70b — [Neon Open Frontier]",
-        hint: "Open-weight reasoning via Neon AI Gateway"
-      }
-    ]
-  });
-
-  if (p.isCancel(modelChoice)) {
-    p.cancel("Agent creation cancelled.");
-    return;
+export function validateHubAgent(dir: string): void {
+  const candidateFiles = ["agent.json", "agent.ts", "agent.py"];
+  const found = candidateFiles.some(f => fs.existsSync(path.join(dir, f)));
+  if (!found) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    throw new Error("Invalid agent: missing agent.ts, agent.py, or agent.json in repository root");
   }
-
-  // Pillar 2: [I] Knowledge & Memory
-  const memoryChoice = await p.select({
-    message: "2. [I] Knowledge Layer — Select Session & Memory Retention:",
-    options: [
-      {
-        value: "file",
-        label: "Persistent Disk Knowledge (sessions/<name>.json)",
-        hint: "Remembers conversation across CLI runs"
-      },
-      {
-        value: ":memory:",
-        label: "Ephemeral In-Memory (:memory:)",
-        hint: "Resets memory after every run"
-      }
-    ]
-  });
-
-  if (p.isCancel(memoryChoice)) {
-    p.cancel("Agent creation cancelled.");
-    return;
-  }
-
-  // Pillar 3: [A] Harness (Name, Intent, Steps)
-  const agentName = await p.text({
-    message: "3. [A] Harness Layer — Enter Agent Identifier / Name:",
-    placeholder: "indic_translator",
-    validate: (v) => (!v || !v.trim() ? "Agent name is required." : undefined)
-  });
-
-  if (p.isCancel(agentName)) {
-    p.cancel("Agent creation cancelled.");
-    return;
-  }
-
-  const cleanName = (agentName as string).trim().toLowerCase().replace(/[^a-z0-9_-]/g, "_");
-  const agentDirName = cleanName.replace(/_/g, "-");
-
-  const agentIntent = await p.text({
-    message: "3. [A] Harness Layer — Define Agent Intent & Persona:",
-    placeholder: "Autonomous agent that translates documents across 22 Indian languages",
-    initialValue: `Specialized autonomous agent powered by ${modelChoice}`
-  });
-
-  if (p.isCancel(agentIntent)) {
-    p.cancel("Agent creation cancelled.");
-    return;
-  }
-
-  // Pillar 4: [T] Tools & MCP
-  const selectedTools = await p.multiselect({
-    message: "4. [T] Tools Layer — Select MCP Protocols & Builtin Tools:",
-    options: [
-      {
-        value: "mcp:sarvam",
-        label: "mcp:sarvam — Sarvam AI Token Factory & Speech Tools",
-        hint: "TTS, STT, and Indic document tools"
-      },
-      {
-        value: "verify_identity",
-        label: "verify_identity — Indian Identity Verifier",
-        hint: "Validates 12-digit Aadhaar (Verhoeff) & PAN cards"
-      },
-      {
-        value: "fetch",
-        label: "fetch — Web Research & Page Scraper",
-        hint: "Fetches web URLs for live context extraction"
-      }
-    ],
-    required: false
-  });
-
-  if (p.isCancel(selectedTools)) {
-    p.cancel("Agent creation cancelled.");
-    return;
-  }
-
-  // Pillar 5: [E] Sandbox & Environment Variables
-  const envConfig: Record<string, string> = {};
-  if ((modelChoice as string).startsWith("sarvam") || (selectedTools as string[]).includes("mcp:sarvam")) {
-    envConfig["SARVAM_API_KEY"] = "$SARVAM_API_KEY";
-  }
-  if ((modelChoice as string).startsWith("neon")) {
-    envConfig["NEON_AI_GATEWAY_TOKEN"] = "$NEON_AI_GATEWAY_TOKEN";
-    envConfig["NEON_AI_GATEWAY_BASE_URL"] = "$NEON_AI_GATEWAY_BASE_URL";
-  }
-
-  // Build the compliant AUM (Agent Universal Manifest)
-  const memoryValue = memoryChoice === "file" ? `sessions/${agentDirName}` : ":memory:";
-
-  const manifest = {
-    L: modelChoice as string,
-    I: {
-      memory: memoryValue
-    },
-    A: {
-      name: cleanName,
-      version: "0.0.1",
-      intent: (agentIntent as string).trim(),
-      maxSteps: 5
-    },
-    T: selectedTools as string[],
-    E: envConfig
-  };
-
-  // Save to .openliate/agents/<agentDirName>/agent.json
-  const targetDir = path.resolve(process.cwd(), ".openliate", "agents", agentDirName);
-  fs.mkdirSync(targetDir, { recursive: true });
-  const targetFile = path.join(targetDir, "agent.json");
-  fs.writeFileSync(targetFile, JSON.stringify(manifest, null, 2) + "\n", "utf-8");
-
-  p.note(
-    `[L] Model:       ${manifest.L}\n` +
-    `[I] Knowledge:   ${manifest.I.memory}\n` +
-    `[A] Harness:     ${manifest.A.name} (v${manifest.A.version})\n` +
-    `[T] Tools:       ${manifest.T.length > 0 ? manifest.T.join(", ") : "None"}\n` +
-    `[E] Sandbox:     ${Object.keys(manifest.E).join(", ") || "Zero secrets required"}\n\n` +
-    `Saved to: .openliate/agents/${agentDirName}/agent.json`,
-    "Agent Manifest Created Successfully"
-  );
-
-  // Instant Run Option
-  const runNow = await p.confirm({
-    message: `Would you like to execute '${cleanName}' right now?`,
-    initialValue: true
-  });
-
-  if (!p.isCancel(runNow) && runNow) {
-    const testPrompt = await p.text({
-      message: "Enter prompt for your agent:",
-      placeholder: "Hello! Tell me what you can do.",
-      initialValue: "Namaste! Introduce yourself and list your capabilities."
-    });
-
-    if (!p.isCancel(testPrompt) && typeof testPrompt === "string" && testPrompt.trim()) {
-      EnvironmentResolver.loadEnv(targetFile);
-      const agent = new Agent({ manifest: targetFile });
-      console.log(`\n[OpenLiate] Booting ${agent.name} (v${agent.version})...`);
-      console.log(`[OpenLiate] Intent: "${agent.intent}"\n`);
-
-      const t0 = Date.now();
-      try {
-        const result = await agent.run(testPrompt.trim());
-        const latency = Date.now() - t0;
-
-        if (result.thought) {
-          console.log(`[Thought]:\n${result.thought}\n`);
-        }
-        console.log(`[Answer]:\n${result.text.trim()}\n`);
-        console.log(`-----------------------------------------------------------`);
-        console.log(`Model: ${result.model} | Latency: ${latency}ms | Steps: ${result.totalSteps}\n`);
-      } catch (err: any) {
-        console.error(`[Agent Execution Note]: ${err.message}`);
-      } finally {
-        await MCP.closeAll();
-      }
-    }
-  }
-
-  p.outro(`\x1b[32mAgent '${cleanName}' is ready! Run anytime via:\x1b[0m\n  $ openliate run ${agentDirName} "<prompt>"\n`);
 }
 
-export async function handleHubCommand(): Promise<void> {
+export async function addHubAgent(source: string): Promise<{ name: string; targetDir: string }> {
+  const hubAgentsDir = path.resolve(process.cwd(), "hub", "agents");
+  if (!fs.existsSync(hubAgentsDir)) {
+    fs.mkdirSync(hubAgentsDir, { recursive: true });
+  }
+
+  // 1. Local filesystem path
+  if (fs.existsSync(source)) {
+    const stat = fs.statSync(source);
+    const repoName = path.basename(source).replace(/\.(ts|py|json)$/, "");
+    const targetDir = path.join(hubAgentsDir, repoName);
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    if (stat.isDirectory()) {
+      fs.cpSync(source, targetDir, { recursive: true });
+    } else {
+      fs.copyFileSync(source, path.join(targetDir, path.basename(source)));
+    }
+
+    validateHubAgent(targetDir);
+    return { name: repoName, targetDir };
+  }
+
+  // 2. Remote GitHub repository (<owner>/<repo>)
+  const cleanSource = source.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "");
+  const parts = cleanSource.split("/");
+  if (parts.length !== 2) {
+    throw new Error(`Invalid agent format '${source}'. Expected <owner>/<repo> (e.g. username/agent-name) or local path.`);
+  }
+
+  const [owner, repoName] = parts;
+  const zipUrl = `https://api.github.com/repos/${owner}/${repoName}/zipball`;
+  console.log(`\n📦 Fetching agent ${owner}/${repoName} from ${zipUrl}...`);
+
+  const resp = await fetch(zipUrl, {
+    headers: {
+      "User-Agent": "openliate-hub-cli"
+    }
+  });
+
+  if (!resp.ok) {
+    throw new Error(`Agent not found on GitHub (${resp.status} ${resp.statusText})`);
+  }
+
+  const buffer = await resp.arrayBuffer();
+  const zip = await JSZip.loadAsync(buffer);
+
+  const targetDir = path.join(hubAgentsDir, repoName);
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  for (const [filename, fileEntry] of Object.entries(zip.files)) {
+    // Strip GitHub top-level wrapper directory
+    const pathParts = filename.split("/");
+    if (pathParts.length < 2 || !pathParts[1]) continue;
+    const relPath = pathParts.slice(1).join("/");
+    const outPath = path.join(targetDir, relPath);
+
+    if (fileEntry.dir) {
+      fs.mkdirSync(outPath, { recursive: true });
+      continue;
+    }
+
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    const content = await fileEntry.async("nodebuffer");
+    fs.writeFileSync(outPath, content);
+  }
+
+  validateHubAgent(targetDir);
+  return { name: repoName, targetDir };
+}
+
+export const installHubAgent = addHubAgent;
+
+export async function handleHubCommand(args: string[] = []): Promise<void> {
+  const sub = args[1]?.toLowerCase();
+  const target = args[2];
+
+  // 1. Direct CLI: openliate hub add <repo> (or openliate hub i <repo>)
+  if (sub === "add" || sub === "i" || sub === "install") {
+    if (!target) {
+      console.error("Usage: openliate hub add <owner/repo|path>");
+      process.exit(1);
+    }
+    try {
+      const res = await addHubAgent(target);
+      console.log(`\n✅ Successfully added agent '${res.name}' to OpenLiate Hub!`);
+      console.log(`   Location: ${res.targetDir}`);
+      console.log(`\nRun your agent:\n  openliate run ${res.name} "Your prompt"\n`);
+    } catch (err: any) {
+      console.error(`\n❌ Failed to add agent: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // 2. Direct CLI: openliate hub list
+  if (sub === "list" || sub === "ls") {
+    const agents = listHubAgents();
+    console.log(`\n📦 OpenLiate Hub Agents (${agents.length}):`);
+    if (agents.length === 0) {
+      console.log("  (No agents found in hub/agents/)");
+    } else {
+      for (const a of agents) {
+        console.log(`  - \x1b[36m${a.id}\x1b[0m [${a.model}]: ${a.intent}`);
+      }
+    }
+    console.log("");
+    return;
+  }
+
+  // 3. Direct CLI: openliate hub create
+  if (sub === "create" || sub === "new") {
+    await handleCreateCommand(args.slice(1));
+    return;
+  }
+
+  // 4. Interactive OpenLiate Hub Menu
   console.log("");
   p.intro("\x1b[36mOpenLiate Hub\x1b[0m");
 
@@ -270,13 +214,23 @@ export async function handleHubCommand(): Promise<void> {
     options: [
       {
         value: "run",
-        label: "1. Run Pre-Built Agent from Hub",
-        hint: "Browse ready-to-run sovereign agents"
+        label: "1. Run Agent from Hub",
+        hint: "Browse and execute ready-to-run agents"
+      },
+      {
+        value: "add",
+        label: "2. Add Agent to Hub",
+        hint: "Add from GitHub (owner/repo) or local directory"
       },
       {
         value: "create",
-        label: "2. Create New Agent (5-Pillar L·I·A·T·E Builder)",
+        label: "3. Create New Agent (5-Layer Builder)",
         hint: "Design, configure, and launch a custom agent"
+      },
+      {
+        value: "list",
+        label: "4. List Hub Agents",
+        hint: "View all Hub agents"
       }
     ]
   });
@@ -291,10 +245,47 @@ export async function handleHubCommand(): Promise<void> {
     return;
   }
 
+  if (action === "list") {
+    const agents = listHubAgents();
+    p.note(
+      agents.length === 0
+        ? "No agents found in hub/agents/."
+        : agents.map(a => `• ${a.id} [${a.model}]: ${a.intent}`).join("\n"),
+      `Hub Agents (${agents.length})`
+    );
+    p.outro("Done.");
+    return;
+  }
+
+  if (action === "add") {
+    const source = await p.text({
+      message: "Enter GitHub repository (owner/repo) or local path:",
+      placeholder: "e.g. username/agent-name or ./path/to/agent",
+      validate: (v) => (!v || !v.trim() ? "Source is required." : undefined)
+    });
+
+    if (p.isCancel(source) || !source) {
+      p.cancel("Operation cancelled.");
+      return;
+    }
+
+    const spin = p.spinner();
+    spin.start(`Adding agent from ${source}...`);
+    try {
+      const res = await addHubAgent(source.trim());
+      spin.stop(`✅ Added '${res.name}' to OpenLiate Hub!`);
+      p.outro(`Run your agent:\n  openliate run ${res.name} "Your prompt"`);
+    } catch (err: any) {
+      spin.stop(`❌ Failed to add agent`);
+      p.cancel(err.message);
+    }
+    return;
+  }
+
   // Browse & Run Existing Hub Agents
   const agents = listHubAgents();
   if (agents.length === 0) {
-    p.note("No agents found in hub/agents/. You can create one using 'openliate create'.", "Hub Empty");
+    p.note("No agents found in hub/agents/. You can add one with 'openliate hub add <owner/repo>' or create with 'openliate create'.", "Hub Empty");
     return;
   }
 
@@ -325,8 +316,8 @@ export async function handleHubCommand(): Promise<void> {
     return;
   }
 
-  EnvironmentResolver.loadEnv(agentSummary.manifestPath);
-  const agent = new Agent({ manifest: agentSummary.manifestPath });
+  EnvironmentResolver.loadEnv(agentSummary.modulePath);
+  const agent = new Agent({ module: agentSummary.modulePath });
   console.log(`\n[OpenLiate] Booting ${agent.name} (v${agent.version})...`);
   console.log(`[OpenLiate] Intent: "${agent.intent}"\n`);
 
@@ -347,4 +338,3 @@ export async function handleHubCommand(): Promise<void> {
     await MCP.closeAll();
   }
 }
-

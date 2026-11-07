@@ -40,7 +40,7 @@
 </p>
 
 <p align="center">
-  <a href="#aum-architecture"><img src="https://img.shields.io/badge/Agent_Architecture-AUM_(Agent_Unified_Manifest)-white?labelColor=black&style=flat-square" alt="Agent Unified Manifest (AUM)"></a>
+  <a href="#aum-architecture"><img src="https://img.shields.io/badge/Agent_Architecture-AUM_(Agent_Unified_Module)-white?labelColor=black&style=flat-square" alt="Agent Unified Module (AUM)"></a>
   &nbsp;
   <a href="#runtime-engine"><img src="https://img.shields.io/badge/Core_Engine-OM_(Orchestration_Module)-white?labelColor=black&style=flat-square" alt="Core Engine: OM (Orchestration Module)"></a>
   &nbsp;
@@ -100,14 +100,20 @@ curl -fsSL https://openliate.tech/install.sh | sh
 
 
 > **Why 5 Lines? The AI Agent Architecture:**  
-> An autonomous AI Agent is fundamentally 5 orthogonal layers: **LLM (`L`)**, **Integration (`I`)**, **Agent (`A`)**, **Tools (`T`)**, and **Environment (`E`)**. OpenLiate maps this directly into 5 lines of declarative execution.
+> An AI Agent is fundamentally 5 layers: **LLM (`L`)**, **Integration (`I`)**, **Agent (`A`)**, **Tools (`T`)**, and **Environment (`E`)**. OpenLiate maps this directly into 5 lines of declarative execution.
 
 ```jsonc
 {
   "L": "sarvam/sarvam-105b",                                                          // [L] LLM: Sarvam AI Token Factory (2026) & Neon AI Gateway (63+ Models)
   "I": { "memory": "sessions/hello-agent" },                                          // [I] Integration: Session Memory, State, npm Libraries, Git Repos
   "A": { "name": "hello_agent", "intent": "Autonomous Agent", "skills": ["vercel/nextjs"] }, // [A] Agent: Identity, Intent, Vercel skills.sh, ReAct Loop
-  "T": ["fetch"],                                                                     // [T] Tools: Model Context Protocol (MCP v2 Local Stdio & Remote SSE)
+  "T": {                                                                              // [T] Tools: Model Context Protocol (MCP v2 Local Stdio & Remote SSE)
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "tools": ["*"]
+    }
+  },
   "E": { "SARVAM_API_KEY": "$SARVAM_API_KEY" }                                        // [E] Environment: Secrets & Security Config
 }
 ```
@@ -134,13 +140,13 @@ liate run agent.json "Hello Agent World!"
 
 ## **Class is an Agent. Agent is a Function. Function is an API.**
 
-#### *Liate Agent Protocol Interface (LAPI) is Your Backend.*
+#### *Agent Protocol Interface (Liate API) is Your Backend.*
 
 </div>
 
 <br>
 
-Write your sovereign agent directly in code. OpenLiate maps the 5 orthogonal layers (`L · I · A · T · E`) into clean OOP classes—available interchangeably in shorthand (`L, I, A, T, E`) or full-name (`LLM, Integration, Agent, Tools, Environment`):
+Write your agent directly in code. OpenLiate maps the 5 layers (`L · I · A · T · E`) into clean OOP classes—available interchangeably in shorthand (`L, I, A, T, E`) or full-name (`LLM, Integration, Agent, Tools, Environment`):
 
 <br>
 
@@ -154,7 +160,13 @@ export class HelloAgent extends liate {
   L = "sarvam/sarvam-105b";                                                          // [L] LLM: Sarvam AI Token Factory (2026) & Neon AI Gateway (63+ Models)
   I = { memory: "sessions/hello-agent" };                                             // [I] Integration: Co-located Session State
   A = { name: "hello_agent", intent: "Autonomous Sovereign Agent" };                 // [A] Agent: Identity & ReAct Loop
-  T = ["fetch"];                                                                     // [T] Tools: Model Context Protocol (MCP v2)
+  T = {                                                                              // [T] Tools: Model Context Protocol (MCP v2)
+    fetch: {
+      command: "uvx",
+      args: ["mcp-server-fetch"],
+      tools: ["*"]
+    }
+  };
   E = { SARVAM_API_KEY: "$SARVAM_API_KEY" };                                         // [E] Environment: Secrets & API Keys
 }
 
@@ -184,10 +196,16 @@ class HelloAgent(liate):
     L = "sarvam/sarvam-105b"                                                          # [L] LLM: Sarvam AI Token Factory (2026) & Neon AI Gateway (63+ Models)
     I = {"memory": "sessions/hello-agent"}                                            # [I] Integration: Co-located Session State
     A = {"name": "hello_agent", "intent": "Autonomous Sovereign Agent"}               # [A] Agent: Identity & ReAct Loop
-    T = ["fetch"]                                                                     # [T] Tools: Model Context Protocol (MCP v2)
+    T = {                                                                             # [T] Tools: Model Context Protocol (MCP v2)
+        "fetch": {
+            "command": "uvx",
+            "args": ["mcp-server-fetch"],
+            "tools": ["*"]
+        }
+    }
     E = {"SARVAM_API_KEY": "$SARVAM_API_KEY"}                                        # [E] Environment: Secrets & API Keys
 
-# Run via LAPI engine:
+# Run via Liate API engine:
 agent = HelloAgent()
 result = agent.run("Hello Agent World!")
 print(result.response)
@@ -205,7 +223,7 @@ python agent.py
 
 ## <a id="runtime-engine"></a>[1] Core Engine: OM (Orchestration Module)
 
-**Liate's Orchestration Module (OM) is the autonomous runtime engine** — just like Docker executes containers and Ollama executes models, **Liate executes AI agents via OM** across the 5 orthogonal layers (`L · I · A · T · E`).
+**Liate's Orchestration Module (OM) is the runtime engine** — just like Docker executes containers and Ollama executes models, **Liate executes AI agents via OM** across the 5 layers (`L · I · A · T · E`).
 
 Liate provides three sovereign deployment targets across local hardware, regional cloud, and worldwide edge:
 
@@ -219,7 +237,7 @@ Run agents anywhere on your own hardware with full Dual-MCP superpowers:
 # 1. Native Standalone CLI
 liate run agent.json "Hello Agent World!"
 
-# 2. Local AI Gateway & Engine Server (OpenAI-Compatible Local LAPI Gateway /v1)
+# 2. Local AI Gateway & Engine Server (OpenAI-Compatible Local Liate API Gateway /v1)
 openliate serve --port 3000
 
 # Connect Cursor, Claude Code, Cline, Copilot, or Python SDK to your local port:
@@ -319,7 +337,7 @@ OpenLiate organizes multi-cloud agent execution across two clean physical topolo
 
 ---
 
-### Invoke from Any App or Webhook via HTTP (LAPI):
+### Invoke from Any App or Webhook via HTTP (Liate API):
 
 #### 1. Universal cURL
 
@@ -394,7 +412,7 @@ Real empirical benchmarks measured live on `v0.1.0` standalone runtime engine ag
 | Benchmark Metric | Measured Result | Environment & Notes |
 |:---|:---|:---|
 | **Hono Engine Cold Boot** | **`0.46 ms`** | Instant isolate startup |
-| **LAPI Request Dispatch** | **`21.65 ms`** | `/run` JSON parsing & routing |
+| **Liate API Request Dispatch** | **`21.65 ms`** | `/run` JSON parsing & routing |
 | **Sovereign LLM Latency** | **`3,866 ms`** | Sarvam 105B Reasoning (`sarvam-105b`) |
 | **Token Generation Speed** | **`130.9 tok/s`** | 549 total tokens generated |
 | **Full Pipeline Execution** | **`2,358 ms`** | Complete L · I · A · T · E ReAct turn |
@@ -409,14 +427,14 @@ bun run benchmark
 
 ## <a id="aum-architecture"></a>[3] Architecture: The 5 Layers (AUM)
 
-Every agent implements the **Agent Unified Manifest (AUM)** across 5 decoupled pillars declared as class properties or manifest keys:
+Every agent implements the **Agent Unified Module (AUM)** across 5 sovereign layers declared as class properties or module keys:
 
-| Layer | Name | Core (Built-in) | Community PRs |
+| Layer | Name | Core (Built-in) | Community Extensibility |
 |---|---|---|---|
-| **L** | **LLM** | Sarvam AI Token Factory (2026 models) <sup>IN</sup> (`hub/llm/sarvam.json`), Neon AI Gateway (63+ models) (`hub/llm/neon.json`) | Add Claude, OpenAI, DeepSeek, custom OpenAI-compatible gateways... |
-| **I** | **Integration** | Libraries (Zod, Math), in-memory state, persistent memory, Neon Postgres, Git repos | Add LlamaIndex, Redis, custom webhooks, vector stores... |
+| **L** | **LLM** | Direct provider routing: Sarvam AI Token Factory (2026 models) <sup>IN</sup> & Neon AI Gateway (73+ direct models) | Add Claude, OpenAI, DeepSeek, custom OpenAI-compatible gateways... |
+| **I** | **Integration** | Libraries (Zod, Math), in-memory state, persistent memory, Neon Cloud, Git repos | Add LlamaIndex, Redis, custom webhooks, vector stores... |
 | **A** | **Agent** | Name, intent, ReAct loop, 1.26M+ `skills.sh` dynamic resolution | Add subagent swarms, custom multi-agent coordinators... |
-| **T** | **Tools** | MCP v2 (Local stdio & Remote SSE), fetch, custom tools | Add filesystem, GitHub, custom MCP servers... |
+| **T** | **Tools** | Model Context Protocol (MCP v2 Local Stdio `uvx`/`npx` & Remote HTTP/SSE) | Add filesystem, GitHub, custom MCP servers... |
 | **E** | **Environment** | Pure `.env` key reader & execution configuration | Add custom secrets managers, edge isolate configs... |
 
 > **Unifying the Two Greatest Standards:** Liate natively unifies **Vercel Labs' `skills.sh`** (1.26M+ portable domain skills injected into Layer **[A]**) and **Anthropic's Model Context Protocol (MCP)** (modular tools and actuators in Layer **[T]**). Zero custom glue code required.

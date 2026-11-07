@@ -272,26 +272,23 @@ export class ToolRegistry {
 
       if (typeof item === "string") {
         const trimmed = item.trim();
+        const parsed = this.parseSpec(trimmed);
+
         if (trimmed.toLowerCase() === "fetch" || trimmed.toLowerCase() === "mcp:fetch" || trimmed.toLowerCase() === "mcp/fetch") {
-          resolved.push({
-            name: "fetch",
-            description: "Safe HTTP web fetcher tool to fetch webpage or API content",
-            parameters: {
-              type: "object",
-              properties: {
-                url: { type: "string", description: "The HTTP or HTTPS URL to fetch" }
-              },
-              required: ["url"]
-            },
-            execute: async ({ url }: { url: string }) => {
-              const res = await fetch(url);
-              return await res.text();
-            }
-          });
+          try {
+            const tools = await MCP.discoverTools({
+              id: "fetch",
+              name: "fetch",
+              transport: "stdio",
+              command: "uvx",
+              args: ["mcp-server-fetch"]
+            }, parsed.selectedTools);
+            resolved.push(...tools);
+          } catch (err: any) {
+            console.warn(`[ToolRegistry] Failed to resolve uvx mcp-server-fetch: ${err.message}`);
+          }
           continue;
         }
-
-        const parsed = this.parseSpec(trimmed);
 
         if (parsed.isMcp && parsed.serverName) {
           try {

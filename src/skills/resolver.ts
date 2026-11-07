@@ -69,7 +69,7 @@ export class EdgeSkillResolver {
         }
       } catch {}
 
-      // 3b. Fallback to GitHub Raw & Tree Resolution
+      // 3b. Resolve from GitHub Raw & Tree
       const owner = idParts[0];
       const repo = idParts[1];
       const targetSkill = idParts.slice(2).join('/') || repo;
@@ -138,10 +138,9 @@ export class EdgeSkillResolver {
       } catch {}
     }
 
-    // Fallback: Use clean skill name derived from slug
-    const fallbackName = idParts[idParts.length - 1] || cleanSlug.split('/').pop()?.replace(/\.md$/, '') || 'skill';
+    const resolvedName = idParts[idParts.length - 1] || cleanSlug.split('/').pop()?.replace(/\.md$/, '') || 'skill';
     return {
-      name: fallbackName,
+      name: resolvedName,
       slug: cleanSlug,
       instructions: cleanSlug,
       source: 'skill' as any,
