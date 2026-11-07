@@ -10,7 +10,7 @@
 <p align="center">
   <a href="https://docs.openliate.tech"><img src="https://img.shields.io/badge/docs-docs.openliate.tech-white?labelColor=black&style=flat-square&v=2" alt="Docs"></a>
   <a href="https://github.com/openliate/openliate/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square" alt="License: MIT"></a>
-  <a href="https://sarvam.ai"><img src="./assets/sarvam-badge.svg" alt="Startup Program: Sarvam AI"></a>
+  <a href="https://sarvam.ai"><img src="https://raw.githubusercontent.com/OpenLiate/OpenLiate/main/assets/sarvam-badge.svg" alt="Startup Program: Sarvam AI"></a>
   <a href="https://neon.tech"><img src="https://img.shields.io/badge/Neon-Cloud_%26_AI_Gateway_Credits-white?logo=neon&logoColor=00E59B&labelColor=black&style=flat-square" alt="Neon Cloud & AI Gateway Credits"></a>
   <a href="https://codespaces.new/openliate/openliate"><img src="https://img.shields.io/badge/Codespaces-1--Click_Run-white?logo=github&logoColor=white&labelColor=black&style=flat-square" alt="Open in GitHub Codespaces"></a>
   <img src="https://img.shields.io/badge/version-v0.1.0-white?labelColor=black&style=flat-square" alt="v0.1.0">

@@ -66,6 +66,7 @@ jobs:
 
       - name: Build Python wheel and sdist
         run: |
+          cp README.md sdk/python/README.md
           cd sdk/python
           python -m build
 
