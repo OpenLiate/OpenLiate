@@ -9,9 +9,16 @@
     "intent": "Autonomous Sovereign Agent powered by Neon AI Gateway & Serverless Postgres",
     "maxSteps": 5
   },
-  "T": [
-    "mcp:neon"
-  ],
+  "T": {
+    "neon": {
+      "name": "Neon Postgres",
+      "transport": "http",
+      "url": "https://mcp.neon.tech/mcp",
+      "headers": {
+        "Authorization": "Bearer $NEON_AI_GATEWAY_TOKEN"
+      }
+    }
+  },
   "E": {
     "NEON_AI_GATEWAY_TOKEN": "$NEON_AI_GATEWAY_TOKEN",
     "NEON_AI_GATEWAY_BASE_URL": "$NEON_AI_GATEWAY_BASE_URL",

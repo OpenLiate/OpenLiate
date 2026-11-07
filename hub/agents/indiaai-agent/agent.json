@@ -10,7 +10,7 @@
     "maxSteps": 5
   },
   "T": [
-    "mcp:fetch"
+    "fetch"
   ],
   "E": {
     "SOKET_API_KEY": "$SOKET_API_KEY"

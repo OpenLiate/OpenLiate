@@ -95,7 +95,7 @@ export class EnvironmentResolver {
     const resolvedEnv = this.resolve(env);
 
     return {
-      allowedDomains: options.allowedDomains || ["api.sarvam.ai", "api.agentmail.to"],
+      allowedDomains: options.allowedDomains || ["api.sarvam.ai", "api.neon.tech"],
       denyNetwork: options.denyNetwork ?? false,
       timeoutMs: options.timeoutMs ?? 30000,
       env: resolvedEnv

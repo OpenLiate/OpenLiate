@@ -163,14 +163,9 @@ export async function handleCreateCommand(): Promise<void> {
         hint: "Validates 12-digit Aadhaar (Verhoeff) & PAN cards"
       },
       {
-        value: "mcp:fetch",
-        label: "mcp:fetch — Web Research & Page Scraper",
+        value: "fetch",
+        label: "fetch — Web Research & Page Scraper",
         hint: "Fetches web URLs for live context extraction"
-      },
-      {
-        value: "mcp:agentmail:list_inboxes,get_inbox,search_messages",
-        label: "mcp:agentmail — Autonomous Email Inbox",
-        hint: "Read, search, and manage email inboxes"
       }
     ],
     required: false
@@ -189,9 +184,6 @@ export async function handleCreateCommand(): Promise<void> {
   if ((modelChoice as string).startsWith("neon")) {
     envConfig["NEON_AI_GATEWAY_TOKEN"] = "$NEON_AI_GATEWAY_TOKEN";
     envConfig["NEON_AI_GATEWAY_BASE_URL"] = "$NEON_AI_GATEWAY_BASE_URL";
-  }
-  if ((selectedTools as string[]).some(t => t.includes("agentmail"))) {
-    envConfig["AGENTMAIL_API_KEY"] = "$AGENTMAIL_API_KEY";
   }
 
   // Build the compliant AUM (Agent Universal Manifest)

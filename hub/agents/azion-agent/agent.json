@@ -7,7 +7,7 @@
     "name": "azion_agent",
     "intent": "Manage Azion Edge Applications, Edge Functions, Object Storage, and Edge Mesh routing"
   },
-  "T": ["azion-build", "azion-docs"],
+  "T": [],
   "E": {
     "AZION_PERSONAL_TOKEN": "$AZION_PERSONAL_TOKEN",
     "SARVAM_API_KEY": "$SARVAM_API_KEY"

@@ -7,7 +7,7 @@
     "name": "fastly_agent",
     "intent": "Manage Fastly Edge Cloud services, WASM Compute, and Anycast routing"
   },
-  "T": ["fastly"],
+  "T": [],
   "E": {
     "FASTLY_API_TOKEN": "$FASTLY_API_TOKEN",
     "SARVAM_API_KEY": "$SARVAM_API_KEY"

@@ -1,11 +1,10 @@
 import { describe, it, expect } from "bun:test";
-import { DEFAULT_JOIN_CALLBACK_PORT, JOIN_PORTAL_URL } from "../../src/cli/commands/join";
+import { DEFAULT_JOIN_CALLBACK_PORT } from "../../src/cli/commands/join";
 import { ConfigManager } from "../../src/core/config";
 
 describe("OpenLiate Join & Workspace Setup", () => {
-  it("exposes default join port and portal URL", () => {
+  it("exposes default join port", () => {
     expect(DEFAULT_JOIN_CALLBACK_PORT).toBe(54324);
-    expect(JOIN_PORTAL_URL).toBe("https://openliate.tech/join");
   });
 
   it("saves gateway and developer handle configuration", () => {

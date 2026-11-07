@@ -6,12 +6,10 @@
   "A": {
     "name": "sarvam_agent",
     "version": "0.0.1",
-    "intent": "Autonomous Sovereign Indic AI Agent using Sarvam MCP tools",
+    "intent": "Autonomous Sovereign Indic AI Agent powered by Sarvam 105B",
     "maxSteps": 5
   },
-  "T": [
-    "mcp:sarvam"
-  ],
+  "T": [],
   "E": {
     "SARVAM_API_KEY": "$SARVAM_API_KEY"
   }

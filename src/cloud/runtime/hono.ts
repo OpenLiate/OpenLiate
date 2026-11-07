@@ -6,6 +6,7 @@ import fs from "fs";
 import { Agent } from "../../layers/agent/harness";
 import { EnvironmentResolver } from "../../layers/environment/sandbox";
 import { MCP } from "../../layers/tools/mcp";
+import { ToolRegistry } from "../../layers/tools/registry";
 import type { MemoryProvider } from "../../layers/integration/types";
 import { InMemorySession } from "../../layers/integration/memory";
 import { LLMRouter, HubResolver } from "../../layers/llm/model";
@@ -15,33 +16,6 @@ import { skillsRouter } from "../../routes/skills";
 // Embedded sovereign hub definitions for standalone edge isolates where fs is absent
 import sarvamHubJson from "../../../hub/llm/sarvam.json";
 import neonHubJson from "../../../hub/llm/neon.json";
-
-// Embedded universal MCP registry
-import agentmailMcpJson from "../../../hub/mcp/agentmail.json";
-import fetchMcpJson from "../../../hub/mcp/fetch.json";
-import neonMcpJson from "../../../hub/mcp/neon.json";
-import sarvamMcpJson from "../../../hub/mcp/sarvam.json";
-import supabaseMcpJson from "../../../hub/mcp/supabase.json";
-import vercelMcpJson from "../../../hub/mcp/vercel.json";
-import azionMcpJson from "../../../hub/mcp/azion.json";
-import azionDocsMcpJson from "../../../hub/mcp/azion-docs.json";
-import azionBuildMcpJson from "../../../hub/mcp/azion-build.json";
-import cloudflareMcpJson from "../../../hub/mcp/cloudflare.json";
-import fastlyMcpJson from "../../../hub/mcp/fastly.json";
-
-const embeddedMcpHub: Record<string, any> = {
-  agentmail: agentmailMcpJson,
-  fetch: fetchMcpJson,
-  neon: neonMcpJson,
-  sarvam: sarvamMcpJson,
-  supabase: supabaseMcpJson,
-  vercel: vercelMcpJson,
-  azion: azionMcpJson,
-  "azion-docs": azionDocsMcpJson,
-  "azion-build": azionBuildMcpJson,
-  cloudflare: cloudflareMcpJson,
-  fastly: fastlyMcpJson
-};
 
 const embeddedLlmHub: Record<string, any> = {
   sarvam: sarvamHubJson,
@@ -435,45 +409,20 @@ export function createRuntimeApp() {
 
   function getHubMCPs() {
     const mcps: any[] = [];
-    let loadedFromFs = false;
-
     try {
-      const hubDir = resolveHubDir("mcp");
-      if (hubDir && fs.existsSync(hubDir)) {
-        const files = fs.readdirSync(hubDir).filter((f) => f.endsWith(".json"));
-        for (const f of files) {
-          try {
-            const filePath = path.join(hubDir, f);
-            const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-            mcps.push({
-              id: data.id || path.basename(f, ".json"),
-              name: data.name || data.id,
-              description: data.description || "",
-              transport: data.transport || "stdio",
-              command: data.command,
-              args: data.args,
-              url: data.url
-            });
-          } catch {}
-        }
-        loadedFromFs = mcps.length > 0;
-      }
-    } catch {}
-
-    if (!loadedFromFs) {
-      for (const [k, data] of Object.entries(embeddedMcpHub)) {
+      const workspaceServers = ToolRegistry.readWorkspaceMcpServers();
+      for (const [k, data] of Object.entries(workspaceServers)) {
         mcps.push({
-          id: data.id || k,
-          name: data.name || data.id || k,
-          description: data.description || "",
-          transport: data.transport || "stdio",
-          command: data.command,
-          args: data.args,
-          url: data.url
+          id: (data as any).id || k,
+          name: (data as any).name || k,
+          description: (data as any).description || "",
+          transport: (data as any).transport || ((data as any).url ? "http" : "stdio"),
+          command: (data as any).command,
+          args: (data as any).args,
+          url: (data as any).url
         });
       }
-    }
-
+    } catch {}
     return mcps;
   }
 

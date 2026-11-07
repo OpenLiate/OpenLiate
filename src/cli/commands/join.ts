@@ -6,7 +6,6 @@ import { SarvamClient } from "../../layers/llm/model";
 import { NeonMcpOAuth } from "../../cloud/regional/neon";
 
 export const DEFAULT_JOIN_CALLBACK_PORT = 54324;
-export const JOIN_PORTAL_URL = "https://openliate.tech/join";
 
 function initWorkspaceOpenLiate(): void {
   try {
@@ -38,28 +37,8 @@ function initWorkspaceOpenLiate(): void {
     if (!fs.existsSync(mcpJsonPath)) {
       const defaultMcp = {
         mcpServers: {
-          sarvam: {
-            name: "Sarvam AI",
-            transport: "stdio",
-            command: "uvx",
-            args: ["sarvam-mcp"],
-            env: {
-              SARVAM_API_KEY: "$SARVAM_API_KEY"
-            }
-          },
-          fetch: {
-            name: "Fetch",
-            transport: "stdio",
-            command: "uvx",
-            args: ["mcp-server-fetch"]
-          },
-          agentmail: {
-            name: "AgentMail",
-            transport: "http",
-            url: "https://mcp.agentmail.to/mcp?apiKey=$AGENTMAIL_API_KEY"
-          },
           neon: {
-            name: "Neon",
+            name: "Neon Postgres",
             transport: "http",
             url: "https://mcp.neon.tech/mcp"
           }
@@ -161,7 +140,7 @@ export async function runJoinFlow(): Promise<void> {
       const client = new SarvamClient(finalKey || undefined);
       const res = await client.chat([
         { role: "user", content: "Say hello and confirm connection in one short sentence." }
-      ], { model: "glm5.3-flash", maxTokens: 60 });
+      ], { model: "sarvam-105b", maxTokens: 60 });
       verifySpinner.stop(`[Verified] Sarvam Sovereign AI Live Verified`);
       if (res.text) {
         console.log(`\n\x1b[32m[Sarvam AI Response]:\x1b[0m\n"${res.text.trim()}"\n`);

@@ -4,29 +4,6 @@ import type { AgentTool } from "../agent/types";
 import type { McpServerConfig, ParsedToolSpec } from "./types";
 import { MCP } from "./mcp";
 
-// Embedded hub MCP definitions for serverless micro-containers (Neon, Vercel, Cloudflare, Fastly)
-import agentmailHubJson from "../../../hub/mcp/agentmail.json";
-import fetchHubJson from "../../../hub/mcp/fetch.json";
-import sarvamHubJson from "../../../hub/mcp/sarvam.json";
-import neonHubJson from "../../../hub/mcp/neon.json";
-import supabaseHubJson from "../../../hub/mcp/supabase.json";
-import vercelHubJson from "../../../hub/mcp/vercel.json";
-import cloudflareHubJson from "../../../hub/mcp/cloudflare.json";
-import fastlyHubJson from "../../../hub/mcp/fastly.json";
-import azionHubJson from "../../../hub/mcp/azion.json";
-
-const BUILTIN_HUB_MCPS: Record<string, any> = {
-  agentmail: agentmailHubJson,
-  fetch: fetchHubJson,
-  sarvam: sarvamHubJson,
-  neon: neonHubJson,
-  supabase: supabaseHubJson,
-  vercel: vercelHubJson,
-  cloudflare: cloudflareHubJson,
-  fastly: fastlyHubJson,
-  azion: azionHubJson
-};
-
 export class ToolRegistry {
   public static parseSpec(spec: string): ParsedToolSpec {
     const trimmed = spec.trim();
@@ -157,58 +134,25 @@ export class ToolRegistry {
   public static loadMcpConfig(serverName: string, customEnv: Record<string, string | undefined> = process.env): McpServerConfig {
     let parsed: McpServerConfig | null = null;
 
-    // 1. Check in-memory embedded hub definitions first (zero disk access for serverless runtimes)
-    const norm = serverName.toLowerCase();
-    if (BUILTIN_HUB_MCPS[norm]) {
-      parsed = JSON.parse(JSON.stringify(BUILTIN_HUB_MCPS[norm]));
-    }
-
-    // 2. Check workspace .openliate/mcp.json (local cache & custom servers)
-    if (!parsed) {
-      const workspaceServers = ToolRegistry.readWorkspaceMcpServers();
-      if (workspaceServers && workspaceServers[serverName]) {
-        const s = workspaceServers[serverName];
-        parsed = {
-          id: serverName,
-          name: s.name || serverName,
-          description: s.description,
-          transport: s.transport || (s.url ? "http" : "stdio"),
-          command: s.command,
-          args: s.args,
-          url: s.url,
-          headers: s.headers,
-          env: s.env
-        };
-      }
-    }
-
-    // 3. If not found in memory or .openliate/mcp.json, search hub/mcp/<serverName>.json on disk
-    if (!parsed) {
-      const possiblePaths = [
-        path.resolve(process.cwd(), `hub/mcp/${serverName}.json`),
-        path.resolve(process.cwd(), `OpenLiate/hub/mcp/${serverName}.json`),
-        path.resolve(process.cwd(), "..", `hub/mcp/${serverName}.json`),
-        path.resolve(__dirname, `../../hub/mcp/${serverName}.json`),
-        path.resolve(__dirname, `../../../hub/mcp/${serverName}.json`),
-        path.resolve(__dirname, `../../../../hub/mcp/${serverName}.json`)
-      ];
-
-      const foundPath = possiblePaths.find((p) => fs.existsSync(p));
-      if (!foundPath) {
-        throw new Error(`MCP definition file not found for '${serverName}' in .openliate/mcp.json or hub/mcp/${serverName}.json`);
-      }
-
-      const raw = fs.readFileSync(foundPath, "utf-8");
-      parsed = JSON.parse(raw);
-
-      // Auto-cache into workspace .openliate/mcp.json for future runs
-      if (parsed) {
-        ToolRegistry.cacheMcpServer(serverName, parsed);
-      }
+    // Check workspace .openliate/mcp.json (local cache & user-registered servers)
+    const workspaceServers = ToolRegistry.readWorkspaceMcpServers();
+    if (workspaceServers && workspaceServers[serverName]) {
+      const s = workspaceServers[serverName];
+      parsed = {
+        id: serverName,
+        name: s.name || serverName,
+        description: s.description,
+        transport: s.transport || (s.url ? "http" : "stdio"),
+        command: s.command,
+        args: s.args,
+        url: s.url,
+        headers: s.headers,
+        env: s.env
+      };
     }
 
     if (!parsed) {
-      throw new Error(`Failed to load MCP configuration for '${serverName}'`);
+      throw new Error(`MCP server '${serverName}' not found. Define it directly inline in Layer [T] (e.g. { url: "...", transport: "http" }) or register it in .openliate/mcp.json.`);
     }
 
     // Resolve environment variables in headers and URL
@@ -327,7 +271,27 @@ export class ToolRegistry {
       }
 
       if (typeof item === "string") {
-        const parsed = this.parseSpec(item);
+        const trimmed = item.trim();
+        if (trimmed.toLowerCase() === "fetch" || trimmed.toLowerCase() === "mcp:fetch" || trimmed.toLowerCase() === "mcp/fetch") {
+          resolved.push({
+            name: "fetch",
+            description: "Safe HTTP web fetcher tool to fetch webpage or API content",
+            parameters: {
+              type: "object",
+              properties: {
+                url: { type: "string", description: "The HTTP or HTTPS URL to fetch" }
+              },
+              required: ["url"]
+            },
+            execute: async ({ url }: { url: string }) => {
+              const res = await fetch(url);
+              return await res.text();
+            }
+          });
+          continue;
+        }
+
+        const parsed = this.parseSpec(trimmed);
 
         if (parsed.isMcp && parsed.serverName) {
           try {

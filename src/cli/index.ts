@@ -21,7 +21,7 @@ export const BANNER = `
 export function printHelp(): void {
   console.log(BANNER);
   console.log(`Usage:
-  liate join                                           Join Mission AgentYaan (Claim sovereign identity)
+  liate join                                           Initialize workspace and configure BYOAI API keys
   liate hub                                            Get sovereign agents from hub
   liate create                                         Define agent.json in 5 lines
   liate run <agent.json|agent-name> "<prompt>"         Run an agent locally

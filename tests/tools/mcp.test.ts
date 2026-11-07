@@ -12,24 +12,24 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
   });
 
   test("ToolRegistry.parseSpec: parses entire MCP server name", () => {
-    const res = ToolRegistry.parseSpec("mcp:agentmail");
+    const res = ToolRegistry.parseSpec("mcp:custom_server");
     expect(res.isMcp).toBe(true);
-    expect(res.serverName).toBe("agentmail");
+    expect(res.serverName).toBe("custom_server");
     expect(res.selectedTools).toBeUndefined();
   });
 
   test("ToolRegistry.parseSpec: parses single granular tool", () => {
-    const res = ToolRegistry.parseSpec("mcp:agentmail:send_email");
+    const res = ToolRegistry.parseSpec("mcp:custom_server:send_query");
     expect(res.isMcp).toBe(true);
-    expect(res.serverName).toBe("agentmail");
-    expect(res.selectedTools).toEqual(["send_email"]);
+    expect(res.serverName).toBe("custom_server");
+    expect(res.selectedTools).toEqual(["send_query"]);
   });
 
   test("ToolRegistry.parseSpec: parses inline comma-separated multiple tools in one entry", () => {
-    const res = ToolRegistry.parseSpec("mcp:agentmail:send_email,read_inbox,delete_email");
+    const res = ToolRegistry.parseSpec("mcp:custom_server:send_query,read_table,delete_row");
     expect(res.isMcp).toBe(true);
-    expect(res.serverName).toBe("agentmail");
-    expect(res.selectedTools).toEqual(["send_email", "read_inbox", "delete_email"]);
+    expect(res.serverName).toBe("custom_server");
+    expect(res.selectedTools).toEqual(["send_query", "read_table", "delete_row"]);
   });
 
   test("ToolRegistry.parseSpec: parses shorthand server:tool1,tool2 syntax", () => {
@@ -39,22 +39,28 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
     expect(res.selectedTools).toEqual(["create_issue", "get_pull_request"]);
   });
 
-  test("ToolRegistry.loadMcpConfig: loads hub/mcp/agentmail.json and resolves env vars", () => {
-    const config = ToolRegistry.loadMcpConfig("agentmail", {
-      AGENTMAIL_API_KEY: "test_secret_agentmail_123"
+  test("ToolRegistry.loadMcpConfig: loads server from .openliate/mcp.json and resolves env vars", () => {
+    ToolRegistry.cacheMcpServer("test-db", {
+      id: "test-db",
+      name: "Test Postgres",
+      transport: "http",
+      url: "https://db.internal/mcp?key=$DB_KEY"
     });
 
-    expect(config.id).toBe("agentmail");
+    const config = ToolRegistry.loadMcpConfig("test-db", {
+      DB_KEY: "test_secret_123"
+    });
+
+    expect(config.id).toBe("test-db");
     expect(config.transport).toBe("http");
-    expect(config.url).toBe("https://mcp.agentmail.to/mcp?apiKey=test_secret_agentmail_123");
+    expect(config.url).toBe("https://db.internal/mcp?key=test_secret_123");
   });
 
-  test("ToolRegistry.loadMcpConfig: loads hub/mcp/fetch.json with uvx stdio transport", () => {
-    const config = ToolRegistry.loadMcpConfig("fetch");
-    expect(config.id).toBe("fetch");
-    expect(config.transport).toBe("stdio");
-    expect(config.command).toBe("uvx");
-    expect(config.args).toEqual(["mcp-server-fetch"]);
+  test("ToolRegistry.resolveTools: resolves built-in native fetch tool", async () => {
+    const tools = await ToolRegistry.resolveTools(["fetch"]);
+    expect(tools.length).toBe(1);
+    expect(tools[0].name).toBe("fetch");
+    expect(tools[0].description).toBeDefined();
   });
 
   test("ToolRegistry: supports custom MCP servers defined directly in .openliate/mcp.json", () => {
@@ -219,28 +225,28 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
     try {
       await ToolRegistry.resolveTools(
         {
-          agentmail: {
-            url: "https://mcp.agentmail.to/mcp?apiKey=$AGENTMAIL_API_KEY",
+          remote_service: {
+            url: "https://mcp.external-api.com/mcp?apiKey=$EXTERNAL_API_KEY",
             headers: {
               Authorization: "Bearer $AUTH_TOKEN",
               "X-Custom": "test"
             },
             transport: "http",
-            tools: ["send_email", "list_inbox"]
+            tools: ["action_one", "action_two"]
           }
         },
         {
-          AGENTMAIL_API_KEY: "secret_agentmail_key_999",
+          EXTERNAL_API_KEY: "secret_external_key_999",
           AUTH_TOKEN: "jwt_token_123"
         }
       );
 
       expect(capturedConfig).toBeDefined();
       expect(capturedConfig.cfg.transport).toBe("http");
-      expect(capturedConfig.cfg.url).toBe("https://mcp.agentmail.to/mcp?apiKey=secret_agentmail_key_999");
+      expect(capturedConfig.cfg.url).toBe("https://mcp.external-api.com/mcp?apiKey=secret_external_key_999");
       expect(capturedConfig.cfg.headers.Authorization).toBe("Bearer jwt_token_123");
       expect(capturedConfig.cfg.headers["X-Custom"]).toBe("test");
-      expect(capturedConfig.filter).toEqual(["send_email", "list_inbox"]);
+      expect(capturedConfig.filter).toEqual(["action_one", "action_two"]);
     } finally {
       MCP.discoverTools = originalDiscover;
     }
@@ -251,7 +257,7 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
 
     globalThis.fetch = (async (input: any, init?: any) => {
       const url = String(input);
-      expect(url).toContain("https://mcp.agentmail.to/mcp?key=live_test_key");
+      expect(url).toContain("https://mcp.external-api.com/mcp?key=live_test_key");
 
       const body = JSON.parse(init?.body as string);
       if (body.method === "tools/list") {
@@ -261,12 +267,12 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
           result: {
             tools: [
               {
-                name: "send_agent_mail",
-                description: "Send an email via remote AgentMail",
+                name: "execute_action",
+                description: "Execute an action via remote MCP",
                 inputSchema: {
                   type: "object",
-                  properties: { to: { type: "string" }, subject: { type: "string" } },
-                  required: ["to", "subject"]
+                  properties: { target: { type: "string" }, action: { type: "string" } },
+                  required: ["target", "action"]
                 }
               }
             ]
@@ -279,7 +285,7 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
           jsonrpc: "2.0",
           id: body.id,
           result: {
-            content: [{ type: "text", text: `Email delivered to ${body.params.arguments.to}` }]
+            content: [{ type: "text", text: `Action executed for ${body.params.arguments.target}` }]
           }
         }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
@@ -290,8 +296,8 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
     try {
       const tools = await ToolRegistry.resolveTools(
         {
-          agentmail_remote: {
-            url: "https://mcp.agentmail.to/mcp?key=$SECRET_KEY",
+          remote_http: {
+            url: "https://mcp.external-api.com/mcp?key=$SECRET_KEY",
             transport: "http",
             tools: ["*"]
           }
@@ -300,11 +306,11 @@ describe("Layer 4: [T] Tools & MCP v2 Layer", () => {
       );
 
       expect(tools.length).toBe(1);
-      expect(tools[0].name).toBe("send_agent_mail");
-      expect(tools[0].description).toContain("remote AgentMail");
+      expect(tools[0].name).toBe("execute_action");
+      expect(tools[0].description).toContain("remote MCP");
 
-      const callResult = await tools[0].execute({ to: "team@openliate.tech", subject: "Hello OpenLiate" });
-      expect(callResult).toBe("Email delivered to team@openliate.tech");
+      const callResult = await tools[0].execute({ target: "test-target", action: "ping" });
+      expect(callResult).toBe("Action executed for test-target");
     } finally {
       globalThis.fetch = originalFetch;
     }

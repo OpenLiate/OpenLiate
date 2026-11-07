@@ -28,18 +28,25 @@ OpenLiate includes built-in sovereign Indian identity verification (`src/tools/b
 
 ## 2. Model Context Protocol (MCP)
 
-OpenLiate natively consumes MCP configs declared under `hub/mcp/`:
+OpenLiate natively consumes MCP configs declared directly inline in Layer `[T]` or through the local workspace cache `.openliate/mcp.json`:
 
-* **`mcp:fetch`** — Safe HTTP fetcher tool (`hub/mcp/fetch.json`).
-* **`mcp:agentmail`** — Transactional agent email delivery (`hub/mcp/agentmail.json`).
-* **`mcp:neon`** — Postgres database operations (`hub/mcp/neon.json`).
-* **`mcp:supabase`** — Supabase client operations (`hub/mcp/supabase.json`).
+* **Inline HTTP / SSE MCP:** Pass remote URL and headers directly.
+* **Inline CLI / Stdio MCP:** Pass `command` (e.g. `npx`, `uvx`) and `args`.
+* **Built-in `fetch`:** Safe HTTP fetcher tool.
 
 ```json agent.json
 {
   "T": [
     "verify_identity",
-    "mcp:fetch"
+    "fetch",
+    {
+      "name": "neon-db",
+      "transport": "http",
+      "url": "https://mcp.neon.tech/mcp",
+      "headers": {
+        "Authorization": "Bearer $NEON_AI_GATEWAY_TOKEN"
+      }
+    }
   ]
 }
 ```
