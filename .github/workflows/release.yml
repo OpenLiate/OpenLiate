@@ -37,10 +37,11 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Upgrade npm to latest
+        run: npm install -g npm@latest
+
       - name: Publish package to npm
-        run: |
-          TAG=$(node -e "console.log(require('./package.json').version.includes('beta') ? '--tag beta' : '')")
-          npm publish $TAG --access public
+        run: npm publish --provenance --access public --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
