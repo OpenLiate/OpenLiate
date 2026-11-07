@@ -7,7 +7,79 @@ from typing import Any, Dict, List, Optional
 import json
 import urllib.request
 import urllib.error
+from urllib.parse import urlparse
 import time
+import os
+import socket
+import ssl
+
+def _resolve_via_doh(hostname: str) -> Optional[str]:
+    """
+    Fallback DNS resolver using Cloudflare (1.1.1.1) and Google (8.8.8.8) DNS-over-HTTPS.
+    Protects developers on restrictive local CGNAT or corporate routers from NXDOMAIN / Query Refused errors.
+    """
+    try:
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+    providers = [
+        f"https://cloudflare-dns.com/dns-query?name={hostname}&type=A",
+        f"https://dns.google/resolve?name={hostname}&type=A"
+    ]
+    for p_url in providers:
+        try:
+            req = urllib.request.Request(
+                p_url, 
+                headers={"Accept": "application/dns-json", "User-Agent": "OpenLiate-SDK/0.1.2"}
+            )
+            with urllib.request.urlopen(req, context=ctx, timeout=5) as r:
+                data = json.loads(r.read().decode("utf-8"))
+                for ans in data.get("Answer", []):
+                    if ans.get("type") == 1 and ans.get("data"):
+                        return ans.get("data")
+        except Exception:
+            continue
+    return None
+
+def _dispatch_direct_sni(ip: str, host: str, path: str, payload_bytes: bytes, timeout: int = 120) -> Dict[str, Any]:
+    """
+    Dispatches request directly to resolved IP with explicit TLS SNI server_hostname.
+    """
+    sock = socket.create_connection((ip, 443), timeout=timeout)
+    ctx = ssl.create_default_context()
+    ssock = ctx.wrap_socket(sock, server_hostname=host)
+    wire = (
+        f"POST {path} HTTP/1.1\r\n"
+        f"Host: {host}\r\n"
+        f"Content-Type: application/json\r\n"
+        f"Content-Length: {len(payload_bytes)}\r\n"
+        f"User-Agent: OpenLiate-Python-SDK/0.1.2\r\n"
+        f"Connection: close\r\n\r\n"
+    ).encode("utf-8") + payload_bytes
+    ssock.sendall(wire)
+    chunks = []
+    while True:
+        buf = ssock.recv(4096)
+        if not buf:
+            break
+        chunks.append(buf)
+    ssock.close()
+    raw = b"".join(chunks).decode("utf-8", errors="ignore")
+    parts = raw.split("\r\n\r\n", 1)
+    body = parts[1] if len(parts) > 1 else raw
+
+    # Robust JSON extraction supporting chunked transfer encoding
+    start_brace = body.find("{")
+    end_brace = body.rfind("}")
+    if start_brace != -1 and end_brace != -1:
+        json_str = body[start_brace:end_brace + 1]
+        return json.loads(json_str)
+
+    return json.loads(body)
 
 @dataclass
 class AgentRunResult:
@@ -44,6 +116,16 @@ class LapiClient:
         if session_id:
             payload["sessionId"] = session_id
 
+        # Dynamically resolve BYOAI keys from environment
+        keys = {}
+        for k, v in manifest.get("E", {}).items():
+            if isinstance(v, str) and v.startswith("$"):
+                var_name = v[1:]
+                keys[k] = os.environ.get(var_name, "")
+            else:
+                keys[k] = v
+        payload["keys"] = keys
+
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
             url,
@@ -65,10 +147,23 @@ class LapiClient:
                 err_msg = err_body
             raise RuntimeError(f"[OpenLiate LAPI Error HTTP {e.code}]: {err_msg}") from e
         except urllib.error.URLError as e:
-            raise ConnectionError(
-                f"[OpenLiate Connection Error]: Unable to reach LAPI engine at {self.endpoint}. "
-                f"Ensure the OpenLiate engine is running (e.g. `openliate serve` or deployed URL)."
-            ) from e
+            # Fallback for DNS resolution issues on restrictive routers / unpropagated subdomains
+            parsed = urlparse(url)
+            hostname = parsed.hostname or ""
+            doh_ip = _resolve_via_doh(hostname) if hostname else None
+            if doh_ip:
+                try:
+                    body = _dispatch_direct_sni(doh_ip, hostname, parsed.path or "/run", data, timeout=120)
+                except Exception as sni_err:
+                    raise ConnectionError(
+                        f"[OpenLiate Connection Error]: Unable to reach LAPI engine at {self.endpoint} "
+                        f"(Direct SNI fallback via {doh_ip} failed: {sni_err})."
+                    ) from e
+            else:
+                raise ConnectionError(
+                    f"[OpenLiate Connection Error]: Unable to reach LAPI engine at {self.endpoint}. "
+                    f"Ensure the OpenLiate engine is running (e.g. `openliate serve` or deployed URL)."
+                ) from e
 
         duration_ms = (time.time() - start_time) * 1000.0
 
