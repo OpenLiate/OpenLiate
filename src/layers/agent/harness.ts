@@ -159,7 +159,29 @@ export class Agent {
     if (this.toolsInitialized) return;
 
     if (this.rawToolSpecs.length > 0) {
-      const customEnv = (this.manifest?.E as Record<string, string>) || process.env;
+      const manifestKeys = ((this.manifest as any)?.keys as Record<string, string>) || {};
+      const manifestEnv = ((this.manifest as any)?.env as Record<string, string>) || {};
+      const rawE = (this.manifest?.E as Record<string, string>) || {};
+
+      // Build customEnv with real secret values taking priority over literal $VAR placeholders
+      const customEnv: Record<string, string | undefined> = {
+        ...process.env,
+        ...manifestEnv,
+        ...manifestKeys
+      };
+
+      for (const [k, v] of Object.entries(rawE)) {
+        if (typeof v === "string" && v.startsWith("$")) {
+          const varName = v.slice(1);
+          const resolvedVal = manifestKeys[k] || manifestKeys[varName] || manifestEnv[k] || manifestEnv[varName] || process.env[k] || process.env[varName];
+          if (resolvedVal) {
+            customEnv[k] = resolvedVal;
+          }
+        } else if (v && !customEnv[k]) {
+          customEnv[k] = v;
+        }
+      }
+
       const resolved = await ToolRegistry.resolveTools(this.rawToolSpecs, customEnv);
       for (const t of resolved) {
         this.tools.set(t.name, t);

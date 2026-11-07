@@ -557,11 +557,18 @@ export function createRuntimeApp() {
     }
 
     // 1. Resolve on-the-fly API keys and environment variables generically
-    const onTheFlyKeys: Record<string, string> = {
-      ...(body.keys || {}),
-      ...(body.env || {}),
-      ...(body.agent?.E || {})
-    };
+    const onTheFlyKeys: Record<string, string> = {};
+
+    // First, load any direct literal values from E (skipping $VAR references)
+    const rawE = { ...(body.E || {}), ...(body.agent?.E || {}), ...(body.manifest?.E || {}) };
+    for (const [k, v] of Object.entries(rawE)) {
+      if (typeof v === "string" && !v.startsWith("$") && v) {
+        onTheFlyKeys[k] = v;
+      }
+    }
+
+    // Overlay real runtime secrets from env and keys (never overwrite with $VAR strings)
+    Object.assign(onTheFlyKeys, body.env || {}, body.keys || {});
 
     // Forward any custom request headers generically
     const reqHeaders = c.req.header();
@@ -690,6 +697,9 @@ export function createRuntimeApp() {
 
     const t0 = Date.now();
     try {
+      if (inlineManifest) {
+        inlineManifest.keys = { ...onTheFlyKeys };
+      }
       const agent = inlineManifest
         ? new Agent({ manifest: inlineManifest, memory: sessionMemory })
         : new Agent({ manifest: manifestPath!, memory: sessionMemory });
