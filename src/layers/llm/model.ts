@@ -295,7 +295,19 @@ export class UniversalLlmClient {
     return {
       text: choice?.message?.content || "",
       reasoningContent: choice?.message?.reasoning_content,
-      toolCalls: choice?.message?.tool_calls,
+      toolCalls: choice?.message?.tool_calls?.map((tc: any) => {
+        let args = {};
+        try {
+          args = typeof tc.function?.arguments === "string" ? JSON.parse(tc.function.arguments) : (tc.function?.arguments || tc.arguments || {});
+        } catch {
+          args = tc.function?.arguments || tc.arguments || {};
+        }
+        return {
+          id: tc.id || `call_${Date.now()}`,
+          name: tc.function?.name || tc.name || "",
+          arguments: args
+        };
+      }),
       model: data.model || model,
       usage: data.usage ? {
         promptTokens: data.usage.prompt_tokens || data.usage.promptTokens || 0,

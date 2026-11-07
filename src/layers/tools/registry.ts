@@ -4,6 +4,29 @@ import type { AgentTool } from "../agent/types";
 import type { McpServerConfig, ParsedToolSpec } from "./types";
 import { MCP } from "./mcp";
 
+// Embedded hub MCP definitions for serverless micro-containers (Neon, Vercel, Cloudflare, Fastly)
+import agentmailHubJson from "../../../hub/mcp/agentmail.json";
+import fetchHubJson from "../../../hub/mcp/fetch.json";
+import sarvamHubJson from "../../../hub/mcp/sarvam.json";
+import neonHubJson from "../../../hub/mcp/neon.json";
+import supabaseHubJson from "../../../hub/mcp/supabase.json";
+import vercelHubJson from "../../../hub/mcp/vercel.json";
+import cloudflareHubJson from "../../../hub/mcp/cloudflare.json";
+import fastlyHubJson from "../../../hub/mcp/fastly.json";
+import azionHubJson from "../../../hub/mcp/azion.json";
+
+const BUILTIN_HUB_MCPS: Record<string, any> = {
+  agentmail: agentmailHubJson,
+  fetch: fetchHubJson,
+  sarvam: sarvamHubJson,
+  neon: neonHubJson,
+  supabase: supabaseHubJson,
+  vercel: vercelHubJson,
+  cloudflare: cloudflareHubJson,
+  fastly: fastlyHubJson,
+  azion: azionHubJson
+};
+
 export class ToolRegistry {
   public static parseSpec(spec: string): ParsedToolSpec {
     const trimmed = spec.trim();
@@ -134,24 +157,32 @@ export class ToolRegistry {
   public static loadMcpConfig(serverName: string, customEnv: Record<string, string | undefined> = process.env): McpServerConfig {
     let parsed: McpServerConfig | null = null;
 
-    // 1. Check workspace .openliate/mcp.json first (local cache & custom servers)
-    const workspaceServers = ToolRegistry.readWorkspaceMcpServers();
-    if (workspaceServers && workspaceServers[serverName]) {
-      const s = workspaceServers[serverName];
-      parsed = {
-        id: serverName,
-        name: s.name || serverName,
-        description: s.description,
-        transport: s.transport || (s.url ? "http" : "stdio"),
-        command: s.command,
-        args: s.args,
-        url: s.url,
-        headers: s.headers,
-        env: s.env
-      };
+    // 1. Check in-memory embedded hub definitions first (zero disk access for serverless runtimes)
+    const norm = serverName.toLowerCase();
+    if (BUILTIN_HUB_MCPS[norm]) {
+      parsed = JSON.parse(JSON.stringify(BUILTIN_HUB_MCPS[norm]));
     }
 
-    // 2. If not found in .openliate/mcp.json, search hub/mcp/<serverName>.json
+    // 2. Check workspace .openliate/mcp.json (local cache & custom servers)
+    if (!parsed) {
+      const workspaceServers = ToolRegistry.readWorkspaceMcpServers();
+      if (workspaceServers && workspaceServers[serverName]) {
+        const s = workspaceServers[serverName];
+        parsed = {
+          id: serverName,
+          name: s.name || serverName,
+          description: s.description,
+          transport: s.transport || (s.url ? "http" : "stdio"),
+          command: s.command,
+          args: s.args,
+          url: s.url,
+          headers: s.headers,
+          env: s.env
+        };
+      }
+    }
+
+    // 3. If not found in memory or .openliate/mcp.json, search hub/mcp/<serverName>.json on disk
     if (!parsed) {
       const possiblePaths = [
         path.resolve(process.cwd(), `hub/mcp/${serverName}.json`),
