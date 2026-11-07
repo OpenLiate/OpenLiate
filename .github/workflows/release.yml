@@ -38,7 +38,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Publish package to npm
-        run: npm publish --provenance --access public
+        run: |
+          TAG=$(node -e "console.log(require('./package.json').version.includes('beta') ? '--tag beta' : '')")
+          npm publish $TAG --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -74,3 +76,4 @@ jobs:
         with:
           packages-dir: sdk/python/dist/
         continue-on-error: true
+

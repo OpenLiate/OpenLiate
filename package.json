@@ -1,6 +1,6 @@
 {
   "name": "openliate",
-  "version": "0.1.0",
+  "version": "0.0.2-beta",
   "description": "Open Source Backend Layer for AI Agents — Built for Sovereign AI Agents From India to the World",
   "type": "module",
   "main": "./dist/liate.js",
